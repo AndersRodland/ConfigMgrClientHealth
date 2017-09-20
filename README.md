@@ -1,0 +1,2 @@
+# ConfigMgrClientHealth
+ConfigMgr Client Health
