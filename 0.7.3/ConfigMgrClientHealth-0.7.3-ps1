@@ -39,7 +39,7 @@
 
 <# TESTING ONLY
 $config = "\\cm01.rodland.lab\clienthealth$\config.xml"
-$config = "C:\Users\AndersRødland\OneDrive\Powershell\SCCM\Client-Health\Development\0.7.3\config.xml"
+$config = "D:\OneDrive\Powershell\SCCM\Client-Health\Development\0.7.3\config.xml"
 #>
 
 [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
@@ -233,13 +233,9 @@ Begin {
     }
 
     Function Get-ClientVersion {
-        try {
-            $obj = (Get-WmiObject -Namespace root/ccm SMS_Client).ClientVersion
-        } catch {
-            $obj = $false
-        } finally {
-            Write-Output $obj
-        }
+        try { $obj = (Get-WmiObject -Namespace root/ccm SMS_Client).ClientVersion }
+        catch { $obj = $false }
+        finally { Write-Output $obj }
     }
 
     Function Get-ClientCache {
@@ -711,7 +707,7 @@ Begin {
 
        # Only fix if the value is wrong
        if ($currentValue -ne $correctValue) {
-            Set-ItemProperty -Path  'HKU:\S-1-5-18\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\' -Name 'AppData' -Value $correntValue
+            Set-ItemProperty -Path  'HKU:\S-1-5-18\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\' -Name 'AppData' -Value $correctValue
         }
     }
 
@@ -812,56 +808,68 @@ Begin {
     Function Test-ConfigMgrClient {
         Param([Parameter(Mandatory=$true)]$Log)
 
-        # Lets not reinstall client unless tests tells us to.
-        $Reinstall = $false
-        
-        $LocalDB = Test-CcmSQLCELog
-        $CCMService = Get-Service -Name ccmexec -ErrorAction SilentlyContinue
+        # Check if the SCCM Agent is installed or not.
+        # If installed, perform tests to decide if reinstall is needed or not.
+        if (Get-Service -Name ccmexec -ErrorAction SilentlyContinue) {
+            $text = "Configuration Manager Client is installed"
+            Write-Host $text
 
-        # Process the test result and determine if we reinstall the CM client
-        if ($LocalDB -eq $true) {
-            # LocalDB is messed up
-            New-ClientInstalledReason -Log $Log -Message "Client database corrupt."
-            $Reinstall = $true
-        }
+            # Lets not reinstall client unless tests tells us to.
+            $Reinstall = $false
 
-        # Reinstall if we are unable to start the CM client
-        if (($CCMService.Status -eq "Stopped") -and ($LocalDB -eq $false)) {
-            try {
-                Write-Host "ConfigMgr Agent not running. Attempting to start it."
-                if ($CCMService.StartType -ne "Automatic") {
-                    $text = "Configuring service CcmExec StartupType to: Automatic (Delayed Start)..."
-                    Write-Output $text
-                    Set-Service -Name CcmExec -StartupType Automatic
+            $testLocalDB = (Get-XMLConfigCcmSQLCELog).ToLower()
+
+            # Only test CM client local DB if this check is enabled
+            if ($testLocalDB -like "enable") {
+                Write-Host "Testing CcmSQLCELog"
+                $LocalDB = Test-CcmSQLCELog
+                if ($LocalDB -eq $true) {
+                    # LocalDB is messed up
+                    New-ClientInstalledReason -Log $Log -Message "ConfigMgr Client database corrupt."
+                    Write-Host "ConfigMgr Client database corrupt. Reinstalling..."
+                    $Reinstall = $true
                 }
-                Start-Service -Name CcmExec
             }
-            catch {
-                $Reinstall = $true
-                New-ClientInstalledReason -Log $Log -Message "Service not running, failed to start."
-            }
-        }
 
-        if ( $reinstall -eq $true) {
-            $text = "Configuration Manager client is not installed. Installing and sleeping for 10 minutes for it to configure..."
-            Write-Warning $text
-            # Lets check that registry settings are OK before we try a new installation.
-            Test-CCMSetup1
-            if ($localDB -eq $true) {
+            $CCMService = Get-Service -Name ccmexec -ErrorAction SilentlyContinue
+
+            # Reinstall if we are unable to start the CM client
+            if (($CCMService.Status -eq "Stopped") -and ($LocalDB -eq $false)) {
+                try {
+                    Write-Host "ConfigMgr Agent not running. Attempting to start it."
+                    if ($CCMService.StartType -ne "Automatic") {
+                        $text = "Configuring service CcmExec StartupType to: Automatic (Delayed Start)..."
+                        Write-Output $text
+                        Set-Service -Name CcmExec -StartupType Automatic
+                    }
+                    Start-Service -Name CcmExec
+                }
+                catch {
+                    $Reinstall = $true
+                    New-ClientInstalledReason -Log $Log -Message "Service not running, failed to start."
+                }
+            }
+
+            if ( $reinstall -eq $true) {
+                $text = "ConfigMgr Client Health thinks the agent need to be reinstalled. Installing and sleeping for 10 minutes for it to configure..."
+                Write-Host $text
+                # Lets check that registry settings are OK before we try a new installation.
+                Test-CCMSetup1
+
                 # Adding forceinstall to the client install properties to make sure previous client is uninstalled.
-                $clientInstallProperties = $clientInstallProperties + " /forceinstall"
+                if ($localDB -eq $true) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
                 Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $false
+                $log.ClientInstalled = Get-SmallDateTime
+                Start-Sleep 600
             }
-            else {
-                Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $true
-            }
-            
-            $log.ClientInstalled = Get-SmallDateTime
-            Start-Sleep 600
         }
         else {
-            $text = "Configuration Manager Client is installed"
-            Write-Output $text
+            $text = "Configuration Manager client is not installed. Installing and sleeping for 10 minutes for it to configure..."
+            Write-Host $text
+            Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $true
+            New-ClientInstalledReason -Log $Log -Message "No agent found."
+            $log.ClientInstalled = Get-SmallDateTime
+            Start-Sleep 600
         }
     }
 
@@ -1987,7 +1995,7 @@ Begin {
 
     # Start Getters - XML config file
     Function Get-LocalFilesPath {
-        $obj = $Xml.Configuration.LocalFiles | Select-Object -ExpandProperty '#text'
+        $obj = $Xml.Configuration.LocalFiles
         Write-Output $obj
     }
     
@@ -2108,6 +2116,11 @@ Begin {
 
     Function Get-XMLConfigDNSCheck {
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Enable'
+        Write-Output $obj
+    }
+    
+    Function Get-XMLConfigCcmSQLCELog {
+        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'CcmSQLCELog'} | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
     }
 
@@ -2269,7 +2282,7 @@ Begin {
             Remove-Item "$pclientpathath\Temp" -Recurse -Force | Out-Null
         }
         
-        $LocalLogging = Get-((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
+        $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
         if ($LocalLogging -ne "true") {
             Write-Verbose "Local logging disabled. Removing $clientpath\ClientHealth"
             Remove-Item "$clientpath\Temp" -Recurse -Force | Out-Null
