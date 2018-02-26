@@ -119,9 +119,9 @@ Begin {
     }
 
     Function Test-LocalLogging {
-        $Path = 'C:\ClientHealth'
-        if ((Test-Path -Path $Path) -eq $False) {
-            New-Item -Path $Path -ItemType Directory -Force | Out-Null
+        $clientpath = Get-LocalFilesPath
+        if ((Test-Path -Path $clientpath) -eq $False) {
+            New-Item -Path $clientpath -ItemType Directory -Force | Out-Null
         }
     }
 
@@ -130,7 +130,8 @@ Begin {
         
         if ($Mode -like "Local") {
             Test-LocalLogging
-            $Logfile = "C:\ClientHealth\ClientHealth.log"
+            $clientpath = Get-LocalFilesPath
+            $Logfile = "$clientpath\ClientHealth.log"
         } else {
             $Logfile = Get-LogFileName    
         }
@@ -774,13 +775,15 @@ Begin {
                                 $kbfullpath = $updates + "$hotfix"
                                 $text = "Update $hotfix" + ": Missing. Installing now..."
                                 Write-Warning $text
+
+                                $clientpath = Get-LocalFilesPath
                     
-                                If ((Test-Path C:\ClientHealth\Temp) -eq $false) {
-                                    New-Item -Path C:\ClientHealth\Temp -ItemType Directory | Out-Null
+                                If ((Test-Path "$clientpath\Temp") -eq $false) {
+                                    New-Item -Path "$clientpath\Temp" -ItemType Directory | Out-Null
                                 }
                     
-                                Copy-Item -Path $kbfullpath -Destination c:\clienthealth\temp
-                                $install = "C:\ClientHealth\Temp\" +$hotfix
+                                Copy-Item -Path $kbfullpath -Destination "$clientpath\temp"
+                                $install = "$clientpath\Temp\" +$hotfix
                     
                                 wusa.exe $install /quiet /norestart
                                 While (Get-Process wusa -ErrorAction SilentlyContinue) {
@@ -2246,7 +2249,8 @@ Begin {
 
         $localLogging = (Get-XMLConfigLoggingLocalFile).ToLower()
         if ($localLogging -eq "true") {
-            $logfile = "c:\clienthealth\ClientHealth.log"
+            $clientpath = Get-LocalFilesPath
+            $logfile = "$clientpath\ClientHealth.log"
             Test-LogFileHistory -Logfile $logfile
         }
 
@@ -2258,15 +2262,17 @@ Begin {
     }
    
     Function CleanUp {
-        if ((Test-Path 'C:\ClientHealth\Temp' -ErrorAction SilentlyContinue) -eq $True) {
-            Write-Verbose 'Cleaning up temporary files in C:\ClientHealth'
-            Remove-Item 'C:\ClientHealth\Temp' -Recurse -Force | Out-Null
+        $clientpath = Get-LocalFilesPath
+        
+        if ((Test-Path "$clientpath\Temp" -ErrorAction SilentlyContinue) -eq $True) {
+            Write-Verbose "Cleaning up temporary files in $clientpath\ClientHealth"
+            Remove-Item "$pclientpathath\Temp" -Recurse -Force | Out-Null
         }
         
         $LocalLogging = Get-((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
         if ($LocalLogging -ne "true") {
-            Write-Verbose "Local logging disabled. Removing C:\ClientHealth"
-            Remove-Item 'C:\ClientHealth' -Recurse -Force | Out-Null
+            Write-Verbose "Local logging disabled. Removing $clientpath\ClientHealth"
+            Remove-Item "$clientpath\Temp" -Recurse -Force | Out-Null
         }
     }
 
