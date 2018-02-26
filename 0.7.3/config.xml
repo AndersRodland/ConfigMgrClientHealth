@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
-	<LocalFiles>C:\ClientHealth</LocalFiles>
-	<Client Name="Version">5.00.8540.1611</Client>
+	<LocalFiles>C:\ClientHealth</LocalFiles> <!-- Path locally on computer for temporary files and local clienthealth.log if LocalLogFile="True" -->
+	<Client Name="Version">5.00.8577.1108</Client>
 	<Client Name="SiteCode">PS1</Client>
 	<Client Name="Domain">rodland.lab</Client>
 	<Client Name="AutoUpgrade">True</Client>
@@ -17,6 +17,7 @@
 	<Log Name="File" Share="\\CM01.rodland.lab\ClientHealthLogs$" Level="Full" MaxLogHistory="8" LocalLogFile="True" Enable="True" />
 	<Log Name="SQL" Server="CM01.rodland.lab" Enable="True" />
 	<Log Name="Time" Format="ClientLocal" /> <!-- Valid formats: ClientLocal / UTC  -->
+	<Option Name="CcmSQLCELog" Enable="False" /> <!-- Optional check on the ConfigMgr agent if local database is corrupt -->
 	<Option Name="BITSCheck" Fix="True" Enable="True" />
 	<Option Name="DNSCheck" Fix="True" Enable="True" />
 	<Option Name="Drivers" Enable="True" />
