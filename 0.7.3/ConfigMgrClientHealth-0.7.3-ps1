@@ -937,7 +937,6 @@ Begin {
             $text = 'ConfigMgr Client version is: ' +$installedVersion +': Tagging client for upgrade to version: '+$ClientVersion
             Write-Warning $text
             $obj = $true
-            New-ClientInstalledReason -Log $Log -Message "Version upgrade."
         }
         else {
             $text = 'ConfigMgr Client version is: ' +$installedVersion +': Required version: '+$ClientVersion +' AutoUpgrade: false. Skipping upgrade'
@@ -1124,7 +1123,7 @@ Begin {
                 $file = Get-ChildItem -Path 'C:\Windows\System32\GroupPolicy\Machine\registry.pol' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty LastWriteTime
                 $regPolDate = Get-Date($file)
                 $now = Get-Date
-                if (($now - $regPolDate).Days -ge 5) {
+                if (($now - $regPolDate).Days -ge 30) {
                     $text = 'GPO Cache: Error. Deleting registry.pol and run gpupdate...'
                     Write-Warning $text
                     $log.WUAHandler = 'Repaired'
