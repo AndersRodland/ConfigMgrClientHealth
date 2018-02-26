@@ -132,9 +132,10 @@ Begin {
             Test-LocalLogging
             $clientpath = Get-LocalFilesPath
             $Logfile = "$clientpath\ClientHealth.log"
-        } else {
-            $Logfile = Get-LogFileName    
         }
+        else { $Logfile = Get-LogFileName }
+
+        if ($mode -like "ClientInstall" ) { $text = "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation." }
         
         $obj = '[' +(Get-DateTime) +'] '+$text
         $obj | Out-File -Encoding utf8 -Append $logFile
@@ -870,6 +871,10 @@ Begin {
             New-ClientInstalledReason -Log $Log -Message "No agent found."
             $log.ClientInstalled = Get-SmallDateTime
             Start-Sleep 600
+
+            # Test again if agent is installed
+            if (Get-Service -Name ccmexec -ErrorAction SilentlyContinue) {}
+            else { Out-LogFile -Mode "ClientInstall"}
         }
     }
 
@@ -932,6 +937,7 @@ Begin {
             $text = 'ConfigMgr Client version is: ' +$installedVersion +': Tagging client for upgrade to version: '+$ClientVersion
             Write-Warning $text
             $obj = $true
+            New-ClientInstalledReason -Log $Log -Message "Version upgrade."
         }
         else {
             $text = 'ConfigMgr Client version is: ' +$installedVersion +': Required version: '+$ClientVersion +' AutoUpgrade: false. Skipping upgrade'
@@ -2516,12 +2522,9 @@ Begin {
         $text = $text.replace(" :",":")
         $text = $text -creplace '(?m)^\s*\r?\n',''
         
-        if ($Mode -eq 'Local') {
-            Out-LogFile -Xml $xml -Text $text -Mode $Mode
-        }
-        else {
-            Out-LogFile -Xml $xml -Text $text
-        }
+        if ($Mode -eq 'Local') { Out-LogFile -Xml $xml -Text $text -Mode $Mode }
+        elseif ($Mode -eq 'ClientInstalledFailed') { Out-LogFile -Xml $xml -Text $text -Mode $Mode }
+        else { Out-LogFile -Xml $xml -Text $text }
         Write-Verbose "End Update-LogFile"
     }
     
@@ -2568,6 +2571,7 @@ Process {
 
     $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
     $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
+    $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
     $SQLLogging = ((Get-XMLConfigSQLLoggingEnable).ToString()).ToLower()
 
     Write-Verbose "Testing if log files are bigger than max history for logfiles."
@@ -2763,7 +2767,7 @@ End {
         Update-SQL -Log $log
     }
 
-    if ($FileLogging -like 'true') {
+    if (($FileLogging -like 'true') -and ($FileLogLevel -like 'full')) {
         Write-Output 'Updating logfile on fileshare with results' 
         Update-LogFile -Log $log
     }
