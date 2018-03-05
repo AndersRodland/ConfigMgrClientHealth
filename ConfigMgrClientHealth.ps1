@@ -38,8 +38,7 @@
 #> 
 
 <# TESTING ONLY
-$config = "\\cm01.rodland.lab\clienthealth$\config.xml"
-$config = "D:\OneDrive\Powershell\SCCM\Client-Health\Development\0.7.4\config.xml"
+$config = "D:\OneDrive\Powershell\SCCM\Client-Health\Development\GitHub\config.xml"
 #>
 
 [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
