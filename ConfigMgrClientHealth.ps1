@@ -1385,13 +1385,8 @@ Begin {
         
         switch -Wildcard ($StartMode) {
             "auto*" {
-                if ($DelayedAutostart -eq 1) {
-                    $serviceStartType = "Automatic (Delayed Start)"
-                }
-                else {
-                    # Default = automatic
-                    $serviceStartType = "Automatic"
-                }
+                if ($DelayedAutostart -eq 1) { $serviceStartType = "Automatic (Delayed Start)" }
+                else { $serviceStartType = "Automatic" }
             }
 
             <# This will be implemented at a later time.
@@ -1417,9 +1412,7 @@ Begin {
                     $text = "Configuring service $Name StartupType to: Automatic (Trigger Start)..."
                     Set-Service -Name $service.Name -StartupType Automatic
                 }
-                else {
-                    "Service $Name startup: OK"
-                }
+                else { "Service $Name startup: OK" }
                 Write-Output $text
             }
             else {
@@ -1429,7 +1422,6 @@ Begin {
                 Write-Output $text
                 $log.Services = 'Started'
             }
-            
         }
 
         else {
@@ -1438,10 +1430,10 @@ Begin {
                 Write-Output $text
                 Set-Service -Name $service.Name -StartupType $StartupType
                 $log.Services = 'Started'
-            } catch {
+            }
+            catch {
                 $text = "Failed to set $StartupType StartupType on service $Name"
                 Write-Error $text
-            } finally {
             }
         }
         
@@ -1921,10 +1913,6 @@ Begin {
             else { $Model = $ComputerSystem.Model }
         }
         
-
-        
-        
-
         $obj = New-Object PSObject -Property @{
             Hostname = $ComputerSystem.Name;
             Manufacturer = $ComputerSystem.Manufacturer
