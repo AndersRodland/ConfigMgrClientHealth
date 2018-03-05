@@ -36,12 +36,6 @@
 .LINK
     Full documentation: https://www.andersrodland.com/configmgr-client-health/
 #> 
-
-<# TESTING ONLY
-$config = "\\cm01.rodland.lab\clienthealth$\config.xml"
-$config = "D:\OneDrive\Powershell\SCCM\Client-Health\Development\0.7.3\config.xml"
-#>
-
 [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
 param(
     [Parameter(Mandatory=$True, HelpMessage='Path to XML Configuration File')]
@@ -52,7 +46,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.7.3'
+    $Version = '0.7.3.1'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
 
     Write-Verbose "Script version: $Version"
@@ -1151,21 +1145,13 @@ Begin {
 
     Function Test-ClientLogSize {
         Param([Parameter(Mandatory=$true)]$Log)
-        try {
-            $currentLogSize = Get-ClientMaxLogSize
-        } catch {
-            $currentLogSize = 0
-        }
-        try {
-            $currentMaxHistory = Get-ClientMaxLogHistory
-        } catch {
-            $currentMaxHistory = 0
-        }
-        try {
-            $logLevel = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').logLevel
-        } catch {
-            $logLevel = 1
-        }
+        try { $currentLogSize = Get-ClientMaxLogSize }
+        catch { $currentLogSize = 0 }
+        try { $currentMaxHistory = Get-ClientMaxLogHistory }
+        catch { $currentMaxHistory = 0 }
+        try { $logLevel = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').logLevel }
+        catch { $logLevel = 1 }
+
         $clientLogSize = Get-XMLConfigClientMaxLogSize
         $clientLogMaxHistory = Get-XMLConfigClientMaxLogHistory
 
@@ -1210,16 +1196,10 @@ Begin {
             #Write-Verbose 'Sleeping for 5 seconds to allow WMI method complete before we collect new results...'
             #Start-Sleep -Seconds 5
 
-            try {
-                $Log.MaxLogSize = Get-ClientMaxLogSize
-            } catch {
-                $Log.MaxLogSize = 0
-            }
-            try {
-                $Log.MaxLogHistory = Get-ClientMaxLogHistory
-            } catch {
-                $Log.MaxLogHistory = 0
-            }
+            try { $Log.MaxLogSize = Get-ClientMaxLogSize }
+            catch { $Log.MaxLogSize = 0 }
+            try { $Log.MaxLogHistory = Get-ClientMaxLogHistory }
+            catch { $Log.MaxLogHistory = 0 }
             $obj = $true
         }
         Write-Output $obj
@@ -1237,9 +1217,7 @@ Begin {
             if ($FirstInstall -eq $true) {
                 $text = 'Installing Configuration Manager Client.'
             } 
-            else {
-                $text = 'Client tagged for reinstall. Reinstalling client...'
-            }
+            else { $text = 'Client tagged for reinstall. Reinstalling client...' }
             Write-Output $text
             
             Write-Verbose "Perform a test on a specific registry key required for ccmsetup to succeed."
@@ -1266,9 +1244,8 @@ Begin {
         [CmdletBinding()]
         param ([string]$FilePath)
 
-        try {
-            $Result = Start-Process -FilePath 'regsvr32.exe' -Args "/s `"$FilePath`"" -Wait -NoNewWindow -PassThru
-        } catch {}
+        try { $Result = Start-Process -FilePath 'regsvr32.exe' -Args "/s `"$FilePath`"" -Wait -NoNewWindow -PassThru }
+        catch {}
     }
 
     Function Test-WMI {
@@ -2284,7 +2261,7 @@ Begin {
         
         if ((Test-Path "$clientpath\Temp" -ErrorAction SilentlyContinue) -eq $True) {
             Write-Verbose "Cleaning up temporary files in $clientpath\ClientHealth"
-            Remove-Item "$pclientpathath\Temp" -Recurse -Force | Out-Null
+            Remove-Item "$clientpath\Temp" -Recurse -Force | Out-Null
         }
         
         $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
