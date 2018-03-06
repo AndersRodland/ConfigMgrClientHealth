@@ -37,6 +37,10 @@
     Full documentation: https://www.andersrodland.com/configmgr-client-health/
 #> 
 
+<# TESTING ONLY
+$config = "D:\OneDrive\Powershell\SCCM\Client-Health\Development\GitHub\config.xml"
+#>
+
 [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
 param(
     [Parameter(Mandatory=$True, HelpMessage='Path to XML Configuration File')]
@@ -271,9 +275,36 @@ Begin {
         Write-Output $obj
     }
 
+    Function Get-CCMDirectory {
+        $logdir = Get-CCMLogDirectory
+        $obj = $logdir.replace("\Logs", "")
+        Write-Output $obj
+    }
+
+    <#
+    .SYNOPSIS
+    Function to test if local database files are missing from the ConfigMgr client. 
+    
+    .DESCRIPTION
+    Function to test if local database files are missing from the ConfigMgr client. Will tag client for reinstall if less than 7. Returns $True if compliant or $False if non-compliant
+    
+    .EXAMPLE
+    An example
+    
+    .NOTES
+    Returns $True if compliant or $False if non-compliant. Non.compliant computers require remediation and will be tagged for ConfigMgr client reinstall.
+    #>    
+    Function Test-CcmSDF {
+        $ccmdir = Get-CCMDirectory
+        $files = Get-ChildItem "$ccmdir\*.sdf"
+        if ($files.Count -lt 7) { $obj = $false }
+        else { $obj = $true }
+        Write-Output $obj
+    }
+
     Function Test-CcmSQLCELog {
         $logdir = Get-CCMLogDirectory
-        $ccmdir = $logdir.replace("\Logs", "")
+        $ccmdir = Get-CCMDirectory
         $logFile = "$logdir\CcmSQLCE.log"
         $logLevel = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').logLevel
 
@@ -790,9 +821,18 @@ Begin {
             # Lets not reinstall client unless tests tells us to.
             $Reinstall = $false
 
-            $testLocalDB = (Get-XMLConfigCcmSQLCELog).ToLower()
-
+            # We test that the local database files exists. Less than 7 means the client is horrible broken and requires reinstall.
+            $LocalDBFilesPresent = Test-CcmSDF
+            if ($LocalDBFilesPresent -eq $False) {
+                    New-ClientInstalledReason -Log $Log -Message "ConfigMgr Client database files missing."
+                    Write-Host "ConfigMgr Client database files missing. Reinstalling..."
+                    # Add /ForceInstall to Client Install Properties to ensure the client is uninstalled before we install client again.
+                    if (-NOT ($clientInstallProperties -like "*/forceinstall*")) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
+                    $Reinstall = $true
+            }
+            
             # Only test CM client local DB if this check is enabled
+            $testLocalDB = (Get-XMLConfigCcmSQLCELog).ToLower()
             if ($testLocalDB -like "enable") {
                 Write-Host "Testing CcmSQLCELog"
                 $LocalDB = Test-CcmSQLCELog
@@ -830,7 +870,7 @@ Begin {
                 Test-CCMSetup1
 
                 # Adding forceinstall to the client install properties to make sure previous client is uninstalled.
-                if ($localDB -eq $true) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
+                if ( ($localDB -eq $true) -and (-NOT ($clientInstallProperties -like "*/forceinstall*")) ) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
                 Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $false
                 $log.ClientInstalled = Get-SmallDateTime
                 Start-Sleep 600
@@ -1161,8 +1201,11 @@ Begin {
             $newLogSize = [int]$clientLogSize
             $newLogSize = $newLogSize * 1000
 
-            $smsClient = [wmiclass]"root/ccm:sms_client"
-            $smsClient.SetGlobalLoggingConfiguration($logLevel, $newLogSize, $clientLogMaxHistory)
+            if ($PowerShellVersion -ge 6) {Invoke-CimMethod -Namespace "root/ccm" -ClassName "sms_client" -MethodName SetGlobalLoggingConfiguration -Arguments @{LogLevel=$loglevel; LogMaxHistory=$clientLogMaxHistory; LogMaxSize=$newLogSize} }
+            else {
+                $smsClient = [wmiclass]"root/ccm:sms_client"
+                $smsClient.SetGlobalLoggingConfiguration($logLevel, $newLogSize, $clientLogMaxHistory)
+            }
             #Write-Verbose 'Returning true to trigger restart of ccmexec service'
 
             #Write-Verbose 'Sleeping for 5 seconds to allow WMI method complete before we collect new results...'
@@ -1198,7 +1241,7 @@ Begin {
             Write-Verbose "Enforce registration of common DLL files to make sure CCM Agent works."
             $DllFiles = 'actxprxy.dll', 'atl.dll', 'Bitsprx2.dll', 'Bitsprx3.dll', 'browseui.dll', 'cryptdlg.dll', 'dssenh.dll', 'gpkcsp.dll', 'initpki.dll', 'jscript.dll', 'mshtml.dll', 'msi.dll', 'mssip32.dll', 'msxml.dll', 'msxml3.dll', 'msxml3a.dll', 'msxml3r.dll', 'msxml4.dll', 'msxml4a.dll', 'msxml4r.dll', 'msxml6.dll', 'msxml6r.dll', 'muweb.dll', 'ole32.dll', 'oleaut32.dll', 'Qmgr.dll', 'Qmgrprxy.dll', 'rsaenh.dll', 'sccbase.dll', 'scrrun.dll', 'shdocvw.dll', 'shell32.dll', 'slbcsp.dll', 'softpub.dll', 'rlmon.dll', 'userenv.dll', 'vbscript.dll', 'Winhttp.dll', 'wintrust.dll', 'wuapi.dll', 'wuaueng.dll', 'wuaueng1.dll', 'wucltui.dll', 'wucltux.dll', 'wups.dll', 'wups2.dll', 'wuweb.dll', 'wuwebv.dll', 'Xpob2res.dll', 'WBEM\wmisvc.dll'
             foreach ($Dll in $DllFiles) {
-                $file =  $env:windir +"\$Dll"
+                $file =  $env:windir +"\System32\$Dll"
                 Register-DLLFile -FilePath $File
             }
 
@@ -1227,9 +1270,10 @@ Begin {
         $result = winmgmt /verifyrepository
         switch -wildcard ($result) {
             # Always fix if this returns inconsistent
-            "*inconsistent*" { $vote = 100} # English
-            "*not consistent*"  { $vote = 100} # English
-            "*inkonsekvent*" { $vote = 100} # Swedish            
+            "*inconsistent*" { $vote = 100 } # English
+            "*not consistent*"  { $vote = 100 } # English
+            "*inkonsekvent*" { $vote = 100 } # Swedish  
+            "*epäyhtenäinen*" { $vote = 100 } # Finnish          
             # Add more languages as I learn their inconsistent value
         }
 
@@ -1831,14 +1875,14 @@ Begin {
             $sqlConnection.Close();
 
             $obj = $true;
-        } catch {
+        }
+        catch {
             $text = "Error connecting to SQLDatabase $Database on SQL Server $SQLServer"
             Write-Error -Message $text
             Out-LogFile -Xml $xml -Text $text
             $obj = $false;
-        } finally {
-            Write-Output $obj
         }
+        finally {Write-Output $obj }
     }
 
     # Invoke-SqlCmd2 - Created by Chad Miller
@@ -2248,8 +2292,8 @@ Begin {
         $Domain = Get-Domain
         $MaxLogSize = 0
         $MaxLogHistory = 0
-        #$InstallDate = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.InstallDate))
-        $InstallDate = Get-SmallDateTime -Date $OS.InstallDate
+        if ($PowerShellVersion -ge 6) { $InstallDate = Get-SmallDateTime -Date ($OS.InstallDate) }
+        else { $InstallDate = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.InstallDate)) }
         $InstallDate = $InstallDate -replace '\.', ':'
         $LastLoggedOnUser = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\').LastLoggedOnUser
         $CacheSize = Get-ClientCache
@@ -2260,8 +2304,8 @@ Begin {
         $Certificate = 'Unknown'
         $PendingReboot = 'Unknown'
         $RebootApp = 'Unknown'
-        #$LastBootTime = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.LastBootUpTime))
-        $LastBootTime = Get-SmallDateTime -Date $OS.LastBootUpTime
+        if ($PowerShellVersion -ge 6) { $LastBootTime = Get-SmallDateTime -Date ($OS.LastBootUpTime) }
+        else { $LastBootTime = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.LastBootUpTime)) }
         $LastBootTime = $LastBootTime -replace '\.', ':'
         $OSDiskFreeSpace = Get-OSDiskFreeSpace
         $AdminShare = 'Unknown'
