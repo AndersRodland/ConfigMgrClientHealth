@@ -827,8 +827,9 @@ Begin {
                     New-ClientInstalledReason -Log $Log -Message "ConfigMgr Client database files missing."
                     Write-Host "ConfigMgr Client database files missing. Reinstalling..."
                     # Add /ForceInstall to Client Install Properties to ensure the client is uninstalled before we install client again.
-                    if (-NOT ($clientInstallProperties -like "*/forceinstall*")) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
+                    #if (-NOT ($clientInstallProperties -like "*/forceinstall*")) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
                     $Reinstall = $true
+                    $Uninstall = $true
             }
             
             # Only test CM client local DB if this check is enabled
@@ -841,6 +842,7 @@ Begin {
                     New-ClientInstalledReason -Log $Log -Message "ConfigMgr Client database corrupt."
                     Write-Host "ConfigMgr Client database corrupt. Reinstalling..."
                     $Reinstall = $true
+                    $Uninstall = $true
                 }
             }
 
@@ -864,25 +866,25 @@ Begin {
             }
 
             if ( $reinstall -eq $true) {
-                $text = "ConfigMgr Client Health thinks the agent need to be reinstalled. Installing and sleeping for 10 minutes for it to configure..."
+                $text = "ConfigMgr Client Health thinks the agent need to be reinstalled.."
                 Write-Host $text
                 # Lets check that registry settings are OK before we try a new installation.
                 Test-CCMSetup1
 
                 # Adding forceinstall to the client install properties to make sure previous client is uninstalled.
-                if ( ($localDB -eq $true) -and (-NOT ($clientInstallProperties -like "*/forceinstall*")) ) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
+                #if ( ($localDB -eq $true) -and (-NOT ($clientInstallProperties -like "*/forceinstall*")) ) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
                 Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $false
                 $log.ClientInstalled = Get-SmallDateTime
-                Start-Sleep 600
+                #Start-Sleep 600
             }
         }
         else {
-            $text = "Configuration Manager client is not installed. Installing and sleeping for 10 minutes for it to configure..."
+            $text = "Configuration Manager client is not installed. Installing..."
             Write-Host $text
             Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $true
             New-ClientInstalledReason -Log $Log -Message "No agent found."
             $log.ClientInstalled = Get-SmallDateTime
-            Start-Sleep 600
+            #Start-Sleep 600
 
             # Test again if agent is installed
             if (Get-Service -Name ccmexec -ErrorAction SilentlyContinue) {}
@@ -1245,8 +1247,34 @@ Begin {
                 Register-DLLFile -FilePath $File
             }
 
+            if ($Uninstall -eq $true) {
+				Write-Verbose "Trigger ConfigMgr Client uninstallation using Invoke-Expression."
+				Invoke-Expression "&'$ClientShare\ccmsetup.exe' /uninstall"
+				
+				$launced = $true
+				do {
+					Sleep -seconds 5
+					if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
+						Write-Verbose "ConfigMgr Client Uninstallation still running"
+						$launched = $true
+					}
+					else { $launched = $false }
+				} while ($launched -eq $true)
+			}
+			
             Write-Verbose "Trigger ConfigMgr Client installation using Invoke-Expression."
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
+			
+			$launced = $true
+			do {
+				Sleep -seconds 5
+				if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
+					Write-Verbose "ConfigMgr Client installation still running"
+					$launched = $true
+				}
+				else { $launched = $false }
+			} while ($launched -eq $true)
+
         }
         else {
             $text = 'ERROR: Client tagged for reinstall, but failed to access fileshare: ' +$ClientShare
@@ -1971,6 +1999,7 @@ Begin {
     # Start Getters - XML config file
     Function Get-LocalFilesPath {
         $obj = $Xml.Configuration.LocalFiles
+        if ($obj -eq $null) { $obj = 'C:\ClientHealth' }
         Write-Output $obj
     }
     
