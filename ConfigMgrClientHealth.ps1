@@ -875,7 +875,7 @@ Begin {
                 #if ( ($localDB -eq $true) -and (-NOT ($clientInstallProperties -like "*/forceinstall*")) ) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
                 Resolve-Client -Xml $xml -ClientInstallProperties $clientInstallProperties -FirstInstall $false
                 $log.ClientInstalled = Get-SmallDateTime
-                #Start-Sleep 600
+                Start-Sleep 600
             }
         }
         else {
@@ -1222,6 +1222,28 @@ Begin {
         Write-Output $obj
     }
 
+    Function Remove-CCMOrphanedCache {
+        #Write-Host "Clearing ConfigMgr orphaned Cache items."
+        try {
+            $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
+            $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
+            if ($PowerShellVersion -gt 2) { $AllCachedFolders = (Get-ChildItem -Path $CCMCache -Directory).FullName }
+            else { $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | select fullname -ExpandProperty fullname }
+
+            ForEach ($CachedFolder in $AllCachedFolders) {
+                If ($ValidCachedFolders -notcontains $CachedFolder) {
+                #Don't delete new folders that might be syncing data with BITS
+                    if ((Get-ItemProperty $CachedFolder).LastWriteTime -le (get-date).AddDays(14)) {
+                        Write-Verbose "Removing orphaned folder: $CachedFolder"
+                        Remove-Item -Path $CachedFolder -Force -Recurse
+                    }
+                }
+            }
+        }
+        catch { #Write-Host "Failed Clearing ConfigMgr orphaned Cache items." 
+        }
+    }
+
     Function Resolve-Client {
         Param(
             [Parameter(Mandatory=$false)]$Xml,
@@ -1259,8 +1281,13 @@ Begin {
 						$launched = $true
 					}
 					else { $launched = $false }
-				} while ($launched -eq $true)
-			}
+                } while ($launched -eq $true)
+                
+                Write-Verbose "Removing orphaned ccm client cache items."
+                Remove-CCMOrphanedCache
+            }
+            
+            
 			
             Write-Verbose "Trigger ConfigMgr Client installation using Invoke-Expression."
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
@@ -1273,7 +1300,9 @@ Begin {
 					$launched = $true
 				}
 				else { $launched = $false }
-			} while ($launched -eq $true)
+            } while ($launched -eq $true)
+            
+            # Client is reinstalled. Remove tag.
 
         }
         else {
@@ -2294,7 +2323,7 @@ Begin {
     }
 
     Function New-LogObject {
-        Write-Verbose "Start New-LogObject"
+       # Write-Verbose "Start New-LogObject"
 
         if ($PowerShellVersion -ge 6) { 
             $OS = Get-CimInstance -class Win32_OperatingSystem
@@ -2394,12 +2423,12 @@ Begin {
             ClientInstalledReason = $null
         }
         Write-Output $obj
-        Write-Verbose "End New-LogObject"
+       # Write-Verbose "End New-LogObject"
     }
 
     Function Get-SmallDateTime {
         Param([Parameter(Mandatory=$false)]$Date)
-        Write-Verbose "Start Get-SmallDateTime"
+        #Write-Verbose "Start Get-SmallDateTime"
 
         $UTC = (Get-XMLConfigLoggingTimeFormat).ToLower()
 
@@ -2410,7 +2439,7 @@ Begin {
         else { $obj = Get-DateTime }
         $obj = $obj -replace '\.', ':'
         Write-Output $obj
-        Write-Verbose "End Get-SmallDateTime"
+        #Write-Verbose "End Get-SmallDateTime"
     }
 
     # Test some values are whole numbers before attempting to insert / update database
