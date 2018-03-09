@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
-	<LocalFiles>C:\ClientHealth2</LocalFiles> <!-- Path locally on computer for temporary files and local clienthealth.log if LocalLogFile="True" -->
-	<Client Name="Version">5.00.8577.1108</Client>
+	<LocalFiles>C:\ClientHealth</LocalFiles> <!-- Path locally on computer for temporary files and local clienthealth.log if LocalLogFile="True" -->
+	<Client Name="Version">5.00.8577.1115</Client>
 	<Client Name="SiteCode">PS1</Client>
 	<Client Name="Domain">rodland.lab</Client>
 	<Client Name="AutoUpgrade">True</Client>
 	<Client Name="Share">\\CM01.rodland.lab\Clienthealth$\Client</Client>
-	<Client Name="CacheSize" Value="10240" Enable="True"/>
+	<Client Name="CacheSize" Value="10240" DeleteOrphanedData="True" Enable="True" />
 	<Client Name="Log" MaxLogSize="4096" MaxLogHistory="1" Enable="True" />
 	<ClientInstallProperty>SMSSITECODE=PS1</ClientInstallProperty>
 	<ClientInstallProperty>MP=CM01.rodland.lab</ClientInstallProperty>

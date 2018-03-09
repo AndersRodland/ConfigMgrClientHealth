@@ -1223,26 +1223,24 @@ Begin {
     }
 
     Function Remove-CCMOrphanedCache {
-        #Write-Host "Clearing ConfigMgr orphaned Cache items."
+        Write-Host "Clearing ConfigMgr orphaned Cache items."
         try {
             $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
             $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
-            if ($PowerShellVersion -gt 2) { $AllCachedFolders = (Get-ChildItem -Path $CCMCache -Directory).FullName }
-            else { $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | select fullname -ExpandProperty fullname }
-
+            $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | Select-Object Fullname -ExpandProperty Fullname
+            
             ForEach ($CachedFolder in $AllCachedFolders) {
                 If ($ValidCachedFolders -notcontains $CachedFolder) {
-                #Don't delete new folders that might be syncing data with BITS
-                    if ((Get-ItemProperty $CachedFolder).LastWriteTime -le (get-date).AddDays(14)) {
-                        Write-Verbose "Removing orphaned folder: $CachedFolder"
+                    #Don't delete new folders that might be syncing data with BITS
+                    if ((Get-ItemProperty $CachedFolder).LastWriteTime -le (get-date).AddDays(-14)) {
+                        Write-Verbose "Removing orphaned folder: $CachedFolder - LastWriteTime: $((Get-ItemProperty $CachedFolder).LastWriteTime)"
                         Remove-Item -Path $CachedFolder -Force -Recurse
                     }
                 }
             }
         }
-        catch { #Write-Host "Failed Clearing ConfigMgr orphaned Cache items." 
+        catch { Write-Host "Failed Clearing ConfigMgr orphaned Cache items." }
         }
-    }
 
     Function Resolve-Client {
         Param(
@@ -1283,8 +1281,7 @@ Begin {
 					else { $launched = $false }
                 } while ($launched -eq $true)
                 
-                Write-Verbose "Removing orphaned ccm client cache items."
-                Remove-CCMOrphanedCache
+                
             }
             
             
@@ -2072,6 +2069,11 @@ Begin {
         Write-Output $obj
     }
 
+    Function Get-XMLConfigClientCacheDeleteOrphanedData {
+        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'DeleteOrphanedData'} | Select-Object -ExpandProperty 'Value'
+        Write-Output $obj
+    }
+
     Function Get-XMLConfigClientCacheEnable {
         $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
@@ -2749,6 +2751,11 @@ Process {
     Test-PendingReboot -log $log
     Write-Verbose 'Getting last reboot time'
     Get-LastReboot -Xml $xml
+    
+    if (Get-XMLConfigClientCacheDeleteOrphanedData -like "true") {
+        Write-Verbose "Removing orphaned ccm client cache items."
+        Remove-CCMOrphanedCache
+    }
 
     # Reinstall client if tagged for reinstall and configmgr client is not already installing
     $proc = Get-Process ccmsetup -ErrorAction SilentlyContinue
