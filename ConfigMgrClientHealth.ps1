@@ -2070,7 +2070,7 @@ Begin {
     }
 
     Function Get-XMLConfigClientCacheDeleteOrphanedData {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'DeleteOrphanedData'} | Select-Object -ExpandProperty 'Value'
+        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'DeleteOrphanedData'
         Write-Output $obj
     }
 
