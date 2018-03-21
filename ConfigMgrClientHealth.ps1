@@ -59,9 +59,8 @@ Begin {
     
     # Read configuration from XML file
     if (Test-Path $Config) {
-        Try {
-            $Xml = [xml](Get-Content -Path $Config)
-        } Catch {
+        Try { $Xml = [xml](Get-Content -Path $Config) }
+        Catch {
             $ErrorMessage = $_.Exception.Message
             $text = "Error, could not read $Config. Check file location and share/ntfs permissions. Is XML config file damaged?"
             $text += "`nError message: $ErrorMessage"
@@ -117,9 +116,7 @@ Begin {
 
     Function Test-LocalLogging {
         $clientpath = Get-LocalFilesPath
-        if ((Test-Path -Path $clientpath) -eq $False) {
-            New-Item -Path $clientpath -ItemType Directory -Force | Out-Null
-        }
+        if ((Test-Path -Path $clientpath) -eq $False) { New-Item -Path $clientpath -ItemType Directory -Force | Out-Null }
     }
 
     Function Out-LogFile {
@@ -151,24 +148,14 @@ Begin {
             "*Windows 8.1*" {$OSName = "Windows 8.1 " + $OSArchitecture}
             "*Windows 10*" {$OSName = "Windows 10 " + $OSArchitecture}
             "*Server 2008*" {
-                if ($OS.Caption -like "*R2*") {
-                    $OSName = "Windows Server 2008 R2 " + $OSArchitecture
-                }
-                else {
-                    $OSName = "Windows Server 2008 " + $OSArchitecture
-                }
+                if ($OS.Caption -like "*R2*") { $OSName = "Windows Server 2008 R2 " + $OSArchitecture }
+                else { $OSName = "Windows Server 2008 " + $OSArchitecture }
             }
             "*Server 2012*" {
-                if ($OS.Caption -like "*R2*") {
-                    $OSName = "Windows Server 2012 R2 " + $OSArchitecture
-                }
-                else {
-                    $OSName = "Windows Server 2012 " + $OSArchitecture
-                }
+                if ($OS.Caption -like "*R2*") { $OSName = "Windows Server 2012 R2 " + $OSArchitecture }
+                else { $OSName = "Windows Server 2012 " + $OSArchitecture }
             }
-            "*Server 2016*" {
-                $OSName = "Windows Server 2016 " + $OSArchitecture
-            }
+            "*Server 2016*" { $OSName = "Windows Server 2016 " + $OSArchitecture }
         }
         Write-Output $OSName
     }
@@ -577,16 +564,10 @@ Begin {
 
         $Date2 = $null
         
-        if ($null -ne $hotfix) {
-            $Date2 = Get-Date($hotfix | Measure-Latest) -ErrorAction SilentlyContinue
-        }
+        if ($null -ne $hotfix) { $Date2 = Get-Date($hotfix | Measure-Latest) -ErrorAction SilentlyContinue }
 
-        if (($Date -ge $Date2) -and ($null -ne $Date)) {
-            $Log.OSUpdates = Get-SmallDateTime -Date $Date
-        }
-        elseif (($Date2 -gt $Date) -and ($null -ne $Date2)) {
-            $Log.OSUpdates = Get-SmallDateTime -Date $Date2
-        }
+        if (($Date -ge $Date2) -and ($null -ne $Date)) { $Log.OSUpdates = Get-SmallDateTime -Date $Date }
+        elseif (($Date2 -gt $Date) -and ($null -ne $Date2)) { $Log.OSUpdates = Get-SmallDateTime -Date $Date2 }
     }
 
     function Measure-Latest {
@@ -668,6 +649,8 @@ Begin {
             Write-Host $dnsFail
         }
 
+        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
+
         switch ($obj) {
             $false {
                 $fix = (Get-XMLConfigDNSFix).ToLower()
@@ -681,13 +664,16 @@ Begin {
                     }
                     Write-Host $text
                     $log.DNS = $logFail
-                    Out-LogFile -Xml $xml -Text $text
-                    Out-LogFile -Xml $xml -Text $dnsFail
+                    if (-NOT($FileLogLevel -like "clientlocal")) {
+                        Out-LogFile -Xml $xml -Text $text
+                        Out-LogFile -Xml $xml -Text $dnsFail
+                    }
+                    
                 }
                 else {
                     $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Monitor mode only, no remediation'
                     $log.DNS = $logFail
-                    Out-LogFile -Xml $xml -Text $text
+                    if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text }
                     Write-Host $text
                 }
                 
@@ -1679,6 +1665,7 @@ Begin {
 
     Function Test-MissingDrivers {
         Param([Parameter(Mandatory=$true)]$Log)
+        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
         $i = 0
         if ($PowerShellVersion -ge 6) { $devices = Get-CimInstance Win32_PNPEntity | Where-Object{ ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
         else { $devices = Get-WmiObject Win32_PNPEntity | Where-Object{ ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
@@ -1692,7 +1679,7 @@ Begin {
             foreach ($device in $devices) {
                 $text = 'Missing or faulty driver: ' +$device.Name + '. Device ID: ' + $device.DeviceID
                 Write-Warning $text
-                Out-LogFile -Xml $xml -Text $text
+                if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text }
             }
         }
         else {
@@ -1919,6 +1906,7 @@ Begin {
     function Test-SQLConnection {    
         $SQLServer = Get-XMLConfigSQLServer
         $Database = 'ClientHealth'
+        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
 
         $ConnectionString = "Server={0};Database={1};Integrated Security=True;" -f $SQLServer,$Database
 
@@ -1933,7 +1921,7 @@ Begin {
         catch {
             $text = "Error connecting to SQLDatabase $Database on SQL Server $SQLServer"
             Write-Error -Message $text
-            Out-LogFile -Xml $xml -Text $text
+            if (-NOT($FileLogLevel -like "clientinstall")) { Out-LogFile -Xml $xml -Text $text }
             $obj = $false;
         }
         finally {Write-Output $obj }

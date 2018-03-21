@@ -14,5 +14,6 @@ Changes since stable release:
 * Corrupt WMI check now works on Finish OS language.
 * Did some cleanup on code to improve readability.
 * LocalFiles will now default to C:\ClientHealth if nothing is specified in config.xml
+* DNS errors, driver errors and failed connections to SQL server will no longer write to logfile if LogLevel is set to ClientInstall
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
