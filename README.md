@@ -13,6 +13,6 @@ Changes since stable release:
 * Script will uninstall ConfigMgr client before installing it again if local database files are missing (less than 7).
 * Corrupt WMI check now works on Finish OS language.
 * Did some cleanup on code to improve readability.
-* LocalFiles will now default to C:\ClientHealth if nothign is specified in config.xml
+* LocalFiles will now default to C:\ClientHealth if nothing is specified in config.xml
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
