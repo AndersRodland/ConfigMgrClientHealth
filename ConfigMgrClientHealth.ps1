@@ -87,14 +87,11 @@ Begin {
     Function Get-DateTime {
         $format = (Get-XMLConfigLoggingTimeFormat).ToLower()
         
-        if ($format -like "utc") {
-            # UTC Time
-            $obj = ([DateTime]::UtcNow).ToString("yyyy-MM-dd HH:mm:ss")
-        }
-        else {
-            # ClientLocal
-            $obj = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-        }
+        # UTC Time
+        if ($format -like "utc") { $obj = ([DateTime]::UtcNow).ToString("yyyy-MM-dd HH:mm:ss") }
+        # ClientLocal
+        else { $obj = (Get-Date -Format "yyyy-MM-dd HH:mm:ss") }
+
         Write-Output $obj
     }
 
@@ -215,8 +212,8 @@ Begin {
 
     Function Get-ClientVersion {
         try { 
-                if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace root/ccm SMS_Client).ClientVersion }
-                else { $obj = (Get-WmiObject -Namespace root/ccm SMS_Client).ClientVersion }
+            if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace root/ccm SMS_Client).ClientVersion }
+            else { $obj = (Get-WmiObject -Namespace root/ccm SMS_Client).ClientVersion }
         }
         catch { $obj = $false }
         finally { Write-Output $obj }
@@ -317,9 +314,7 @@ Begin {
                 } while ( ($Service.Status -ne "Stopped") -and ($seconds -le 60) )
     
                 # Do another test to make sure CcmExec service really is stopped
-                if ($Service.Status -ne "Stopped") {
-                    Stop-Service -Name ccmexec -Force
-                }
+                if ($Service.Status -ne "Stopped") { Stop-Service -Name ccmexec -Force }
                 
                 Write-Verbose "Waiting 10 seconds to allow file locking issues to clear up"
                 Start-Sleep -seconds 10
@@ -341,15 +336,12 @@ Begin {
                 $obj = $true
             }
 
-            else {
-                # CcmSQLCE.log has not been updated for two days. We are good for now.
-                $obj = $false
-            }
+            # CcmSQLCE.log has not been updated for two days. We are good for now.
+            else { $obj = $false }
         }
-        else {
-            # we are good
-            $obj = $false
-        }
+        
+        # we are good
+        else { $obj = $false }
         Write-Output $obj
 
     }
@@ -445,12 +437,8 @@ Begin {
             [Parameter(Mandatory=$true)]$Log
             )
 
-        if ($log.ClientInstalledReason -eq $null) {
-            $log.ClientInstalledReason = $Message
-        }
-        else {
-            $log.ClientInstalledReason += " $Message"
-        }
+        if ($log.ClientInstalledReason -eq $null) { $log.ClientInstalledReason = $Message }
+        else { $log.ClientInstalledReason += " $Message" }
     }
 
 
@@ -464,17 +452,11 @@ Begin {
 
         #Check CBS Registry
         $key = Get-ChildItem "HKLM:Software\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending" -ErrorAction SilentlyContinue
-        if ($null -ne $key) 
-        {
-            $result.CBSRebootPending = $true
-        }
+        if ($null -ne $key) { $result.CBSRebootPending = $true }
     
         #Check Windows Update
         $key = Get-Item 'HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired' -ErrorAction SilentlyContinue
-        if ($null -ne $key) 
-        {
-            $result.WindowsUpdateRebootRequired = $true
-        }
+        if ($null -ne $key) { $result.WindowsUpdateRebootRequired = $true }
 
         #Check PendingFileRenameOperations
         $prop = Get-ItemProperty 'HKLM:SYSTEM\CurrentControlSet\Control\Session Manager' -Name PendingFileRenameOperations -ErrorAction SilentlyContinue
@@ -488,10 +470,9 @@ Begin {
         { 
             $util = [wmiclass]'\\.\root\ccm\clientsdk:CCM_ClientUtilities'
             $status = $util.DetermineIfRebootPending()
-            if(($null -ne $status) -and $status.RebootPending){
-                $result.SCCMRebootPending = $true
-            }
-        }catch{}
+            if(($null -ne $status) -and $status.RebootPending){ $result.SCCMRebootPending = $true }
+        }
+        catch{}
 
         #Return Reboot required
         if ($result.ContainsValue($true)) {
@@ -656,12 +637,8 @@ Begin {
                 $fix = (Get-XMLConfigDNSFix).ToLower()
                 if ($fix -eq "true") {
                     $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Trying to resolve by registerting with DNS server'
-                    if ($PowerShellVersion -ge 4) {
-                        Register-DnsClient | out-null
-                    }
-                    else {
-                        ipconfig /registerdns | out-null
-                    }
+                    if ($PowerShellVersion -ge 4) { Register-DnsClient | out-null  }
+                    else { ipconfig /registerdns | out-null }
                     Write-Host $text
                     $log.DNS = $logFail
                     if (-NOT($FileLogLevel -like "clientlocal")) {
@@ -749,12 +726,8 @@ Begin {
                             Write-Output $text
                         }
                         else {
-                            if ($null -eq $logEntry) {
-                                $logEntry = $kb
-                            }
-                            else {
-                                $logEntry += ", $kb"
-                            }
+                            if ($null -eq $logEntry) { $logEntry = $kb }
+                            else { $logEntry += ", $kb" }
 
                             $fix = (Get-XMLConfigUpdatesFix).ToLower()
                             if ($fix -eq "true") {
@@ -764,17 +737,13 @@ Begin {
 
                                 $clientpath = Get-LocalFilesPath
                     
-                                If ((Test-Path "$clientpath\Temp") -eq $false) {
-                                    New-Item -Path "$clientpath\Temp" -ItemType Directory | Out-Null
-                                }
+                                If ((Test-Path "$clientpath\Temp") -eq $false) { New-Item -Path "$clientpath\Temp" -ItemType Directory | Out-Null }
                     
                                 Copy-Item -Path $kbfullpath -Destination "$clientpath\temp"
                                 $install = "$clientpath\Temp\" +$hotfix
                     
                                 wusa.exe $install /quiet /norestart
-                                While (Get-Process wusa -ErrorAction SilentlyContinue) {
-                                    Start-Sleep -Seconds 2
-                                }
+                                While (Get-Process wusa -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 2 }
                                 Remove-Item $install -Force -Recurse
                             }
                             else {
@@ -783,12 +752,8 @@ Begin {
                             }
                         }
 
-                        if ($null -eq $logEntry) {
-                            $log.Updates = 'OK'
-                        }
-                        else {
-                            $log.Updates = $logEntry
-                        }
+                        if ($null -eq $logEntry) { $log.Updates = 'OK' }
+                        else { $log.Updates = $logEntry }
                     }
                 }
             }
@@ -1237,9 +1202,7 @@ Begin {
 
         $ClientShare = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Share'} | Select-Object -ExpandProperty '#Text'
         if ((Test-Path $ClientShare -ErrorAction SilentlyContinue) -eq $true) {
-            if ($FirstInstall -eq $true) {
-                $text = 'Installing Configuration Manager Client.'
-            } 
+            if ($FirstInstall -eq $true) { $text = 'Installing Configuration Manager Client.' } 
             else { $text = 'Client tagged for reinstall. Reinstalling client...' }
             Write-Output $text
             
@@ -1259,18 +1222,14 @@ Begin {
 				
 				$launced = $true
 				do {
-					Sleep -seconds 5
+					Start-Sleep -seconds 5
 					if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
 						Write-Verbose "ConfigMgr Client Uninstallation still running"
 						$launched = $true
 					}
 					else { $launched = $false }
                 } while ($launched -eq $true)
-                
-                
             }
-            
-            
 			
             Write-Verbose "Trigger ConfigMgr Client installation using Invoke-Expression."
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
@@ -2656,9 +2615,7 @@ Process {
     if ((Get-XMLConfigClientMaxLogSizeEnabled -like 'True') -eq $true) {
         Write-Verbose 'Validating Max CCMClient Log Size...'
         $TestClientLogSize = Test-ClientLogSize -Log $Log
-        if ($TestClientLogSize -eq $true) {
-            $restartCCMExec = $true
-        }
+        if ($TestClientLogSize -eq $true) { $restartCCMExec = $true }
     }
 
     Write-Verbose 'Validating CCMClient provisioning mode...'
