@@ -1236,7 +1236,7 @@ Begin {
 			
 			$launced = $true
 			do {
-				Sleep -seconds 5
+				Start-Sleep -seconds 5
 				if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
 					Write-Verbose "ConfigMgr Client installation still running"
 					$launched = $true
