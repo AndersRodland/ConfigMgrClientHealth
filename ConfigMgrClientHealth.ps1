@@ -203,8 +203,12 @@ Begin {
 
     Function Get-Sitecode {
         try {
+            <#
             if ($PowerShellVersion -ge 6) { $obj = (Invoke-CimMethod -Namespace "ROOT\ccm" -ClassName SMS_Client -MethodName GetAssignedSite).sSiteCode }
             else { $obj = $([WmiClass]"ROOT\ccm:SMS_Client").getassignedsite() | Select-Object -Expandproperty sSiteCode }
+            #>
+            $sms = new-object –comobject "Microsoft.SMS.Client"
+            $obj = $sms.GetAssignedSite()
         }
         catch { $obj = '...' }
         finally { Write-Output $obj }
@@ -914,8 +918,10 @@ Begin {
 
     Function Test-ClientSiteCode {
         Param([Parameter(Mandatory=$true)]$Log)
+        $sms = new-object –comobject "Microsoft.SMS.Client"
         $ClientSiteCode = Get-XMLConfigClientSitecode
-        [String]$currentSiteCode = Get-Sitecode
+        #[String]$currentSiteCode = Get-Sitecode
+        $currentSiteCode = $sms.GetAssignedSite()
         $currentSiteCode = $currentSiteCode.Trim()
         $Log.Sitecode = $currentSiteCode
 
@@ -923,14 +929,15 @@ Begin {
         if ($ClientSiteCode -like $currentSiteCode) {
             $text = "ConfigMgr Client Site Code: OK"
             Write-Host $text
-            $obj = $false
+            #$obj = $false
         }
         else {
-            $text = 'ConfigMgr Client Site Code is "' +$currentSiteCode + '". Expected: "' +$ClientSiteCode +'". Tagging client for reinstall'
+            $text = 'ConfigMgr Client Site Code is "' +$currentSiteCode + '". Expected: "' +$ClientSiteCode +'". Changing sitecode.'
             Write-Warning $text
-            $obj = $true
+            $sms.SetAssignedSite($ClientSiteCode)
+            #$obj = $true
         }
-        Write-Output $obj
+        #Write-Output $obj
     }
 
     function Test-PendingReboot {
@@ -2599,10 +2606,7 @@ Process {
     }
 
     Write-Verbose 'Validating ConfigMgr SiteCode...'
-    if ((Test-ClientSiteCode -Log $Log) -eq $true) {
-        $reinstall = $true
-        New-ClientInstalledReason -Log $Log -Message "Wrong sitecode."
-    }
+    Test-ClientSiteCode -Log $Log
 
     Write-Verbose 'Validating client cache size. Will restart configmgr client if cache size is changed'    
     
