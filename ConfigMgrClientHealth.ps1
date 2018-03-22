@@ -30,7 +30,7 @@
     
     DO NOT GIVE USERS WRITE ACCESS TO THIS FILE. LOCK IT DOWN !
     
-    Author: Anders RÃ¸dland
+    Author: Anders Rødland
     Blog: https://www.andersrodland.com
     Twitter: @AndersRodland
 .LINK
@@ -47,7 +47,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.7.4'
+    $Version = '0.7.5'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
 
     Write-Verbose "Script version: $Version"
@@ -1275,7 +1275,7 @@ Begin {
             "*inconsistent*" { $vote = 100 } # English
             "*not consistent*"  { $vote = 100 } # English
             "*inkonsekvent*" { $vote = 100 } # Swedish  
-            "*epÃ¤yhtenÃ¤inen*" { $vote = 100 } # Finnish          
+            "*epäyhtenäinen*" { $vote = 100 } # Finnish          
             # Add more languages as I learn their inconsistent value
         }
 
@@ -1371,6 +1371,16 @@ Begin {
             catch {}
         }
     }
+
+    Function Test-SMSTSMgr {
+        $service = get-service smstsmgr
+        if (($service.ServicesDependedOn).name -notcontains "ccmexec") {  
+            write-host "SMSTSMgr: Setting dependent on CCMExec service."  
+            start-process sc.exe -ArgumentList "config smstsmgr depend= winmgmt/ccmexec" -wait  
+        }
+        else { Write-Host "SMSTSMgr: OK"}
+    }
+
 
     # Windows Service Functions
     Function Test-Services {
@@ -2600,6 +2610,9 @@ Process {
         }
         catch {}
     }
+
+    Write-Verbose 'Validating SMSTSMgr service is depenent on CCMExec service...'
+    Test-SMSTSMgr
 
     Write-Verbose 'Validating ConfigMgr SiteCode...'
     Test-ClientSiteCode -Log $Log
