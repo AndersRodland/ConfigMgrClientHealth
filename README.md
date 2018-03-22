@@ -11,7 +11,7 @@ Note: Script version 0.7.4 requires database version 0.7.3.
 
 ## Changes since stable release:
 
-* Experimental Powershell Core support, tested successfulyl with PowerShell 6.0.1 on Windows 10 64-Bit 1709.
+* Experimental Powershell Core support. Tested successfully with PowerShell 6.0.1 on Windows 10 64-Bit 1709.
 * Script will uninstall ConfigMgr client before installing it again if local database files are missing (less than 7).
 * Corrupt WMI check now works on Finish OS language.
 * Did some cleanup on code to improve readability.
