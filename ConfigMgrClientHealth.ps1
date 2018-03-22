@@ -525,10 +525,10 @@ Begin {
         $OS = Get-OperatingSystem
         Switch -Wildcard ($OS) {
             "*Windows 7*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object {$_.ClientApplicationID -eq 'AutomaticUpdates'} | Select-Object -ExpandProperty Date | Measure-Latest }
-            "*Windows 8*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object ClientApplicationID -eq AutomaticUpdatesWuApp | Select-Object -ExpandProperty Date | Measure-Latest }
+            "*Windows 8*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object {$_.ClientApplicationID -eq 'AutomaticUpdatesWuApp'} | Select-Object -ExpandProperty Date | Measure-Latest }
             "*Windows 10*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object {$_.ClientApplicationID -eq 'UpdateOrchestrator'} | Select-Object -ExpandProperty Date | Measure-Latest }
             "*Server 2008*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object {$_.ClientApplicationID -eq 'AutomaticUpdates'} | Select-Object -ExpandProperty Date | Measure-Latest }
-            "*Server 2012*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object ClientApplicationID -eq AutomaticUpdatesWuApp | Select-Object -ExpandProperty Date | Measure-Latest }
+            "*Server 2012*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object {$_.ClientApplicationID -eq 'AutomaticUpdatesWuApp'} | Select-Object -ExpandProperty Date | Measure-Latest }
             "*Server 2016*" { $Date = $Searcher.QueryHistory(0,$HistoryCount) | Where-Object {$_.ClientApplicationID -eq 'UpdateOrchestrator'} | Select-Object -ExpandProperty Date | Measure-Latest }
         }
 
