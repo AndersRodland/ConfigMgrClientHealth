@@ -37,10 +37,6 @@
     Full documentation: https://www.andersrodland.com/configmgr-client-health/
 #> 
 
-<# TESTING ONLY
-$config = "D:\OneDrive\Powershell\SCCM\Client-Health\Development\GitHub\config.xml"
-#>
-
 [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
 param(
     [Parameter(Mandatory=$True, HelpMessage='Path to XML Configuration File')]
