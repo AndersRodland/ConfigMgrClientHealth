@@ -406,7 +406,7 @@ Begin {
                 
                 if ($fix -eq "true") {
                     $text = "BITS: Error. Remediating"
-                    $Errors | Remove-BitsTransfer
+                    $Errors | Remove-BitsTransfer -ErrorAction SilentlyContinue
                     $log.BITS = 'Remediated'
                     $obj = $true
                 }
