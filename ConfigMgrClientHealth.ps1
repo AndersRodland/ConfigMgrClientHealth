@@ -30,7 +30,7 @@
     
     DO NOT GIVE USERS WRITE ACCESS TO THIS FILE. LOCK IT DOWN !
     
-    Author: Anders Rødland
+    Author: Anders RÃ¸dland
     Blog: https://www.andersrodland.com
     Twitter: @AndersRodland
 .LINK
@@ -203,7 +203,7 @@ Begin {
             if ($PowerShellVersion -ge 6) { $obj = (Invoke-CimMethod -Namespace "ROOT\ccm" -ClassName SMS_Client -MethodName GetAssignedSite).sSiteCode }
             else { $obj = $([WmiClass]"ROOT\ccm:SMS_Client").getassignedsite() | Select-Object -Expandproperty sSiteCode }
             #>
-            $sms = new-object –comobject 'Microsoft.SMS.Client'
+            $sms = new-object -comobject 'Microsoft.SMS.Client'
             $obj = $sms.GetAssignedSite()
         }
         catch { $obj = '...' }
@@ -586,7 +586,7 @@ Begin {
         if (($OSName -notlike "*Windows 7*") -or ($OSName -notlike "*Server 2008*")) {
             # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
             try {
-                $dnsServers = Get-DnsClientServerAddress | Where-Object {$_.AddressFamily -eq 2} | Select-Object –ExpandProperty ServerAddresses
+                $dnsServers = Get-DnsClientServerAddress | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
                 $dnsAddressList = Resolve-DnsName -Name $fqdn -Server ($dnsServers | Select-Object -First 1) -Type A -DnsOnly | Select-Object -ExpandProperty IPAddress
             }
             catch {
@@ -914,7 +914,7 @@ Begin {
 
     Function Test-ClientSiteCode {
         Param([Parameter(Mandatory=$true)]$Log)
-        $sms = new-object –comobject "Microsoft.SMS.Client"
+        $sms = new-object -comobject "Microsoft.SMS.Client"
         $ClientSiteCode = Get-XMLConfigClientSitecode
         #[String]$currentSiteCode = Get-Sitecode
         $currentSiteCode = $sms.GetAssignedSite()
@@ -1275,7 +1275,7 @@ Begin {
             "*inconsistent*" { $vote = 100 } # English
             "*not consistent*"  { $vote = 100 } # English
             "*inkonsekvent*" { $vote = 100 } # Swedish  
-            "*epäyhtenäinen*" { $vote = 100 } # Finnish          
+            "*epÃ¤yhtenÃ¤inen*" { $vote = 100 } # Finnish          
             # Add more languages as I learn their inconsistent value
         }
 
