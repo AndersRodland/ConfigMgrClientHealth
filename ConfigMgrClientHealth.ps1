@@ -203,7 +203,7 @@ Begin {
             if ($PowerShellVersion -ge 6) { $obj = (Invoke-CimMethod -Namespace "ROOT\ccm" -ClassName SMS_Client -MethodName GetAssignedSite).sSiteCode }
             else { $obj = $([WmiClass]"ROOT\ccm:SMS_Client").getassignedsite() | Select-Object -Expandproperty sSiteCode }
             #>
-            $sms = new-object –comobject "Microsoft.SMS.Client"
+            $sms = new-object –comobject 'Microsoft.SMS.Client'
             $obj = $sms.GetAssignedSite()
         }
         catch { $obj = '...' }
