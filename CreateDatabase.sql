@@ -57,6 +57,7 @@ CREATE TABLE dbo.Clients
     StateMessages varchar(50),
     WUAHandler varchar(50),
     WMI varchar(50),
+    RefreshComplianceState smalldatetime,
     ClientInstalled smalldatetime,
     Version varchar(10),
     Timestamp datetime,
@@ -75,6 +76,7 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[C
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'BITS') ALTER TABLE dbo.Clients ADD BITS varchar(50)
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'PatchLevel') ALTER TABLE dbo.Clients ADD PatchLevel int
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'ClientInstalledReason') ALTER TABLE dbo.Clients ADD ClientInstalledReason varchar(200)
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'RefreshComplianceState') ALTER TABLE dbo.Clients ADD RefreshComplianceState smalldatetime
 
 
 -- Modify columns if needed
