@@ -50,6 +50,9 @@ Begin {
     $Version = '0.7.5'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
 
+    # Testing Webservice
+    $WebserviceURI = "http://10.10.100.2:63699/ClientHealth"
+
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
     
@@ -96,6 +99,32 @@ Begin {
         param([Parameter(Mandatory=$true)][DateTime]$DateTime)
         $obj = $DateTime.ToUniversalTime()
         Write-Output $obj
+    }
+
+    Function Get-Hostname {
+        if ($PowerShellVersion -ge 6) { $Obj = (Get-CimInstance Win32_ComputerSystem).Name }
+        else { $Obj = (Get-WmiObject Win32_ComputerSystem).Name }
+        Write-Output $Obj
+    }
+
+    # Update-WebService use ClientHealth Webservice to update database. RESTful API.
+    Function Update-Webservice {
+        Param([Parameter(Mandatory=$true)][String]$URI, $Log)
+
+        $Hostname = Get-Hostname
+        $Obj = $Log | ConvertTo-Json
+        $URI = $URI + "/Clients/$Hostname"
+        $ContentType = "application/json"
+        
+        # Detect if we use PUT or POST
+        try {
+            Invoke-RestMethod -Uri $URI | Out-Null
+            $Method = "PUT"
+        }
+        catch { $Method = "POST" }
+        
+        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $obj -ContentType $ContentType }
+        catch { Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice" }
     }
 
     Function Get-LogFileName {
@@ -2748,9 +2777,14 @@ End {
         Update-LogFile -Log $log
     }
 
-    if ($SQLLogging -like 'true') {
-        Write-Output 'Updating SQL database with results' 
+    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $null)) {
+        Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
+    }
+
+    if ($WebserviceURI -ne $null) {
+        Write-Output 'Updating SQL database with results using Webservice'
+        Update-Webservice -URI $WebserviceURI -Log $Log
     }
 
     Write-Verbose "Stop End"
