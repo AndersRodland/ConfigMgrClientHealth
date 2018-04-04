@@ -113,17 +113,18 @@ Begin {
 
         $Hostname = Get-Hostname
         $Obj = $Log | ConvertTo-Json
-        $URI = $URI + "/Clients/$Hostname"
+        $URI = $URI + "/Clients"
         $ContentType = "application/json"
         
         # Detect if we use PUT or POST
         try {
-            Invoke-RestMethod -Uri $URI | Out-Null
+            Invoke-RestMethod -Uri "$URI/$Hostname" | Out-Null
             $Method = "PUT"
+            $URI = $URI + "/$Hostname"
         }
         catch { $Method = "POST" }
         
-        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $obj -ContentType $ContentType }
+        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $obj -ContentType $ContentType | Out-Null}
         catch { Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice" }
     }
 
@@ -2783,7 +2784,7 @@ End {
     }
 
     if ($WebserviceURI -ne $null) {
-        Write-Output 'Updating SQL database with results using Webservice'
+        Write-Output 'Updating SQL database with results using webservice'
         Update-Webservice -URI $WebserviceURI -Log $Log
     }
 
