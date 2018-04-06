@@ -98,13 +98,13 @@ GO
 begin tran
 if exists (SELECT * FROM dbo.Configuration WITH (updlock,serializable) WHERE Name='ClientHealth')
 begin
-    IF EXISTS (SELECT * FROM dbo.Configuration WITH (updlock,serializable) WHERE Name='ClientHealth' AND Version < '0.7.3')
-    UPDATE dbo.Configuration SET Version='0.7.3' WHERE Name = 'ClientHealth'
+    IF EXISTS (SELECT * FROM dbo.Configuration WITH (updlock,serializable) WHERE Name='ClientHealth' AND Version < '0.7.5')
+    UPDATE dbo.Configuration SET Version='0.7.5' WHERE Name = 'ClientHealth'
 end
 else
 begin
     INSERT INTO dbo.Configuration (Name, Version)
-    VALUES ('ClientHealth', '0.7.3')
+    VALUES ('ClientHealth', '0.7.5')
 end
 commit tran
 

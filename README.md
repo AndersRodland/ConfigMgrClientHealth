@@ -7,7 +7,7 @@ Latest stable version: https://gallery.technet.microsoft.com/ConfigMgr-Client-He
 
 Full documentation of stable version: https://www.andersrodland.com/configmgr-client-health/
 
-Note: Script version 0.7.5 requires database version 0.7.3.
+Note: Script version 0.7.5 requires database version 0.7.5.
 
 ## Changes since stable release:
 
