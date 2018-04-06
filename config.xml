@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
 	<LocalFiles>$($env:ProgramData)\ConfigMgrClientHealth</LocalFiles> <!-- Path locally on computer for temporary files and local clienthealth.log if LocalLogFile="True" -->
-	<Client Name="Version">5.00.8498.1711</Client>
-	<Client Name="SiteCode">IUS</Client>
-	<Client Name="Domain">ius.meijer.com</Client>
+	<Client Name="Version">5.00.8577.11151</Client>
+	<Client Name="SiteCode">PS1</Client>
+	<Client Name="Domain">rodland.lab</Client>
 	<Client Name="AutoUpgrade">True</Client>
 	<Client Name="Share"></Client>
 	<Client Name="CacheSize" Value="10240" DeleteOrphanedData="True" Enable="True" />
 	<Client Name="Log" MaxLogSize="4096" MaxLogHistory="1" Enable="True" />
-	<ClientInstallProperty>SMSSITECODE=IUS</ClientInstallProperty>
-	<ClientInstallProperty>DNSSUFFIX=ius.meijer.com</ClientInstallProperty>
-	<ClientInstallProperty>CCMLOGMAXSIZE=2621440</ClientInstallProperty>
+	<ClientInstallProperty>SMSSITECODE=PS1</ClientInstallProperty>
+	<ClientInstallProperty>MP=CM01.rodland.lab</ClientInstallProperty>
+	<ClientInstallProperty>MP=CM01.rodland.lab</ClientInstallProperty>
+	<ClientInstallProperty>FSP=CM01.rodland.lab</ClientInstallProperty>
+	<ClientInstallProperty>DNSSUFFIX=rodland.lab</ClientInstallProperty>
+	<ClientInstallProperty>/Source:\\CM01.rodland.lab\Clienthealth$\client</ClientInstallProperty>
+	<ClientInstallProperty>/MP:CM01.rodland.lab</ClientInstallProperty>
 	<ClientInstallProperty>/skipprereq:silverlight.exe</ClientInstallProperty>
-	<ClientInstallProperty>/MP:w0982iappv0601.ius.meijer.com</ClientInstallProperty>
-	<Log Name="File" Share="$($env:ProgramData)\ConfigMgrClientHealth\Logs" Level="Full" MaxLogHistory="8" LocalLogFile="True" Enable="False" /> <!-- Level: Full = everything. ClientInstall = only if installation of sccm agent fails.  -->
+	<Log Name="File" Share="\\CM01.rodland.lab\ClientHealthLogs$" Level="Full" MaxLogHistory="8" LocalLogFile="True" Enable="False" /> <!-- Level: Full = everything. ClientInstall = only if installation of sccm agent fails.  -->
 	<Log Name="SQL" Server="CM01.rodland.lab" Enable="False" />
 	<Log Name="Time" Format="ClientLocal" /> <!-- Valid formats: ClientLocal / UTC  -->
 	<Option Name="CcmSQLCELog" Enable="False" /> <!-- Optional check on the ConfigMgr agent if local database is corrupt -->

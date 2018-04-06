@@ -152,7 +152,7 @@ Begin {
 
         #First try and get the service start time based on the last start event message in the system log.
         Try{
-            [datetime]$ServiceStartTime = (Get-EventLog -LogName “System” -Source “Service Control Manager” -EntryType “Information” -Message “*$($ServiceDisplayName)*running*” -Newest 1).TimeGenerated
+            [datetime]$ServiceStartTime = (Get-EventLog -LogName System -Source Service Control Manager -EntryType Information -Message *$($ServiceDisplayName)*running* -Newest 1).TimeGenerated
             Return (New-TimeSpan -Start $ServiceStartTime -End (Get-Date)).Days
         }
         Catch {
@@ -161,7 +161,9 @@ Begin {
 
         #If the event log doesn't contain a start event then use the start time of the service's process.  Since processes can be shared this is less reliable.
         Try{
-            $ServiceProcessID = (Get-WMIObject -Class Win32_Service -Filter "Name='$($Name)'").ProcessID
+            if ($PowerShellVersion -ge 6) { $ServiceProcessID = (Get-CimInstance Win32_Service -Filter "Name='$($Name)'").ProcessID }
+            else { $ServiceProcessID = (Get-WMIObject -Class Win32_Service -Filter "Name='$($Name)'").ProcessID }
+            
             [datetime]$ServiceStartTime = (Get-Process -Id $ServiceProcessID).StartTime
             Return (New-TimeSpan -Start $ServiceStartTime -End (Get-Date)).Days
 
@@ -1516,7 +1518,7 @@ Begin {
         Write-Verbose "The compliance states were last sent on $($LastSent)"
 
         #Determine the number of days until the next run.
-        $NumberOfDays=(New-Timespan –Start (Get-Date) –End ($LastSent.AddDays($Days))).Days
+        $NumberOfDays=(New-Timespan Start (Get-Date) End ($LastSent.AddDays($Days))).Days
 
 
         #Resend complianc states if the next interval has already arrived or randomly based on the number of days left until the next interval.

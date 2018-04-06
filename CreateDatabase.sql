@@ -65,7 +65,8 @@ CREATE TABLE dbo.Clients
     SWMetering varchar(50),
     BITS varchar(50),
     PatchLevel int,
-    ClientInstalledReason varchar(200)
+    ClientInstalledReason varchar(200),
+    RefreshComplianceState smalldatetime
 )
 else
 
