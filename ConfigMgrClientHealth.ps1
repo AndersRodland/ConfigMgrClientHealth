@@ -54,7 +54,7 @@ Begin {
     #If no config file was passed in, use the default.
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
 
-    # Testing Webservice
+    # Testing Webservice.
     $WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
 
     Write-Verbose "Script version: $Version"
@@ -134,7 +134,7 @@ Begin {
             Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice. Exception: $ExceptionMessage"
             
         }
-        $obj | out-file c:\test.txt -Force
+        $obj | out-file "c:\test.txt" -force
     }
 
     Function Get-LogFileName {
@@ -474,6 +474,7 @@ Begin {
     }
 
     function Test-CCMCertificateError {
+        Param([Parameter(Mandatory=$true)]$Log)
         # More checks to come
         $logdir = Get-CCMLogDirectory
         $logFile1 = "$logdir\ClientIDManagerStartup.log"
@@ -498,7 +499,7 @@ Begin {
             Start-Service -Name ccmexec
             
             # Update log object
-            $log.Certificate = $error1
+            $log.ClientCertificate = $error1
         }
 
         #$content = Get-Content -Path $logFile2
@@ -506,13 +507,13 @@ Begin {
             $ok = $false
             $text = 'ConfigMgr Client Certificate: Error! Server rejected client registration. Client Certificate not valid. No auto-remediation.'
             Write-Error $text
-            $log.Certificate = $error2
+            $log.ClientCertificate = $error2
         }
 
         if ($ok = $true) {
             $text = 'ConfigMgr Client Certificate: OK'
             Write-Output $text
-            $log.Certificate = 'OK'
+            $log.ClientCertificate = 'OK'
         }
     }
 
@@ -1368,6 +1369,11 @@ Begin {
 				}
 				else { $launched = $false }
             } while ($launched -eq $true)
+
+            if ($FirstInstall -eq $true) {
+                Start-Sleep -Seconds 360
+                Write-Host "ConfigMgr Client was installed for the first time. Waiting 6 minutes for client to syncronize."
+            }
             
             # Client is reinstalled. Remove tag.
 
@@ -1502,9 +1508,6 @@ Begin {
         Write-Verbose "The compliance states were last sent on $($LastSent)"
         #Determine the number of days until the next run.
         $NumberOfDays = (New-Timespan -Start (Get-Date) -End ($LastSent.AddDays($Days))).Days
-        
-        # Force update for test
-        $NumberOfDays = 0
 
         #Resend complianc states if the next interval has already arrived or randomly based on the number of days left until the next interval.
         If (($NumberOfDays -le 0) -or ((Get-Random -Maximum $NumberOfDays) -eq 0 )){
@@ -2553,7 +2556,7 @@ Begin {
         $Updates = 'Unknown'
         $DNS = 'Unknown'
         $Drivers = 'Unknown'
-        $Certificate = 'Unknown'
+        $ClientCertificate = 'Unknown'
         $PendingReboot = 'Unknown'
         $RebootApp = 'Unknown'
         if ($PowerShellVersion -ge 6) { $LastBootTime = Get-SmallDateTime -Date ($OS.LastBootUpTime) }
@@ -2583,43 +2586,59 @@ Begin {
             Build = $Build
             Manufacturer = $Manufacturer
             Model = $Model
-            InstallDate = $InstallDate 
+            InstallDate = $InstallDate
+            OSUpdates = $null
             LastLoggedOnUser = $LastLoggedOnUser
             ClientVersion = $ClientVersion
+            PSVersion = $PSVersion
+            PSBuild = $PSBuild
             Sitecode = $Sitecode
             Domain = $Domain
             MaxLogSize = $MaxLogSize
             MaxLogHistory = $MaxLogHistory
             CacheSize = $CacheSize
-            Certificate = $Certificate
+            ClientCertificate = $Certificate
             ProvisioningMode = $ProvisioningMode
             DNS = $DNS
             Drivers = $Drivers
             Updates = $Updates
             PendingReboot = $PendingReboot
-            RebootApp = $RebootApp
             LastBootTime = $LastBootTime
             OSDiskFreeSpace = $OSDiskFreeSpace
+            Services = $Services
             AdminShare = $AdminShare
             StateMessages = $StateMessages
             WUAHandler = $WUAHandler
             WMI = $WMI
             RefreshComplianceState = $RefreshComplianceState
-            Timestamp = $smallDateTime
-            Version = $Version
-            Services = $Services
-            PSVersion = $PSVersion
-            PSBuild = $PSBuild
-            OSUpdates = $null
-            HWInventory = $null
             ClientInstalled = $null
+            Version = $Version
+            Timestamp = $smallDateTime
+            HWInventory = $null
             SWMetering = $null
-            PatchLevel = $UBR
             BITS = $BITS
+            PatchLevel = $UBR
             ClientInstalledReason = $null
+            RebootApp = $RebootApp
         }
         Write-Output $obj
        # Write-Verbose "End New-LogObject"
+    }
+
+    Function Get-SmallDateTime {
+        Param([Parameter(Mandatory=$false)]$Date)
+        #Write-Verbose "Start Get-SmallDateTime"
+
+        $UTC = (Get-XMLConfigLoggingTimeFormat).ToLower()
+
+        if ($null -ne $Date) {
+            if ($UTC -eq "utc") { $obj = (Get-UTCTime -DateTime $Date).ToString("yyyy-MM-dd HH:mm:ss") }
+            else { $obj = ($Date).ToString("yyyy-MM-dd HH:mm:ss") }
+        }
+        else { $obj = Get-DateTime }
+        $obj = $obj -replace '\.', ':'
+        Write-Output $obj
+        #Write-Verbose "End Get-SmallDateTime"
     }
 
     Function Get-SmallDateTime {
@@ -2693,13 +2712,13 @@ Begin {
         $query= "begin tran
         if exists (SELECT * FROM $table WITH (updlock,serializable) WHERE Hostname='"+$log.Hostname+"')
         begin
-            UPDATE $table SET Operatingsystem='"+$log.Operatingsystem+"', Architecture='"+$log.Architecture+"', Build='"+$log.Build+"', Manufacturer='"+$log.Manufacturer+"', Model='"+$log.Model+"', InstallDate='"+$log.InstallDate+"', $q1 LastLoggedOnUser='"+$log.LastLoggedOnUser+"', ClientVersion='"+$log.ClientVersion+"', PSVersion='"+$log.PSVersion+"', PSBuild='"+$log.PSBuild+"', Sitecode='"+$log.Sitecode+"', Domain='"+$log.Domain+"', MaxLogSize='"+$log.MaxLogSize+"', MaxLogHistory='"+$log.MaxLogHistory+"', CacheSize='"+$log.CacheSize+"', ClientCertificate='"+$log.Certificate+"', ProvisioningMode='"+$log.ProvisioningMode+"', DNS='"+$log.DNS+"', Drivers='"+$log.Drivers+"', Updates='"+$log.Updates+"', PendingReboot='"+$log.PendingReboot+"', LastBootTime='"+$log.LastBootTime+"', OSDiskFreeSpace='"+$log.OSDiskFreeSpace+"', Services='"+$log.Services+"', AdminShare='"+$log.AdminShare+"', StateMessages='"+$log.StateMessages+"', WUAHandler='"+$log.WUAHandler+"', WMI='"+$log.WMI+"', RefreshComplianceState='"+$log.RefreshComplianceState+"', HWInventory='"+$log.HWInventory+"', Version='"+$Version+"', $q10 Timestamp='"+$smallDateTime+"', SWMetering='"+$log.SWMetering+"', BITS='"+$log.BITS+"', PatchLevel='"+$Log.PatchLevel+"', ClientInstalledReason='"+$log.ClientInstalledReason+"'
+            UPDATE $table SET Operatingsystem='"+$log.Operatingsystem+"', Architecture='"+$log.Architecture+"', Build='"+$log.Build+"', Manufacturer='"+$log.Manufacturer+"', Model='"+$log.Model+"', InstallDate='"+$log.InstallDate+"', $q1 LastLoggedOnUser='"+$log.LastLoggedOnUser+"', ClientVersion='"+$log.ClientVersion+"', PSVersion='"+$log.PSVersion+"', PSBuild='"+$log.PSBuild+"', Sitecode='"+$log.Sitecode+"', Domain='"+$log.Domain+"', MaxLogSize='"+$log.MaxLogSize+"', MaxLogHistory='"+$log.MaxLogHistory+"', CacheSize='"+$log.CacheSize+"', ClientCertificate='"+$log.ClientCertificate+"', ProvisioningMode='"+$log.ProvisioningMode+"', DNS='"+$log.DNS+"', Drivers='"+$log.Drivers+"', Updates='"+$log.Updates+"', PendingReboot='"+$log.PendingReboot+"', LastBootTime='"+$log.LastBootTime+"', OSDiskFreeSpace='"+$log.OSDiskFreeSpace+"', Services='"+$log.Services+"', AdminShare='"+$log.AdminShare+"', StateMessages='"+$log.StateMessages+"', WUAHandler='"+$log.WUAHandler+"', WMI='"+$log.WMI+"', RefreshComplianceState='"+$log.RefreshComplianceState+"', HWInventory='"+$log.HWInventory+"', Version='"+$Version+"', $q10 Timestamp='"+$smallDateTime+"', SWMetering='"+$log.SWMetering+"', BITS='"+$log.BITS+"', PatchLevel='"+$Log.PatchLevel+"', ClientInstalledReason='"+$log.ClientInstalledReason+"'
             WHERE Hostname = '"+$log.Hostname+"'
         end
         else
         begin
             INSERT INTO $table (Hostname, Operatingsystem, Architecture, Build, Manufacturer, Model, InstallDate, $q2 LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, Sitecode, Domain, MaxLogSize, MaxLogHistory, CacheSize, ClientCertificate, ProvisioningMode, DNS, Drivers, Updates, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, HWInventory, Version, $q20 Timestamp, SWMetering, BITS, PatchLevel, ClientInstalledReason)
-            VALUES ('"+$log.Hostname+"', '"+$log.Operatingsystem+"', '"+$log.Architecture+"', '"+$log.Build+"', '"+$log.Manufacturer+"', '"+$log.Model+"', '"+$log.InstallDate+"', $q3 '"+$log.LastLoggedOnUser+"', '"+$log.ClientVersion+"', '"+$log.PSVersion+"', '"+$log.PSBuild+"', '"+$log.Sitecode+"', '"+$log.Domain+"', '"+$log.MaxLogSize+"', '"+$log.MaxLogHistory+"', '"+$log.CacheSize+"', '"+$log.Certificate+"', '"+$log.ProvisioningMode+"', '"+$log.DNS+"', '"+$log.Drivers+"', '"+$log.Updates+"', '"+$log.PendingReboot+"', '"+$log.LastBootTime+"', '"+$log.OSDiskFreeSpace+"', '"+$log.Services+"', '"+$log.AdminShare+"', '"+$log.StateMessages+"', '"+$log.WUAHandler+"', '"+$log.WMI+"', '"+$log.RefreshComplianceState+"', '"+$log.HWInventory+"', '"+$log.Version+"', $q30 '"+$smallDateTime+"', '"+$log.SWMetering+"', '"+$log.BITS+"', '"+$Log.PatchLevel+"', '"+$Log.ClientInstalledReason+"')
+            VALUES ('"+$log.Hostname+"', '"+$log.Operatingsystem+"', '"+$log.Architecture+"', '"+$log.Build+"', '"+$log.Manufacturer+"', '"+$log.Model+"', '"+$log.InstallDate+"', $q3 '"+$log.LastLoggedOnUser+"', '"+$log.ClientVersion+"', '"+$log.PSVersion+"', '"+$log.PSBuild+"', '"+$log.Sitecode+"', '"+$log.Domain+"', '"+$log.MaxLogSize+"', '"+$log.MaxLogHistory+"', '"+$log.CacheSize+"', '"+$log.ClientCertificate+"', '"+$log.ProvisioningMode+"', '"+$log.DNS+"', '"+$log.Drivers+"', '"+$log.Updates+"', '"+$log.PendingReboot+"', '"+$log.LastBootTime+"', '"+$log.OSDiskFreeSpace+"', '"+$log.Services+"', '"+$log.AdminShare+"', '"+$log.StateMessages+"', '"+$log.WUAHandler+"', '"+$log.WMI+"', '"+$log.RefreshComplianceState+"', '"+$log.HWInventory+"', '"+$log.Version+"', $q30 '"+$smallDateTime+"', '"+$log.SWMetering+"', '"+$log.BITS+"', '"+$Log.PatchLevel+"', '"+$Log.ClientInstalledReason+"')
         end
         commit tran"
 
@@ -2871,11 +2890,11 @@ Process {
     }
 
     Write-Verbose 'Validating CCMClient provisioning mode...'
-    if (($ClientProvisioningMode -like 'True') -eq $true) {Test-ProvisioningMode -log $log}
+    if (($ClientProvisioningMode -like 'True') -eq $true) { Test-ProvisioningMode -log $log }
     Write-Verbose 'Validating CCMClient certificate...'
 
-    if ((Get-XMLConfigRemediationClientCertificate -like 'True') -eq $true) {Test-CCMCertificateError}
-    if (Get-XMLConfigHardwareInventoryEnable -like 'True') {Test-SCCMHardwareInventoryScan -Log $log}
+    if ((Get-XMLConfigRemediationClientCertificate -like 'True') -eq $true) { Test-CCMCertificateError -Log $Log }
+    if (Get-XMLConfigHardwareInventoryEnable -like 'True') { Test-SCCMHardwareInventoryScan -Log $log }
 
     
     if (Get-XMLConfigSoftwareMeteringEnable -like 'True') {
@@ -2884,7 +2903,7 @@ Process {
     }
    
     Write-Verbose 'Validating DNS...'
-    if ((Get-XMLConfigDNSCheck -like 'True' ) -eq $true) {Test-DNSConfiguration -Log $log}
+    if ((Get-XMLConfigDNSCheck -like 'True' ) -eq $true) { Test-DNSConfiguration -Log $log }
 
     Write-Verbose 'Validating BITS'
     if (Get-XMLConfigBITSCheck -like 'True') {
@@ -2999,7 +3018,7 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $null)) {
+    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $false)) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
