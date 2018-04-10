@@ -1297,7 +1297,9 @@ Begin {
     Function Remove-CCMOrphanedCache {
         Write-Host "Clearing ConfigMgr orphaned Cache items."
         try {
+            $CCMCache = "C:\Windows\ccmcache"
             $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
+            if ($CCMCache -eq $null) { $CCMCache = "C:\Windows\ccmcache" } 
             $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
             $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | Select-Object Fullname -ExpandProperty Fullname
             
@@ -1496,12 +1498,10 @@ Begin {
         Catch { [datetime]$LastSent = Get-Date }
 
         Write-Verbose "The compliance states were last sent on $($LastSent)"
-
-        Write-Host "LastSent: $LastSent"
-
         #Determine the number of days until the next run.
         $NumberOfDays = (New-Timespan -Start (Get-Date) -End ($LastSent.AddDays($Days))).Days
-        Write-Host "Days untill next forced compliance state refresh: $NumberOfDays"
+        
+        # Force update for test
         $NumberOfDays = 0
 
         #Resend complianc states if the next interval has already arrived or randomly based on the number of days left until the next interval.
@@ -2705,7 +2705,6 @@ Begin {
             Write-Error $text
             Out-LogFile -Xml $Xml -Text "ERROR Insert/Update SQL. SQL Query: $query `nSQL Error: $ErrorMessage"
         }
-
         Write-Verbose "End Update-SQL"
     }
         
