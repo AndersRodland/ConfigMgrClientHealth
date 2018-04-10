@@ -128,8 +128,13 @@ Begin {
         }
         catch { $Method = "POST" }
         
-        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $obj -ContentType $ContentType | Out-Null}
-        catch { Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice" }
+        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $Obj -ContentType $ContentType }
+        catch {
+            $ExceptionMessage = $_.Exception.Message
+            Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice. Exception: $ExceptionMessage"
+            
+        }
+        $obj | out-file c:\test.txt -Force
     }
 
     Function Get-LogFileName {
@@ -377,6 +382,7 @@ Begin {
 
     Function Get-CCMLogDirectory {
         $obj = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').LogDirectory
+        if ($obj -eq $null) { $obj = "c:\windows\ccm\Logs" }
         Write-Output $obj
     }
 
@@ -483,14 +489,13 @@ Begin {
             Write-Warning $text
             Stop-Service -Name ccmexec -Force
             # Name is persistant across systems.
-            $cert = 'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys\19c5cf9c7b5dc9de3e548adb70398402_50e417e0-e461-474b-96e2-077b80325612'
+            $cert = "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys\19c5cf9c7b5dc9de3e548adb70398402_50e417e0-e461-474b-96e2-077b80325612"
             # CCM creates new certificate when missing.
             Remove-Item -Path $cert -Force -ErrorAction SilentlyContinue | Out-Null
             # Remove the error from the logfile to avoid double remediations based on false positives
             $newContent = $content | Select-String -pattern $Error1 -notmatch
             Out-File -FilePath $logfile -InputObject $newContent -Encoding utf8 -Force
             Start-Service -Name ccmexec
-            #Remove-Item $logFile -Force -ErrorAction SilentlyContinue | Out-Null
             
             # Update log object
             $log.Certificate = $error1
@@ -681,15 +686,12 @@ Begin {
     Function Test-LogFileHistory {
         Param([Parameter(Mandatory=$true)]$Logfile)
         $startString = '<--- ConfigMgr Client Health Check starting --->'
-        #$stopString = '<--- ConfigMgr Client Health Check finished --->'
-        
         $content = ''
         
         # Handle the network share log file
         if (Test-Path $logfile -ErrorAction SilentlyContinue)  { $content = Get-Content($logfile) }
         $maxHistory = Get-XMLConfigLoggingMaxHistory
         $startCount = [regex]::matches($content,$startString).count
-        #$stopCount = [regex]::matches($content,$stopString).count
         
         # Delete logfile if more start and stop entries than max history
         if ($startCount -ge $maxHistory) { if ((Test-Path -Path $logfile -ErrorAction SilentlyContinue) -eq $true) { Remove-Item $logfile -Force } }
@@ -1172,7 +1174,7 @@ Begin {
             [Parameter(Mandatory=$true)]$Log)
         $log.WUAHandler = "Checking"
         $RepairReason = ""
-        $MachineRegistryFile="$($env:WinDir)\System32\GroupPolicy\Machine\registry.pol"
+        $MachineRegistryFile = "$($env:WinDir)\System32\GroupPolicy\Machine\registry.pol"
         
         # Check 1 - Error in WUAHandler.log
         Write-Verbose "Check WUAHandler.log for errors since $($StartTime)."
@@ -1231,10 +1233,10 @@ Begin {
 
     Function Test-ClientLogSize {
         Param([Parameter(Mandatory=$true)]$Log)
-        try { $currentLogSize = Get-ClientMaxLogSize }
-        catch { $currentLogSize = 0 }
-        try { $currentMaxHistory = Get-ClientMaxLogHistory }
-        catch { $currentMaxHistory = 0 }
+        try { [int]$currentLogSize = Get-ClientMaxLogSize }
+        catch { [int]$currentLogSize = 0 }
+        try { [int]$currentMaxHistory = Get-ClientMaxLogHistory }
+        catch { [int]$currentMaxHistory = 0 }
         try { $logLevel = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').logLevel }
         catch { $logLevel = 1 }
 
@@ -2540,7 +2542,7 @@ Begin {
         $ClientVersion = 'Unknown'
         $Sitecode = Get-Sitecode
         $Domain = Get-Domain
-        $MaxLogSize = 0
+        [int]$MaxLogSize = 0
         $MaxLogHistory = 0
         if ($PowerShellVersion -ge 6) { $InstallDate = Get-SmallDateTime -Date ($OS.InstallDate) }
         else { $InstallDate = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.InstallDate)) }
@@ -2639,10 +2641,10 @@ Begin {
     # Test some values are whole numbers before attempting to insert / update database
     Function Test-ValuesBeforeLogUpdate {
         Write-Verbose "Start Test-ValuesBeforeLogUpdate"
-        $Log.MaxLogSize = [Math]::Round($Log.MaxLogSize)
-        $Log.MaxLogHistory = [Math]::Round($Log.MaxLogHistory)
-        $Log.PSBuild = [Math]::Round($Log.PSBuild)
-        $Log.CacheSize = [Math]::Round($Log.CacheSize)
+        [int]$Log.MaxLogSize = [Math]::Round($Log.MaxLogSize)
+        [int]$Log.MaxLogHistory = [Math]::Round($Log.MaxLogHistory)
+        [int]$Log.PSBuild = [Math]::Round($Log.PSBuild)
+        [int]$Log.CacheSize = [Math]::Round($Log.CacheSize)
         Write-Verbose "End Test-ValuesBeforeLogUpdate"
     }
 
