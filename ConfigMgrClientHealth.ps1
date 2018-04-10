@@ -55,7 +55,7 @@ Begin {
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
 
     # Testing Webservice
-    $WebserviceURI = "http://10.10.100.2:63699/ClientHealth"
+    $WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
@@ -1181,7 +1181,6 @@ Begin {
         $logLine = Search-CMLogFile -LogFile $logfile -StartTime $StartTime -SearchStrings @('0x80004005','0x87d00692')
         if ($logLine) {$RepairReason = "WUAHandler Log"}
 								   
-
         # Check 2 - Registry.pol is too old.
         if ($Days) {
             Write-Verbose "Check machine registry file to see if it's older than $($Days) days."
@@ -1190,12 +1189,8 @@ Begin {
                 $regPolDate = Get-Date($file)
                 $now = Get-Date
                 if (($now - $regPolDate).Days -ge $Days) {$RepairReason = "File Age"}
-										   
-										   
             }
-            catch {
-                Write-Warning "GPO Cache: Failed to check machine policy age."
-            }
+            catch { Write-Warning "GPO Cache: Failed to check machine policy age." }
         }
         
         # Check 3 - Look back through the last 7 days for group policy processing errors.  
@@ -1206,9 +1201,7 @@ Begin {
             if ($numberOfGPOErrors -gt 0) {$RepairReason = "Event Log"}
                 
         }
-        catch {
-           Write-Warning "GPO Cache: Failed to check the event log for policy errors."
-        }        
+        catch { Write-Warning "GPO Cache: Failed to check the event log for policy errors." }        
 
         #If we need to repirt the policy files then do so.
         if ($RepairReason -ne ""){
@@ -1217,11 +1210,11 @@ Begin {
             Write-Verbose 'Deleting registry.pol and running gpupdate...'
 
             try { Remove-Item $MachineRegistryFile -Force }
-            catch {Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))."}
+            catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
             & gpupdate.exe /force | Out-Null
             
             Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
-            Start-Sleep -Seconds 60
+            #Start-Sleep -Seconds 60
             
             Write-Verbose 'Refreshing update policy'
             Get-SCCMPolicyScanUpdateSource
@@ -1231,17 +1224,8 @@ Begin {
             Write-Output "GPO Cache: $($log.WUAHandler)"
         }
         else {
-										   
-									   
             $log.WUAHandler = 'OK'
-										  
-										  
             Write-Output "GPO Cache: OK"
-			 
-			 
-									  
-								  
-			 
         }
     }
 
@@ -1508,18 +1492,17 @@ Begin {
         $RegValueName="RefreshServerComplianceState"
 
         #Get the last time this script was ran.  If the registry isn't found just use the current date.
-        Try{
-            [datetime]$LastSent= Get-RegistryValue -Path $RegistryKey -Name $RegValueName            
-        }
-        Catch{
-            [datetime]$LastSent=Get-Date            
-        }
+        Try { [datetime]$LastSent = Get-RegistryValue -Path $RegistryKey -Name $RegValueName }
+        Catch { [datetime]$LastSent = Get-Date }
 
         Write-Verbose "The compliance states were last sent on $($LastSent)"
 
-        #Determine the number of days until the next run.
-        $NumberOfDays=(New-Timespan Start (Get-Date) End ($LastSent.AddDays($Days))).Days
+        Write-Host "LastSent: $LastSent"
 
+        #Determine the number of days until the next run.
+        $NumberOfDays = (New-Timespan -Start (Get-Date) -End ($LastSent.AddDays($Days))).Days
+        Write-Host "Days untill next forced compliance state refresh: $NumberOfDays"
+        $NumberOfDays = 0
 
         #Resend complianc states if the next interval has already arrived or randomly based on the number of days left until the next interval.
         If (($NumberOfDays -le 0) -or ((Get-Random -Maximum $NumberOfDays) -eq 0 )){
@@ -1539,7 +1522,7 @@ Begin {
         }
 
         Set-RegistryValue -Path $RegistryKey -Name $RegValueName -Value $LastSent
-        $Log.RefreshComplianceState=Get-SmallDateTime $LastSent
+        $Log.RefreshComplianceState = Get-SmallDateTime $LastSent
         
 
     }
@@ -1570,12 +1553,12 @@ Begin {
         Write-Verbose 'Test services from XML configuration file'
         foreach ($service in $Xml.Configuration.Service) {
             $startuptype = ($service.StartupType).ToLower()
-            $uptime = ($service.Uptime).ToLower()
-            if ($startuptype -like "automatic (delayed start)") {
-                $service.StartupType = "automaticd"
-            }
-            Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Uptime $uptime -Log $log
             
+            if ($service.uptime -ne $null) {
+                $uptime = ($service.Uptime).ToLower()
+                if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
+            }
+            else { Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log }
         }
     }
 
