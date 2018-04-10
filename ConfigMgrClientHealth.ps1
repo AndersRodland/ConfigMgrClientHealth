@@ -2497,15 +2497,18 @@ Begin {
     }
    
     Function CleanUp {
-        $clientpath = Get-LocalFilesPath
+        $clientpath = (Get-LocalFilesPath).ToLower()
+        $forbidden = "c:", "c:\", "c:\windows", "c:\windows\"
+        $NoDelete = $false
+        foreach ($item in $forbidden) { if ($clientpath -like $item) { $NoDelete = $true } }
         
-        if ((Test-Path "$clientpath\Temp" -ErrorAction SilentlyContinue) -eq $True) {
+        if (((Test-Path "$clientpath\Temp" -ErrorAction SilentlyContinue) -eq $True) -and ($NoDelete -eq $false) ) {
             Write-Verbose "Cleaning up temporary files in $clientpath\ClientHealth"
             Remove-Item "$clientpath\Temp" -Recurse -Force | Out-Null
         }
         
         $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
-        if ($LocalLogging -ne "true") {
+        if (($LocalLogging -ne "true") -and ($NoDelete -eq $false)) {
             Write-Verbose "Local logging disabled. Removing $clientpath\ClientHealth"
             Remove-Item "$clientpath\Temp" -Recurse -Force | Out-Null
         }

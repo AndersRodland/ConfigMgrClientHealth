@@ -41,6 +41,6 @@
 	<Remediation Name="AdminShare" Fix="True" />
 	<Remediation Name="ClientProvisioningMode" Fix="True" />
 	<Remediation Name="ClientStateMessages" Fix="True" />
-	<Remediation Name="ClientWUAHandler" Fix="True"  Days=""/>
+	<Remediation Name="ClientWUAHandler" Fix="True"  Days="14"/>
 	<Remediation Name="ClientCertificate" Fix="True" />
 </Configuration>
