@@ -1207,7 +1207,7 @@ Begin {
         }
         catch { Write-Warning "GPO Cache: Failed to check the event log for policy errors." }        
 
-        #If we need to repirt the policy files then do so.
+        #If we need to repart the policy files then do so.
         if ($RepairReason -ne ""){
             $log.WUAHandler = "Broken ($RepairReason)"
             Write-Output "GPO Cache: Broken ($RepairReason)"
@@ -1812,12 +1812,16 @@ Begin {
 
     Function Start-RebootApplication {
         $taskName = 'ConfigMgr Client Health - Reboot on demand'
-        $OS = Get-OperatingSystem
-        if ($OS -like "*Windows 7*") { $task = schtasks.exe /query | FIND /I "ConfigMgr Client Health - Reboot" }
-        else { $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue }
+        #$OS = Get-OperatingSystem
+        #if ($OS -like "*Windows 7*") {
+            $task = schtasks.exe /query | FIND /I "ConfigMgr Client Health - Reboot"
+        #}
+        #else { $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue }
         if ($task -eq $null) { New-RebootTask -taskName $taskName }
-        if ($OS -notlike "*Windows 7*") { Start-ScheduledTask -TaskName $taskName }
-        else { schtasks.exe /Run /TN $taskName }
+        #if ($OS -notlike "*Windows 7*") {Start-ScheduledTask -TaskName $taskName }
+        #else {
+            schtasks.exe /Run /TN $taskName
+        #}
     }
 
     Function New-RebootTask {
@@ -1834,13 +1838,17 @@ Begin {
         $i = $argument.Length -1
         if ($argument.Substring($i) -eq ' ') { $argument = $argument.Substring(0, $argument.Length -1) }
 
-        $OS = Get-OperatingSystem
-        if ($OS -like "*Windows 7*") { schtasks.exe /Create /tn $taskName /tr "$execute $argument" /ru "BUILTIN\Users" /sc ONCE /st 00:00 /sd 01/01/1901 }
+        #$OS = Get-OperatingSystem
+        #if ($OS -like "*Windows 7*") {
+            schtasks.exe /Create /tn $taskName /tr "$execute $argument" /ru "BUILTIN\Users" /sc ONCE /st 00:00 /sd 01/01/1901
+        #}
+        <#
         else {
             $action = New-ScheduledTaskAction -Execute $execute -Argument $argument
             $userPrincipal = New-ScheduledTaskPrincipal -GroupId "S-1-5-32-545"
             Register-ScheduledTask -Action $action -TaskName $taskName -Principal $userPrincipal | Out-Null
         }
+        #>
     }
 
     Function Start-Ccmeval {
