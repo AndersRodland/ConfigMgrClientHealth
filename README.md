@@ -18,6 +18,7 @@ Note: Script version 0.7.5 requires database version 0.7.5.
 * Script will resend clients compliance state.
 * Script will now write a timestamp in registry when it runs to show last run time.
 * Added more tests before executing remove-item to prevent the script from deleting files that should not be deleted.
+* Added check on DNS to only lookup DNS servers from active adapters
 * +More fixes from Bryan Adams.
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
