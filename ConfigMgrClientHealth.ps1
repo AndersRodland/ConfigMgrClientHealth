@@ -55,7 +55,7 @@ Begin {
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
 
     # Testing Webservice.
-    $WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
+    #$WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
@@ -3027,7 +3027,7 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $false)) {
+    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $null)) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
