@@ -11,6 +11,7 @@ Note: Script version 0.7.6 requires database version 0.7.5.
 
 ## Changes since stable release
 
-* Added test to verify SMSTSMgr is not dependent on CCMExec service.
+* Changed test to verify SMSTSMgr is not dependent on CCMExec service, and only WMI service.
+* Added test to verify no active task sequence is executing on computer
 
 This software is provided "AS IS" with no warranties. Use at your own risk.

@@ -2803,7 +2803,7 @@ Begin {
 }
 
 Process {
-    Write-Verbose "Start Process"
+    Write-Verbose "Starting precheck. Determing if script will run or not."
     # Veriy script is running with administrative priveleges.
     If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
     {
@@ -2814,10 +2814,25 @@ Process {
     }
     else {
         $StartupText1 = "PowerShell version: " + $PSVersionTable.PSVersion + ". Script executing with Administrator rights."
-        $StartupText2 = "ConfigMgr Client Health " +$Version+ " starting."
         Write-Host $StartupText1
-        Write-Host $StartupText2
+        
+        Write-Verbose "Determing if a task sequence is running."
+        try { $tsenv = New-Object -COMObject Microsoft.SMS.TSEnvironment | Out-Null }
+        catch { $tsenv = $null }
+
+        if ($tsenv -ne $null) { 
+            $TSName = $tsenv.Value("_SMSTSAdvertID") 
+            Write-Host "Task sequence $TSName is active executing on computer. ConfigMgr Client Health will not execute."
+            Exit 1
+         }
+         else {
+            $StartupText2 = "ConfigMgr Client Health " +$Version+ " starting."
+            Write-Host $StartupText2
+         }
     }
+
+    
+
     $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
     $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
     $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
