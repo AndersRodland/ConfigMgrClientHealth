@@ -47,7 +47,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.7.5'
+    $Version = '0.7.6'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
@@ -55,7 +55,7 @@ Begin {
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
 
     # Testing Webservice.
-    #$WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
+    $WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
@@ -1543,9 +1543,15 @@ Begin {
 
     Function Test-SMSTSMgr {
         $service = get-service smstsmgr
-        if (($service.ServicesDependedOn).name -notcontains "ccmexec") {  
-            write-host "SMSTSMgr: Setting dependent on CCMExec service."  
-            start-process sc.exe -ArgumentList "config smstsmgr depend= winmgmt/ccmexec" -wait  
+        if (($service.ServicesDependedOn).name -contains "ccmexec") {  
+            write-host "SMSTSMgr: Removing dependency on CCMExec service."  
+            start-process sc.exe -ArgumentList "config smstsmgr depend= winmgmt" -wait  
+        }
+        
+        # WMI service depenency is present by default
+        if (($service.ServicesDependedOn).name -notcontains "Winmgmt") {  
+            write-host "SMSTSMgr: Adding dependency on Windows Management Instrumentaion service."  
+            start-process sc.exe -ArgumentList "config smstsmgr depend= winmgmt" -wait  
         }
         else { Write-Host "SMSTSMgr: OK"}
     }
