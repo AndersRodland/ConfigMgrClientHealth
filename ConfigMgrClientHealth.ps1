@@ -2105,7 +2105,7 @@ Begin {
 
     function Test-SQLConnection {    
         $SQLServer = Get-XMLConfigSQLServer
-        $Database = 'ClientHealth'
+        $Database = Get-XMLConfigSQLDatabase
         $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
 
         $ConnectionString = "Server={0};Database={1};Integrated Security=True;" -f $SQLServer,$Database
@@ -2461,6 +2461,16 @@ Begin {
         Write-Output $obj
     }
 
+    Function Get-XMLConfigSQLDatabase {
+        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'SQL'} | Select-Object -ExpandProperty 'Database'
+        Write-Output $obj
+    }
+
+    Function Get-XMLConfigSQLClientsTable {
+        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'SQL'} | Select-Object -ExpandProperty 'ClientsTable'
+        Write-Output $obj
+    }
+
     Function Get-XMLConfigSQLLoggingEnable {
         $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'SQL'} | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
@@ -2692,8 +2702,8 @@ Begin {
         Test-ValuesBeforeLogUpdate
 
         $SQLServer = Get-XMLConfigSQLServer
-        $Database = 'ClientHealth'
-        $table = 'dbo.Clients'
+        $Database = Get-XMLConfigSQLDatabase
+        $table = 'dbo.' + (Get-XMLConfigSQLClientsTable)
         $smallDateTime = Get-SmallDateTime
         
         if ($null -ne $log.OSUpdates) {
