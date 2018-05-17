@@ -128,7 +128,7 @@ Begin {
         }
         catch { $Method = "POST" }
         
-        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $Obj -ContentType $ContentType }
+        try { Invoke-RestMethod -Method $Method -Uri $URI -Body $Obj -ContentType $ContentType | Out-Null }
         catch {
             $ExceptionMessage = $_.Exception.Message
             Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice. Exception: $ExceptionMessage"
@@ -530,7 +530,7 @@ Begin {
                 if ($fix -eq "true") {
                     $text = "BITS: Error. Remediating"
                     $Errors | Remove-BitsTransfer -ErrorAction SilentlyContinue
-                    sc.exe sdset bits D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;AU)(A;;CCLCSWRPWPDTLOCRRC;;;PU) | out-null
+                    Invoke-Expression -Command 'sc.exe sdset bits D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;AU)(A;;CCLCSWRPWPDTLOCRRC;;;PU)' | out-null
                     $log.BITS = 'Remediated'
                     $obj = $true
                 }
@@ -2658,22 +2658,6 @@ Begin {
         #Write-Verbose "End Get-SmallDateTime"
     }
 
-    Function Get-SmallDateTime {
-        Param([Parameter(Mandatory=$false)]$Date)
-        #Write-Verbose "Start Get-SmallDateTime"
-
-        $UTC = (Get-XMLConfigLoggingTimeFormat).ToLower()
-
-        if ($null -ne $Date) {
-            if ($UTC -eq "utc") { $obj = (Get-UTCTime -DateTime $Date).ToString("yyyy-MM-dd HH:mm:ss") }
-            else { $obj = ($Date).ToString("yyyy-MM-dd HH:mm:ss") }
-        }
-        else { $obj = Get-DateTime }
-        $obj = $obj -replace '\.', ':'
-        Write-Output $obj
-        #Write-Verbose "End Get-SmallDateTime"
-    }
-
     # Test some values are whole numbers before attempting to insert / update database
     Function Test-ValuesBeforeLogUpdate {
         Write-Verbose "Start Test-ValuesBeforeLogUpdate"
@@ -3032,7 +3016,6 @@ Process {
 }
 
 End {
-    Write-Verbose "Start End"
     # Update database and logfile with results
 
     #Set the last run.
@@ -3059,7 +3042,5 @@ End {
         Write-Output 'Updating SQL database with results using webservice'
         Update-Webservice -URI $WebserviceURI -Log $Log
     }
-
-    Write-Verbose "Stop End"
     Write-Verbose "Client Health script finished"
 }
