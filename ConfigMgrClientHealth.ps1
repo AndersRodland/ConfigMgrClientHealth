@@ -47,7 +47,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.7.6'
+    $Version = '0.7.7'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
@@ -530,6 +530,7 @@ Begin {
                 if ($fix -eq "true") {
                     $text = "BITS: Error. Remediating"
                     $Errors | Remove-BitsTransfer -ErrorAction SilentlyContinue
+                    sc.exe sdset bits D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;AU)(A;;CCLCSWRPWPDTLOCRRC;;;PU) | out-null
                     $log.BITS = 'Remediated'
                     $obj = $true
                 }
@@ -1213,9 +1214,9 @@ Begin {
             Write-Output "GPO Cache: Broken ($RepairReason)"
             Write-Verbose 'Deleting registry.pol and running gpupdate...'
 
-            try { Remove-Item $MachineRegistryFile -Force }
+            try { if (Test-Path -Path $MachineRegistryFile) {Remove-Item $MachineRegistryFile -Force } }
             catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
-            & gpupdate.exe /force | Out-Null
+            finally { & gpupdate.exe /force | Out-Null  }
             
             Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
             #Start-Sleep -Seconds 60
@@ -1403,8 +1404,9 @@ Begin {
             # Always fix if this returns inconsistent
             "*inconsistent*" { $vote = 100 } # English
             "*not consistent*"  { $vote = 100 } # English
-            "*inkonsekvent*" { $vote = 100 } # Swedish  
-            "*epäyhtenäinen*" { $vote = 100 } # Finnish          
+            "*inkonsekvent*" { $vote = 100 } # Swedish
+            "*epäyhtenäinen*" { $vote = 100 } # Finnish
+            "*inkonsistent*" { $vote = 100 } # German
             # Add more languages as I learn their inconsistent value
         }
 
