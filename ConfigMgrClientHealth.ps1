@@ -134,7 +134,6 @@ Begin {
             Write-Host "Error Invoking RestMethod $Method on URI $URI. Failed to update database using webservice. Exception: $ExceptionMessage"
             
         }
-        $obj | out-file "c:\test.txt" -force
     }
 
     Function Get-LogFileName {
@@ -384,7 +383,7 @@ Begin {
 
     Function Get-CCMLogDirectory {
         $obj = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').LogDirectory
-        if ($obj -eq $null) { $obj = "c:\windows\ccm\Logs" }
+        if ($obj -eq $null) { $obj = "$env:SystemDrive\windows\ccm\Logs" }
         Write-Output $obj
     }
 
@@ -626,8 +625,9 @@ Begin {
     }
 
     Function Get-OSDiskFreeSpace {
-        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq 'C:'} | Select-Object FreeSpace, Size }
-        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq 'C:'} | Select-Object FreeSpace, Size }
+        
+        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
+        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
         $freeSpace = (($driveC.FreeSpace / $driveC.Size) * 100)
         Write-Output ([math]::Round($freeSpace,2))
     }
@@ -991,8 +991,8 @@ Begin {
             $num = $ClientCacheSize -replace '%'
             $num = ($num / 100)
             # TotalDiskSpace in Byte
-            if ($PowerShellVersion -ge 6) { $TotalDiskSpace = (Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq 'C:'} | Select-Object -ExpandProperty Size) }
-            else { $TotalDiskSpace = (Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq 'C:'} | Select-Object -ExpandProperty Size) }
+            if ($PowerShellVersion -ge 6) { $TotalDiskSpace = (Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object -ExpandProperty Size) }
+            else { $TotalDiskSpace = (Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object -ExpandProperty Size) }
             $ClientCacheSize = ([math]::Round(($TotalDiskSpace * $num) / 1048576))
         }
         else { $type = 'fixed' }
@@ -1220,7 +1220,7 @@ Begin {
 
             try { if (Test-Path -Path $MachineRegistryFile) {Remove-Item $MachineRegistryFile -Force } }
             catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
-            finally { & gpupdate.exe /force | Out-Null  }
+            finally { & gpupdate.exe /force /target:computer | Out-Null  }
             
             Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
             #Start-Sleep -Seconds 60
@@ -1306,9 +1306,9 @@ Begin {
     Function Remove-CCMOrphanedCache {
         Write-Host "Clearing ConfigMgr orphaned Cache items."
         try {
-            $CCMCache = "C:\Windows\ccmcache"
+            $CCMCache = "$env:SystemDrive\Windows\ccmcache"
             $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
-            if ($CCMCache -eq $null) { $CCMCache = "C:\Windows\ccmcache" } 
+            if ($CCMCache -eq $null) { $CCMCache = "$env:SystemDrive\Windows\ccmcache" } 
             $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
             $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | Select-Object Fullname -ExpandProperty Fullname
             
@@ -1461,7 +1461,7 @@ Begin {
         Write-Output $text
         
         # Check PATH
-        if((! (@(($ENV:PATH).Split(";")) -contains "c:\WINDOWS\System32\Wbem")) -and (! (@(($ENV:PATH).Split(";")) -contains "%systemroot%\System32\Wbem"))){
+        if((! (@(($ENV:PATH).Split(";")) -contains "$env:SystemDrive\WINDOWS\System32\Wbem")) -and (! (@(($ENV:PATH).Split(";")) -contains "%systemroot%\System32\Wbem"))){
             $text = "WMI Folder not in search path!."
             Write-Warning $text
         }
@@ -1768,16 +1768,16 @@ Begin {
 
     Function Test-DiskSpace {
         $XMLDiskSpace = Get-XMLConfigOSDiskFreeSpace
-        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq 'C:'} | Select-Object FreeSpace, Size }
-        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq 'C:'} | Select-Object FreeSpace, Size }
+        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
+        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
         $freeSpace = (($driveC.FreeSpace / $driveC.Size) * 100)
 
         if ($freeSpace -le $XMLDiskSpace) {
-            $text = 'Local disk C: Less than '+$XMLDiskSpace +'% free space'
+            $text = "Local disk $env:SystemDrive Less than $XMLDiskSpace % free space"
             Write-Error $text
         }
         else {
-            $text = 'Free space C: OK'
+            $text ="Free space $env:SystemDrive OK"
             Write-Output $text
         }
     }
@@ -2524,7 +2524,7 @@ Begin {
    
     Function CleanUp {
         $clientpath = (Get-LocalFilesPath).ToLower()
-        $forbidden = "c:", "c:\", "c:\windows", "c:\windows\"
+        $forbidden = "$env:SystemDrive", "$env:SystemDrive\", "$env:SystemDrive\windows", "$env:SystemDrive\windows\"
         $NoDelete = $false
         foreach ($item in $forbidden) { if ($clientpath -like $item) { $NoDelete = $true } }
         
@@ -2953,7 +2953,7 @@ Process {
 		Test-Update -Log $log
 	}
 
-    Write-Verbose 'Validating C: free diskspace (Only warning, no remediation)...'
+    Write-Verbose "Validating $env:SystemDrive free diskspace (Only warning, no remediation)..."
     Test-DiskSpace
     Write-Verbose 'Getting install date of last OS patch for SQL log'
     Get-LastInstalledPatches -Log $log

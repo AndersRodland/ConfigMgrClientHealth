@@ -12,5 +12,8 @@ Note: Script version 0.7.7 requires database version 0.7.5.
 ## Changes since stable release
 
 * Fixed a bug in Test-Registrypol function that could cause looping
+* Windows 10 1803 and Windows 10 LTSB will now report build number correctly
+* Fixed remaining pieces of hard coded paths in the script
+* Fixed a bug that could case gpupdate to hang when initiated by Client Health
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
