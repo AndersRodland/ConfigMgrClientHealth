@@ -1220,7 +1220,7 @@ Begin {
 
             try { if (Test-Path -Path $MachineRegistryFile) {Remove-Item $MachineRegistryFile -Force } }
             catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
-            finally { & gpupdate.exe /force /target:computer | Out-Null  }
+            finally { & echo n | gpupdate.exe /force /target:computer | Out-Null  }
             
             Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
             #Start-Sleep -Seconds 60
