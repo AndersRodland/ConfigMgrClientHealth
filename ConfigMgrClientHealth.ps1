@@ -1222,7 +1222,7 @@ Begin {
             catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
             finally { & echo n | gpupdate.exe /force /target:computer | Out-Null  }
             
-            Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
+            #Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
             #Start-Sleep -Seconds 60
             
             Write-Verbose 'Refreshing update policy'
@@ -1952,6 +1952,32 @@ Begin {
         $log.HWInventory = $HWScanDate
         Write-Verbose "End Test-SCCMHardwareInventoryScan"
     }
+
+    # TODO: Implement so result of this remediation is stored in WMI log object, next to result of previous WMI check. This do not require db or webservice update
+    # ref: https://social.technet.microsoft.com/Forums/de-DE/1f48e8d8-4e13-47b5-ae1b-dcb831c0a93b/setup-was-unable-to-compile-the-file-discoverystatusmof-the-error-code-is-8004100e?forum=configmanagerdeployment
+    Function Test-PolicyPlatform {
+        Param([Parameter(Mandatory=$true)]$Log)
+        try {
+            if (Get-WmiObject -Namespace 'root/Microsoft' -Class '__Namespace' -Filter 'Name = "PolicyPlatform"') { Write-Host "PolicyPlatform: OK" }
+            else {
+                Write-Warning "PolicyPlatform: Not found, recompiling WMI 'Microsoft Policy Platform\ExtendedStatus.mof'"
+
+                if ($PowerShellVersion -ge 6) { $OS = Get-CimInstance Win32_OperatingSystem }
+                else { $OS = Get-WmiObject Win32_OperatingSystem }
+                
+                # 32 or 64?
+                if ($OS.OSArchitecture -match '64') { & mofcomp "$env:ProgramW6432\Microsoft Policy Platform\ExtendedStatus.mof" }
+                else { &  mofcomp "$env:ProgramFiles\Microsoft Policy Platform\ExtendedStatus.mof" }
+                
+                # Update WMI log object
+                $text = 'PolicyPlatform Recompiled.'
+                if (-NOT($Log.WMI -eq 'OK')) { $Log.WMI += ". $text" }
+                else { $Log.WMI = $text }
+            }
+        }
+        catch { Write-Warning "PolicyPlatform: RecompilePolicyPlatform failed!" }
+    }
+
 
     # Get the clients SiteName in Active Directory
     Function Get-ClientSiteName {
