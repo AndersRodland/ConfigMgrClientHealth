@@ -273,10 +273,12 @@ Begin {
         if ($OSName -like "*Windows 10*") {
             $build = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber
             switch ($build) {
+                10240 {$OSName = $OSName + " 1507"}
                 10586 {$OSName = $OSName + " 1511"}
                 14393 {$OSName = $OSName + " 1607"}
                 15063 {$OSName = $OSName + " 1703"}
                 16299 {$OSName = $OSName + " 1709"}
+                17134 {$OSName = $OSName + " 1803"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -819,10 +821,12 @@ Begin {
         if ($OSName -like "*Windows 10*") {
             $build = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber
             switch ($build) {
+                10240 {$OSName = $OSName + " 1507"}
                 10586 {$OSName = $OSName + " 1511"}
                 14393 {$OSName = $OSName + " 1607"}
                 15063 {$OSName = $OSName + " 1703"}
                 16299 {$OSName = $OSName + " 1709"}
+                17134 {$OSName = $OSName + " 1803"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
