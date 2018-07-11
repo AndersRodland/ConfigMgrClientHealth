@@ -1576,7 +1576,7 @@ Begin {
                 $uptime = ($service.Uptime).ToLower()
                 if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
             }
-            else { Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log }
+            Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log
         }
     }
 
@@ -1722,13 +1722,34 @@ Begin {
         }
         else {
             try {
+                $RetryService= $False
                 $text = 'Starting service: ' + $Name + '...'
                 Write-Output $text
-                Start-Service -Name $service.Name
+                Start-Service -Name $service.Name -ErrorAction Stop                
                 $log.Services = 'Started'
             } catch {
-                $text = 'Failed to start service ' +$Name
-                Write-Error $text
+                #Error 1290 (-2146233087) indicates that the service is sharing a thread with another service that is protected and cannot share its thread.
+                #This is resolved by configuring the service to run on its own thread.
+                If ($_.Exception.Hresult -eq '-2146233087'){                
+                    Write-Output "Failed to start service $Name because it's sharing a thread with another process.  Changing to use its own thread."
+                    & cmd /c sc config $Name type= own
+                    $RetryService= $True                    
+                }
+                Else{
+                    $text = 'Failed to start service ' +$Name
+                    Write-Error $text
+                }
+            }
+
+            #If a recoverable error was found, try starting it again.
+            If ($RetryService){
+                try {                    
+                    Start-Service -Name $service.Name -ErrorAction Stop                
+                    $log.Services = 'Started'
+                } catch {
+                    $text = 'Failed to start service ' +$Name
+                    Write-Error $text
+                }
             }
         }
     }
