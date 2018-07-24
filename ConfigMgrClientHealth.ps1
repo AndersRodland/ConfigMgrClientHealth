@@ -51,7 +51,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.7.7'
+    $Version = '0.8'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
@@ -89,6 +89,7 @@ Begin {
     if (Test-Path $Config) {
         # Test if valid XML
         if ((Test-XML -xmlFilePath $Config) -ne $true ) { Exit 1 }
+        else { Write-Host "Configuration file $Config is valid XML." }
 
         # Load XML file into variable
         Try { $Xml = [xml](Get-Content -Path $Config) }
