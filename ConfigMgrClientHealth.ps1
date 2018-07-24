@@ -4,7 +4,7 @@
 .EXAMPLE 
    .\ConfigMgrClientHealth.ps1 -Config .\Config.Xml
 .EXAMPLE 
-    \\sccm.lab.net\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\sccm.lab.net\ClientHealth$\Config.Xml -Webservice https://sccm.lab.net/ConfigMgrClientHealth
+    \\cm01.rodland.lab\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\cm01.rodland.lab\ClientHealth$\Config.Xml -Webservice https://cm01.rodland.lab/ConfigMgrClientHealth
 .PARAMETER Config
     A single parameter specifying the path to the configuration XML file.
 .PARAMETER Webservice
@@ -51,15 +51,12 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.8'
+    $Version = '0.8.0'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
     #If no config file was passed in, use the default.
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
-
-    # Testing Webservice.
-    # $Webservice = "http://cm01.rodland.lab/ConfigMgrClientHealth"
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
@@ -81,6 +78,7 @@ Begin {
         }
         catch [System.Xml.XmlException] {
             Write-Error "$xmlFilePath : $($_.toString())"
+            Write-Error "Configuration file $Config is NOT valid XML. Script will not execute."
             return $false
         }
     }
@@ -89,7 +87,6 @@ Begin {
     if (Test-Path $Config) {
         # Test if valid XML
         if ((Test-XML -xmlFilePath $Config) -ne $true ) { Exit 1 }
-        else { Write-Host "Configuration file $Config is valid XML." }
 
         # Load XML file into variable
         Try { $Xml = [xml](Get-Content -Path $Config) }
