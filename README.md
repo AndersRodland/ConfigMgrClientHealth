@@ -15,6 +15,8 @@ Note: Script version 0.7.7 requires database version 0.7.5.
 * Windows 10 1803 and Windows 10 LTSB will now report build number correctly
 * Fixed remaining pieces of hard coded paths in the script
 * Fixed a bug that could case gpupdate to hang when initiated by Client Health
+* Fixed and enchaned the service tests
 * Added a function to test if PolicyPlatform is okay in WMI. Error here will cause ccmsetup to fail.
+* Script will now validate if config.xml is valid XML, and abort if XML errors.
 
 This software is provided "AS IS" with no warranties. Use at your own risk.

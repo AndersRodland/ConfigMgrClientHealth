@@ -59,9 +59,34 @@ Begin {
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
+
+    Function Test-XML {
+        <#
+        .SYNOPSIS
+        Test the validity of an XML file
+        #>
+        [CmdletBinding()]
+        param ([parameter(mandatory=$true)][ValidateNotNullorEmpty()][string]$xmlFilePath)
+        # Check the file exists
+        if (!(Test-Path -Path $xmlFilePath)) { throw "$xmlFilePath is not valid. Please provide a valid path to the .xml config file" }
+        # Check for Load or Parse errors when loading the XML file
+        $xml = New-Object System.Xml.XmlDocument
+        try {
+            $xml.Load((Get-ChildItem -Path $xmlFilePath).FullName)
+            return $true
+        }
+        catch [System.Xml.XmlException] {
+            Write-Error "$xmlFilePath : $($_.toString())"
+            return $false
+        }
+    }
     
     # Read configuration from XML file
     if (Test-Path $Config) {
+        # Test if valid XML
+        if (($TestXML = Test-XML -xmlFilePath $Config) -ne $true ) { Exit 1 }
+
+        # Load XML file into variable
         Try { $Xml = [xml](Get-Content -Path $Config) }
         Catch {
             $ErrorMessage = $_.Exception.Message
