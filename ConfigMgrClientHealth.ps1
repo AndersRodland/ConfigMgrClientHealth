@@ -84,7 +84,7 @@ Begin {
     # Read configuration from XML file
     if (Test-Path $Config) {
         # Test if valid XML
-        if (($TestXML = Test-XML -xmlFilePath $Config) -ne $true ) { Exit 1 }
+        if ((Test-XML -xmlFilePath $Config) -ne $true ) { Exit 1 }
 
         # Load XML file into variable
         Try { $Xml = [xml](Get-Content -Path $Config) }
@@ -378,7 +378,7 @@ Begin {
         }
         catch { $obj = 0}
         finally { 
-            if ($obj -eq $null) { $obj = 0 }
+            if ($null -eq $obj) { $obj = 0 }
             Write-Output $obj
         }
     }
@@ -408,7 +408,7 @@ Begin {
 
     Function Get-CCMLogDirectory {
         $obj = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').LogDirectory
-        if ($obj -eq $null) { $obj = "$env:SystemDrive\windows\ccm\Logs" }
+        if ($null -eq $obj) { $obj = "$env:SystemDrive\windows\ccm\Logs" }
         Write-Output $obj
     }
 
@@ -550,7 +550,7 @@ Begin {
         if ($BitsCheckEnabled -eq $true) {
             $Errors = Get-BitsTransfer -AllUsers | Where-Object { ($_.JobState -like "TransientError") -or ($_.JobState -like "Transient_Error") -or ($_.JobState -like "Error") }
             
-            if ($Errors -ne $null) {
+            if ($null -ne $Errors) {
                 $fix = (Get-XMLConfigBITSCheckFix).ToLower()
                 
                 if ($fix -eq "true") {
@@ -591,7 +591,7 @@ Begin {
             [Parameter(Mandatory=$true)]$Log
             )
 
-        if ($log.ClientInstalledReason -eq $null) { $log.ClientInstalledReason = $Message }
+        if ($null -eq $log.ClientInstalledReason) { $log.ClientInstalledReason = $Message }
         else { $log.ClientInstalledReason += " $Message" }
     }
 
@@ -1333,7 +1333,7 @@ Begin {
         try {
             $CCMCache = "$env:SystemDrive\Windows\ccmcache"
             $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
-            if ($CCMCache -eq $null) { $CCMCache = "$env:SystemDrive\Windows\ccmcache" } 
+            if ($null -eq $CCMCache) { $CCMCache = "$env:SystemDrive\Windows\ccmcache" } 
             $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
             $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | Select-Object Fullname -ExpandProperty Fullname
             
