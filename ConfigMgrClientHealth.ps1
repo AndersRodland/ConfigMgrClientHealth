@@ -4,9 +4,11 @@
 .EXAMPLE 
    .\ConfigMgrClientHealth.ps1 -Config .\Config.Xml
 .EXAMPLE 
-    \\sccm.lab.net\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\sccm.lab.net\ClientHealth$\Config.Xml
+    \\sccm.lab.net\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\sccm.lab.net\ClientHealth$\Config.Xml -Webservice https://sccm.lab.net/ConfigMgrClientHealth
 .PARAMETER Config
     A single parameter specifying the path to the configuration XML file.
+.PARAMETER Webservice
+    A single parameter specifying the URI to the ConfigMgr Client Health Webservice.
 .DESCRIPTION
     ConfigMgr Client Health detects and fixes following errors:
         * ConfigMgr client is not installed.
@@ -42,7 +44,9 @@ param(
     [Parameter(HelpMessage='Path to XML Configuration File')]
     [ValidateScript({Test-Path -Path $_ -PathType Leaf})]
     [ValidatePattern('.xml$')]
-    [string]$Config
+    [string]$Config,
+    [Parameter(HelpMessage='URI to ConfigMgr Client Health Webservice')]
+    [string]$Webservice
 )
 
 Begin {
@@ -55,7 +59,7 @@ Begin {
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
 
     # Testing Webservice.
-    $WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
+    # $Webservice = "http://cm01.rodland.lab/ConfigMgrClientHealth"
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
@@ -1377,7 +1381,7 @@ Begin {
 				Write-Verbose "Trigger ConfigMgr Client uninstallation using Invoke-Expression."
 				Invoke-Expression "&'$ClientShare\ccmsetup.exe' /uninstall"
 				
-				$launced = $true
+				$launched = $true
 				do {
 					Start-Sleep -seconds 5
 					if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
@@ -1391,7 +1395,7 @@ Begin {
             Write-Verbose "Trigger ConfigMgr Client installation using Invoke-Expression."
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
 			
-			$launced = $true
+			$launched = $true
 			do {
 				Start-Sleep -seconds 5
 				if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
@@ -3109,14 +3113,14 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $null)) {
+    if (($SQLLogging -like 'true') -and ($Webservice -eq $null)) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
 
-    if ($WebserviceURI -ne $null) {
+    if ($Webservice -ne $null) {
         Write-Output 'Updating SQL database with results using webservice'
-        Update-Webservice -URI $WebserviceURI -Log $Log
+        Update-Webservice -URI $Webservice -Log $Log
     }
     Write-Verbose "Client Health script finished"
 }
