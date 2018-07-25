@@ -1,6 +1,6 @@
 # ConfigMgr Client Health Development Code
 
-Version: 0.8 Beta
+Version: 0.8.0
 
 This is the unstable development version. DO NOT run this in a production environment.
 [Download stable version instead](https://gallery.technet.microsoft.com/ConfigMgr-Client-Health-ccd00bd7)
@@ -18,5 +18,6 @@ Note: Script version 0.8 requires database version 0.7.5.
 * Fixed and enchaned the service tests
 * Added a function to test if PolicyPlatform is okay in WMI. Error here will cause ccmsetup to fail.
 * Script will now validate if config.xml is valid XML, and abort if XML errors.
+* Added restful webservice
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
