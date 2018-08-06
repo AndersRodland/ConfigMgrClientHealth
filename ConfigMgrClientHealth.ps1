@@ -3116,7 +3116,7 @@ End {
         Update-SQL -Log $log
     }
 
-    if ($Webservice -ne $null) {
+    if ($Webservice) {
         Write-Output 'Updating SQL database with results using webservice'
         Update-Webservice -URI $Webservice -Log $Log
     }
