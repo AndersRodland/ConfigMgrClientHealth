@@ -1404,8 +1404,8 @@ Begin {
             } while ($launched -eq $true)
 
             if ($FirstInstall -eq $true) {
+                Write-Host "ConfigMgr Client was installed for the first time. Waiting 6 minutes for client to syncronize policy before proceeding."
                 Start-Sleep -Seconds 360
-                Write-Host "ConfigMgr Client was installed for the first time. Waiting 6 minutes for client to syncronize."
             }
             
             # Client is reinstalled. Remove tag.
