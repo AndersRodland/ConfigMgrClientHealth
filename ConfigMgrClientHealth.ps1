@@ -51,7 +51,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.8.0'
+    $Version = '0.8.1'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 

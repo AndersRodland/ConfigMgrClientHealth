@@ -12,5 +12,6 @@ Note: Script version 0.8 requires database version 0.7.5.
 ## Changes since stable release
 
 * Fixed a bug with webservice introduced in 0.8.0
+* Fixed an issue with BITS test.
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
