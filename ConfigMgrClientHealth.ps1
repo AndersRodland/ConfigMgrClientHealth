@@ -737,7 +737,7 @@ Begin {
         $dnscheck = [System.Net.DNS]::GetHostByName($fqdn)
 
         $OSName = Get-OperatingSystem
-        if (($OSName -notlike "*Windows 7*") -or ($OSName -notlike "*Server 2008*")) {
+        if (($OSName -notlike "*Windows 7*") -and ($OSName -notlike "*Server 2008*")) {
             # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
             try {
                 $AvtiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
@@ -755,7 +755,6 @@ Begin {
             # This method cannot guarantee to only resolve against DNS sever. Local cache can be used in some circumstances.
             # For Windows 7 only
             
-            #$dnscheck = [System.Net.DNS]::GetHostEntry($fqdn)
             $dnsAddressList = $dnscheck.AddressList | Select-Object -ExpandProperty IPAddressToString
             $dnsAddressList = $dnsAddressList -replace("%(.*)", "")
         }
