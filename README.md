@@ -7,11 +7,11 @@ This is the unstable development version. DO NOT run this in a production enviro
 
 [ConfigMgr Client Health Full documentation](https://www.andersrodland.com/configmgr-client-health/)
 
-Note: Script version 0.8 requires database version 0.7.5.
+Note: Script version 0.8.1 requires database version 0.7.5.
 
 ## Changes since stable release
 
-* Fixed a bug with webservice introduced in 0.8.0
+* Fixed a bug where logging directly to SQL database would not work.
 * Fixed an issue with BITS test.
 * ClientCacheSize check no longer need to restart CM Agent when changing the cache size.
 

@@ -2210,8 +2210,7 @@ Begin {
     }
 
     # Invoke-SqlCmd2 - Created by Chad Miller
-    function Invoke-Sqlcmd2 
-    { 
+    function Invoke-Sqlcmd2 { 
         [CmdletBinding()] 
         param( 
         [Parameter(Position=0, Mandatory=$true)] [string]$ServerInstance, 
@@ -2979,6 +2978,7 @@ Process {
         # This check is now able to set ClientCacheSize without restarting CCMExec service.
         if ($TestClientCacheSzie -eq $true) { $restartCCMExec = $false }
     }
+    
 
     if ((Get-XMLConfigClientMaxLogSizeEnabled -like 'True') -eq $true) {
         Write-Verbose 'Validating Max CCMClient Log Size...'
@@ -3114,7 +3114,7 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and ($Webservice -eq $null)) {
+    if (($SQLLogging -like 'true') -and (($Webservice -eq $null)) -or ($Webservice -eq "")) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
