@@ -375,8 +375,9 @@ Begin {
 
     Function Get-ClientCache {
         try {
-            if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
-            else { $obj = (Get-WmiObject -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
+            $obj = (New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize
+            #if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
+            #else { $obj = (Get-WmiObject -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
         }
         catch { $obj = 0}
         finally { 
@@ -1033,17 +1034,18 @@ Begin {
 
         else {
             switch ($type) {
-                'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating and tagging CcmExec Service for restart..."}
+                'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating."}
                 'percentage' {
                     $percent = Get-XMLConfigClientCache
-                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). Redmediating and tagging CcmExec Service for restart..."
+                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). Redmediating."
                 }
             }
             
             Write-Warning $text
-            $Cache.Size = $ClientCacheSize
-            $Cache.Put()
+            #$Cache.Size = $ClientCacheSize
+            #$Cache.Put()
             $log.CacheSize = $ClientCacheSize
+            (New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = "$ClientCacheSize"
             $obj = $true
         }
         Write-Output $obj
@@ -2974,7 +2976,8 @@ Process {
     $CacheCheckEnabled = Get-XMLConfigClientCacheEnable
     if ($CacheCheckEnabled -like 'True') {
         $TestClientCacheSzie = Test-ClientCacheSize -Log $Log
-        if ($TestClientCacheSzie -eq $true) { $restartCCMExec = $true }
+        # This check is now able to set ClientCacheSize without restarting CCMExec service.
+        if ($TestClientCacheSzie -eq $true) { $restartCCMExec = $false }
     }
 
     if ((Get-XMLConfigClientMaxLogSizeEnabled -like 'True') -eq $true) {
