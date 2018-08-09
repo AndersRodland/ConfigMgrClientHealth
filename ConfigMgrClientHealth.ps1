@@ -1600,11 +1600,15 @@ Begin {
         foreach ($service in $Xml.Configuration.Service) {
             $startuptype = ($service.StartupType).ToLower()
             
+            if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
+            
             if ($service.uptime -ne $null) {
                 $uptime = ($service.Uptime).ToLower()
-                if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
+                Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log -Uptime $uptime
             }
-            Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log
+            else {
+                Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log
+            }
         }
     }
 
