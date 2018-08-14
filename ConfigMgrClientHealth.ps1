@@ -3117,7 +3117,7 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and (($Webservice -eq $null)) -or ($Webservice -eq "")) {
+    if (($SQLLogging -like 'true') -and (($Webservice -eq $null) -or ($Webservice -eq ""))) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
