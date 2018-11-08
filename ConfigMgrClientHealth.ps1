@@ -4,9 +4,11 @@
 .EXAMPLE 
    .\ConfigMgrClientHealth.ps1 -Config .\Config.Xml
 .EXAMPLE 
-    \\sccm.lab.net\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\sccm.lab.net\ClientHealth$\Config.Xml
+    \\cm01.rodland.lab\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\cm01.rodland.lab\ClientHealth$\Config.Xml -Webservice https://cm01.rodland.lab/ConfigMgrClientHealth
 .PARAMETER Config
     A single parameter specifying the path to the configuration XML file.
+.PARAMETER Webservice
+    A single parameter specifying the URI to the ConfigMgr Client Health Webservice.
 .DESCRIPTION
     ConfigMgr Client Health detects and fixes following errors:
         * ConfigMgr client is not installed.
@@ -42,26 +44,51 @@ param(
     [Parameter(HelpMessage='Path to XML Configuration File')]
     [ValidateScript({Test-Path -Path $_ -PathType Leaf})]
     [ValidatePattern('.xml$')]
-    [string]$Config
+    [string]$Config,
+    [Parameter(HelpMessage='URI to ConfigMgr Client Health Webservice')]
+    [string]$Webservice
 )
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.7.7'
+    $Version = '0.8.1'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
     #If no config file was passed in, use the default.
     If (!$Config){$Config = Join-Path ($global:ScriptPath) "Config.xml"}
 
-    # Testing Webservice.
-    $WebserviceURI = "http://cm01.rodland.lab/ConfigMgrClientHealth"
-
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
+
+    Function Test-XML {
+        <#
+        .SYNOPSIS
+        Test the validity of an XML file
+        #>
+        [CmdletBinding()]
+        param ([parameter(mandatory=$true)][ValidateNotNullorEmpty()][string]$xmlFilePath)
+        # Check the file exists
+        if (!(Test-Path -Path $xmlFilePath)) { throw "$xmlFilePath is not valid. Please provide a valid path to the .xml config file" }
+        # Check for Load or Parse errors when loading the XML file
+        $xml = New-Object System.Xml.XmlDocument
+        try {
+            $xml.Load((Get-ChildItem -Path $xmlFilePath).FullName)
+            return $true
+        }
+        catch [System.Xml.XmlException] {
+            Write-Error "$xmlFilePath : $($_.toString())"
+            Write-Error "Configuration file $Config is NOT valid XML. Script will not execute."
+            return $false
+        }
+    }
     
     # Read configuration from XML file
     if (Test-Path $Config) {
+        # Test if valid XML
+        if ((Test-XML -xmlFilePath $Config) -ne $true ) { Exit 1 }
+
+        # Load XML file into variable
         Try { $Xml = [xml](Get-Content -Path $Config) }
         Catch {
             $ErrorMessage = $_.Exception.Message
@@ -348,12 +375,13 @@ Begin {
 
     Function Get-ClientCache {
         try {
-            if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
-            else { $obj = (Get-WmiObject -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
+            $obj = (New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize
+            #if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
+            #else { $obj = (Get-WmiObject -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
         }
         catch { $obj = 0}
         finally { 
-            if ($obj -eq $null) { $obj = 0 }
+            if ($null -eq $obj) { $obj = 0 }
             Write-Output $obj
         }
     }
@@ -383,7 +411,7 @@ Begin {
 
     Function Get-CCMLogDirectory {
         $obj = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').LogDirectory
-        if ($obj -eq $null) { $obj = "$env:SystemDrive\windows\ccm\Logs" }
+        if ($null -eq $obj) { $obj = "$env:SystemDrive\windows\ccm\Logs" }
         Write-Output $obj
     }
 
@@ -525,13 +553,13 @@ Begin {
         if ($BitsCheckEnabled -eq $true) {
             $Errors = Get-BitsTransfer -AllUsers | Where-Object { ($_.JobState -like "TransientError") -or ($_.JobState -like "Transient_Error") -or ($_.JobState -like "Error") }
             
-            if ($Errors -ne $null) {
+            if ($null -ne $Errors) {
                 $fix = (Get-XMLConfigBITSCheckFix).ToLower()
                 
                 if ($fix -eq "true") {
                     $text = "BITS: Error. Remediating"
                     $Errors | Remove-BitsTransfer -ErrorAction SilentlyContinue
-                    Invoke-Expression -Command 'sc.exe sdset bits D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;AU)(A;;CCLCSWRPWPDTLOCRRC;;;PU)' | out-null
+                    Invoke-Expression -Command 'sc.exe sdset bits "D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;AU)(A;;CCLCSWRPWPDTLOCRRC;;;PU)"' | out-null
                     $log.BITS = 'Remediated'
                     $obj = $true
                 }
@@ -566,7 +594,7 @@ Begin {
             [Parameter(Mandatory=$true)]$Log
             )
 
-        if ($log.ClientInstalledReason -eq $null) { $log.ClientInstalledReason = $Message }
+        if ($null -eq $log.ClientInstalledReason) { $log.ClientInstalledReason = $Message }
         else { $log.ClientInstalledReason += " $Message" }
     }
 
@@ -710,7 +738,7 @@ Begin {
         $dnscheck = [System.Net.DNS]::GetHostByName($fqdn)
 
         $OSName = Get-OperatingSystem
-        if (($OSName -notlike "*Windows 7*") -or ($OSName -notlike "*Server 2008*")) {
+        if (($OSName -notlike "*Windows 7*") -and ($OSName -notlike "*Server 2008*")) {
             # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
             try {
                 $AvtiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
@@ -728,7 +756,6 @@ Begin {
             # This method cannot guarantee to only resolve against DNS sever. Local cache can be used in some circumstances.
             # For Windows 7 only
             
-            #$dnscheck = [System.Net.DNS]::GetHostEntry($fqdn)
             $dnsAddressList = $dnscheck.AddressList | Select-Object -ExpandProperty IPAddressToString
             $dnsAddressList = $dnsAddressList -replace("%(.*)", "")
         }
@@ -1006,17 +1033,19 @@ Begin {
 
         else {
             switch ($type) {
-                'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating and tagging CcmExec Service for restart..."}
+                'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating."}
                 'percentage' {
                     $percent = Get-XMLConfigClientCache
-                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). Redmediating and tagging CcmExec Service for restart..."
+                    if ($ClientCacheSize -gt "99999") { $ClientCacheSize = "99999" }
+                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). (99999 maxium). Redmediating."
                 }
             }
             
             Write-Warning $text
-            $Cache.Size = $ClientCacheSize
-            $Cache.Put()
+            #$Cache.Size = $ClientCacheSize
+            #$Cache.Put()
             $log.CacheSize = $ClientCacheSize
+            (New-Object -ComObject UIResource.UIResourceMgr).GetCacheInfo().TotalSize = "$ClientCacheSize"
             $obj = $true
         }
         Write-Output $obj
@@ -1308,7 +1337,7 @@ Begin {
         try {
             $CCMCache = "$env:SystemDrive\Windows\ccmcache"
             $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
-            if ($CCMCache -eq $null) { $CCMCache = "$env:SystemDrive\Windows\ccmcache" } 
+            if ($null -eq $CCMCache) { $CCMCache = "$env:SystemDrive\Windows\ccmcache" } 
             $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
             $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | Select-Object Fullname -ExpandProperty Fullname
             
@@ -1352,7 +1381,7 @@ Begin {
 				Write-Verbose "Trigger ConfigMgr Client uninstallation using Invoke-Expression."
 				Invoke-Expression "&'$ClientShare\ccmsetup.exe' /uninstall"
 				
-				$launced = $true
+				$launched = $true
 				do {
 					Start-Sleep -seconds 5
 					if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
@@ -1366,7 +1395,7 @@ Begin {
             Write-Verbose "Trigger ConfigMgr Client installation using Invoke-Expression."
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
 			
-			$launced = $true
+			$launched = $true
 			do {
 				Start-Sleep -seconds 5
 				if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
@@ -1377,8 +1406,8 @@ Begin {
             } while ($launched -eq $true)
 
             if ($FirstInstall -eq $true) {
+                Write-Host "ConfigMgr Client was installed for the first time. Waiting 6 minutes for client to syncronize policy before proceeding."
                 Start-Sleep -Seconds 360
-                Write-Host "ConfigMgr Client was installed for the first time. Waiting 6 minutes for client to syncronize."
             }
             
             # Client is reinstalled. Remove tag.
@@ -1572,11 +1601,15 @@ Begin {
         foreach ($service in $Xml.Configuration.Service) {
             $startuptype = ($service.StartupType).ToLower()
             
+            if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
+            
             if ($service.uptime -ne $null) {
                 $uptime = ($service.Uptime).ToLower()
-                if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
+                Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log -Uptime $uptime
             }
-            else { Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log }
+            else {
+                Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log
+            }
         }
     }
 
@@ -1722,13 +1755,34 @@ Begin {
         }
         else {
             try {
+                $RetryService= $False
                 $text = 'Starting service: ' + $Name + '...'
                 Write-Output $text
-                Start-Service -Name $service.Name
+                Start-Service -Name $service.Name -ErrorAction Stop                
                 $log.Services = 'Started'
             } catch {
-                $text = 'Failed to start service ' +$Name
-                Write-Error $text
+                #Error 1290 (-2146233087) indicates that the service is sharing a thread with another service that is protected and cannot share its thread.
+                #This is resolved by configuring the service to run on its own thread.
+                If ($_.Exception.Hresult -eq '-2146233087'){                
+                    Write-Output "Failed to start service $Name because it's sharing a thread with another process.  Changing to use its own thread."
+                    & cmd /c sc config $Name type= own
+                    $RetryService= $True                    
+                }
+                Else{
+                    $text = 'Failed to start service ' +$Name
+                    Write-Error $text
+                }
+            }
+
+            #If a recoverable error was found, try starting it again.
+            If ($RetryService){
+                try {                    
+                    Start-Service -Name $service.Name -ErrorAction Stop                
+                    $log.Services = 'Started'
+                } catch {
+                    $text = 'Failed to start service ' +$Name
+                    Write-Error $text
+                }
             }
         }
     }
@@ -2160,8 +2214,7 @@ Begin {
     }
 
     # Invoke-SqlCmd2 - Created by Chad Miller
-    function Invoke-Sqlcmd2 
-    { 
+    function Invoke-Sqlcmd2 { 
         [CmdletBinding()] 
         param( 
         [Parameter(Position=0, Mandatory=$true)] [string]$ServerInstance, 
@@ -2937,8 +2990,10 @@ Process {
     $CacheCheckEnabled = Get-XMLConfigClientCacheEnable
     if ($CacheCheckEnabled -like 'True') {
         $TestClientCacheSzie = Test-ClientCacheSize -Log $Log
-        if ($TestClientCacheSzie -eq $true) { $restartCCMExec = $true }
+        # This check is now able to set ClientCacheSize without restarting CCMExec service.
+        if ($TestClientCacheSzie -eq $true) { $restartCCMExec = $false }
     }
+    
 
     if ((Get-XMLConfigClientMaxLogSizeEnabled -like 'True') -eq $true) {
         Write-Verbose 'Validating Max CCMClient Log Size...'
@@ -3074,14 +3129,14 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and ($WebserviceURI -eq $null)) {
+    if (($SQLLogging -like 'true') -and (($Webservice -eq $null)) -or ($Webservice -eq "")) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
 
-    if ($WebserviceURI -ne $null) {
+    if ($Webservice) {
         Write-Output 'Updating SQL database with results using webservice'
-        Update-Webservice -URI $WebserviceURI -Log $Log
+        Update-Webservice -URI $Webservice -Log $Log
     }
     Write-Verbose "Client Health script finished"
 }
