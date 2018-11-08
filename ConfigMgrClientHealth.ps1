@@ -2211,6 +2211,17 @@ Begin {
         } 
     }
 
+    # TODO finish writing and testing this function to get all config from SQL by using the webservice
+    # TODO write simmilar function using direct SQL query.
+    Function Get-ConfigFromWebservice {
+        [CmdletBinding()] 
+        param([Parameter(Position=0, Mandatory=$true)] [string]$Webservice)
+
+        $Config = Invoke-RestMethod -Uri $Webservice -Method "GetConfig"
+
+
+    }
+
 
     # Gather info about the computer
     Function Get-Info {
