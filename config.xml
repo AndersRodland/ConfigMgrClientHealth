@@ -20,6 +20,7 @@
 	<Log Name="Time" Format="ClientLocal" /> <!-- Valid formats: ClientLocal / UTC  -->
 	<Option Name="CcmSQLCELog" Enable="False" /> <!-- Optional check on the ConfigMgr agent if local database is corrupt -->
 	<Option Name="BITSCheck" Fix="True" Enable="True" />
+	<Option Name="ClientSettingsCheck" Fix="True" Enable="True" />
 	<Option Name="DNSCheck" Fix="True" Enable="True" />
 	<Option Name="Drivers" Enable="True" />
 	<Option Name="Updates" Share="\\CM01.rodland.lab\ClientHealth$\Updates" Fix="True" Enable="False" />
