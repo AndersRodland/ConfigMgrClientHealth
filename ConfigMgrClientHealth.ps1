@@ -587,6 +587,39 @@ Begin {
         Write-Output $Obj
 
     }
+	
+	Function Test-ClientSettingsConfiguration {
+		Param([Parameter(Mandatory=$true)]$Log)
+        
+		$ClientSettingsConfig = Get-WMIObject CCM_ClientAgentConfig -Namespace 'root\ccm\policy\defaultmachine\RequestedConfig'
+		
+		if ($ClientSettingsConfig.Count -gt 0) {
+		
+			$fix = (Get-XMLConfigClientSettingsCheckFix).ToLower()
+			
+			if ($fix -eq "true") {
+				$text = "ClientSettings: Error. Remediating"
+				DO {
+					Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where {$_.PolicySource -eq "CcmTaskSequence"} | Select -first 1000 | % {Remove-WmiObject -InputObject $_}
+				} Until (!(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where {$_.PolicySource -eq "CcmTaskSequence"} | Select -first 1))
+				$log.ClientSettings = 'Remediated'
+				$obj = $true
+			}
+			else {
+				$text = "ClientSettings: Error. Monitor only"
+				$log.ClientSettings = 'Error'
+				$obj = $false
+			}
+		}
+		
+		else {
+			$text = "ClientSettings: OK"
+			$log.ClientSettings = 'OK'
+			$Obj = $false
+		}
+		Write-Host $text
+		Write-Output $Obj    
+    }
 
     Function New-ClientInstalledReason {
         Param(
@@ -712,7 +745,7 @@ Begin {
                     ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
-        }
+		}
 
         # Reading date from PowerShell Get-Hotfix
         #$now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
@@ -1060,8 +1093,7 @@ Begin {
                 'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating."}
                 'percentage' {
                     $percent = Get-XMLConfigClientCache
-                    if ($ClientCacheSize -gt "99999") { $ClientCacheSize = "99999" }
-                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). (99999 maxium). Redmediating."
+                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). Redmediating."
                 }
             }
             
@@ -2288,17 +2320,6 @@ Begin {
         } 
     }
 
-    # TODO finish writing and testing this function to get all config from SQL by using the webservice
-    # TODO write simmilar function using direct SQL query.
-    Function Get-ConfigFromWebservice {
-        [CmdletBinding()] 
-        param([Parameter(Position=0, Mandatory=$true)] [string]$Webservice)
-
-        $Config = Invoke-RestMethod -Uri $Webservice -Method "GetConfig"
-
-
-    }
-
 
     # Gather info about the computer
     Function Get-Info {
@@ -2545,11 +2566,21 @@ Begin {
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
     }
-
+	
     Function Get-XMLConfigBITSCheckFix {
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Fix'
         Write-Output $obj
     }
+		
+	Function Get-XMLConfigClientSettingsCheck {
+        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientSettingsCheck'} | Select-Object -ExpandProperty 'Enable'
+        Write-Output $obj
+	}
+
+	Function Get-XMLConfigClientSettingsCheckFix {
+        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientSettingsCheck'} | Select-Object -ExpandProperty 'Fix'
+        Write-Output $obj
+	}
 
     Function Get-XMLConfigWMI {
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Enable'
@@ -2713,6 +2744,7 @@ Begin {
         if ($PSBuild -le 0) { $PSBuild = $null }
         $UBR = Get-UBR
         $BITS = $null
+		$ClientSettings = $null
 
         $obj = New-Object PSObject -Property @{
             Hostname = $Hostname
@@ -2751,6 +2783,7 @@ Begin {
             Timestamp = $smallDateTime
             HWInventory = $null
             SWMetering = $null
+			ClientSettings = $null
             BITS = $BITS
             PatchLevel = $UBR
             ClientInstalledReason = $null
@@ -2828,6 +2861,7 @@ Begin {
             $q30 = $null
         }
         
+		#ADD ClientSettings.log...
         $query= "begin tran
         if exists (SELECT * FROM $table WITH (updlock,serializable) WHERE Hostname='"+$log.Hostname+"')
         begin
@@ -2864,7 +2898,7 @@ Begin {
         $logfile = $logfile = Get-LogFileName
         Test-LogFileHistory -Logfile $logfile
         $text = "<--- ConfigMgr Client Health Check starting --->"
-        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, PatchLevel, ClientInstalledReason | Out-String
+        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
         $text = $text.replace("`t","")
         $text = $text.replace("  ","")
         $text = $text.replace(" :",":")
@@ -3046,7 +3080,12 @@ Process {
         if ((Test-BITS -Log $Log) -eq $true) { 
             #$Reinstall = $true
         }
-    } 
+    }
+	
+    Write-Verbose 'Validating ClientSettings'
+	If (Get-XMLConfigClientSettingsCheck -like 'True') {
+		Test-ClientSettingsConfiguration -Log $log
+	}
 
     if (($ClientWUAHandler -like 'True') -eq $true) {
 		Write-Verbose 'Validating Windows Update Scan not broken by bad group policy...'
@@ -3152,8 +3191,8 @@ End {
         Write-Output 'Updating fileshare logfile with results' 
         Update-LogFile -Log $log
     }
-
-    if (($SQLLogging -like 'true') -and (($Webservice -eq $null)) -or ($Webservice -eq "")) {
+	
+    if (($SQLLogging -like 'true') -and (($Webservice -eq $null) -or ($Webservice -eq ""))) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
