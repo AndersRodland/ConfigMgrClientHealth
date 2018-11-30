@@ -1093,7 +1093,8 @@ Begin {
                 'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating."}
                 'percentage' {
                     $percent = Get-XMLConfigClientCache
-                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). Redmediating."
+                    if ($ClientCacheSize -gt "99999") { $ClientCacheSize = "99999" }
+                    $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize ($percent). (99999 maxium). Redmediating."
                 }
             }
             
