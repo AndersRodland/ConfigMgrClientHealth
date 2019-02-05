@@ -7,7 +7,7 @@ This is the unstable development version. DO NOT run this in a production enviro
 
 [ConfigMgr Client Health Full documentation](https://www.andersrodland.com/configmgr-client-health/)
 
-Note: Script version 0.8.2 requires database version 0.7.5.
+Note: Script version 0.8.2 requires database version 0.8.2.
 
 ## Changes since stable release
 
@@ -17,5 +17,6 @@ Note: Script version 0.8.2 requires database version 0.7.5.
 * ClientCacheSize check no longer need to restart CM Agent when changing the cache size.
 * Fixes erros where configuration baselines fails because script is not signed when bypass is set as executionpolicy is client settings
 * Script will now stop services that are in a degraded state
+* Updated database to allow null for LastLoggedOnUser
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
