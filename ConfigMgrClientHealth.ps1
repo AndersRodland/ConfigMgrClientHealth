@@ -163,6 +163,13 @@ Begin {
         }
     }
 
+    Function Get-ConfigFromWebservice {
+        Param([Parameter(Mandatory=$true)][String]$URI)
+
+        Write-Verbose "Retrieving configuration"
+
+    }
+
     Function Get-LogFileName {
         #$OS = Get-WmiObject -class Win32_OperatingSystem
         #$OSName = Get-OperatingSystem
@@ -3179,7 +3186,11 @@ Process {
         $Log.MaxLogSize = Get-ClientMaxLogSize
         $Log.MaxLogHistory = Get-ClientMaxLogHistory
         $log.CacheSize = Get-ClientCache
+        
     }
+
+    # Get the latest client version in case it was reinstalled by the script
+    $log.ClientVersion = Get-ClientVersion
 
     # Trigger default Microsoft CM client health evaluation
     Start-Ccmeval
