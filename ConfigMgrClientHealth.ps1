@@ -1673,8 +1673,8 @@ Begin {
         }
 
         $service = Get-Service -Name $Name
-        if ($PowerShellVersion -ge 6) { $WMIService = Get-CimInstance -Class Win32_Service -Property StartMode -Filter "Name='$Name'" }
-        else { $WMIService = Get-WmiObject -Class Win32_Service -Property StartMode -Filter "Name='$Name'" }
+        if ($PowerShellVersion -ge 6) { $WMIService = Get-CimInstance -Class Win32_Service -Property StartMode, ProcessID, Status -Filter "Name='$Name'" }
+        else { $WMIService = Get-WmiObject -Class Win32_Service -Property StartMode, ProcessID, Status -Filter "Name='$Name'" }
         $StartMode = ($WMIService.StartMode).ToLower()
         
         switch -Wildcard ($StartMode) {
@@ -1778,6 +1778,17 @@ Begin {
             }
         }
         else {
+            if ($WMIService.Status -eq 'Degraded') {
+                try {
+                    Write-Warning "Identified $Name service in a 'Degraded' state. Will force $Name process to stop."
+                    $ServicePID = $WMIService | Select-Object -ExpandProperty ProcessID
+                    Stop-Process -ID $ServicePID -Force:$true -Confirm:$false -ErrorAction Stop
+                    Write-Verbose "Succesfully stopped the $Name service process which was in a degraded state."
+                }
+                Catch{
+                    Write-Error "Failed to force $Name process to stop."
+                }
+            }    
             try {
                 $RetryService= $False
                 $text = 'Starting service: ' + $Name + '...'
