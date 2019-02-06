@@ -163,11 +163,26 @@ Begin {
         }
     }
 
+    # Retrieve configuration from SQL using webserivce
     Function Get-ConfigFromWebservice {
-        Param([Parameter(Mandatory=$true)][String]$URI)
+        Param(
+            [Parameter(Mandatory=$true)][String]$URI,
+            [Parameter(Mandatory=$false)][String]$ProfileID
+            )
+
+        $URI = $URI + "/ConfigurationProfile"
+        if ($ProfileID -ge 0) { $URI = $URI + "/$ProfileID"}
 
         Write-Verbose "Retrieving configuration"
+        try {
+            $Obj = Invoke-RestMethod -Uri $URI 
+        }
+        catch {
+            Write-Host "Error retrieving configuration from webservice $URI. Exception: $ExceptionMessage" -ForegroundColor Red
+            Exit 1
+        }
 
+        Write-Output $Obj
     }
 
     Function Get-LogFileName {
@@ -2936,21 +2951,40 @@ Begin {
     $restartCCMExec = $false
     $Reinstall = $false
 
-    # Build the ConfigMgr Client Install Property string
-    $propertyString = ""
 
-    foreach ($property in $Xml.Configuration.ClientInstallProperty) {
-        $propertyString = $propertyString + $property
-        $propertyString = $propertyString + ' '
+    # If config.xml is used
+    if ($Config -ne $null) {
+        # Build the ConfigMgr Client Install Property string
+        $propertyString = ""
+        foreach ($property in $Xml.Configuration.ClientInstallProperty) {
+            $propertyString = $propertyString + $property
+            $propertyString = $propertyString + ' '
+        }
+        $clientCacheSize = Get-XMLConfigClientCache
+        $clientInstallProperties = $propertyString + "SMSCACHESIZE=$clientCacheSize"
+        $clientAutoUpgrade = (Get-XMLConfigClientAutoUpgrade).ToLower()
+        $AdminShare = Get-XMLConfigRemediationAdminShare
+        $ClientProvisioningMode = Get-XMLConfigRemediationClientProvisioningMode
+        $ClientStateMessages = Get-XMLConfigRemediationClientStateMessages
+        $ClientWUAHandler = Get-XMLConfigRemediationClientWUAHandler
+        $LogShare = Get-XMLConfigLoggingShare
     }
-    $clientCacheSize = Get-XMLConfigClientCache
-    $clientInstallProperties = $propertyString + "SMSCACHESIZE=$clientCacheSize"
-    $clientAutoUpgrade = (Get-XMLConfigClientAutoUpgrade).ToLower()
-    $AdminShare = Get-XMLConfigRemediationAdminShare
-    $ClientProvisioningMode = Get-XMLConfigRemediationClientProvisioningMode
-    $ClientStateMessages = Get-XMLConfigRemediationClientStateMessages
-    $ClientWUAHandler = Get-XMLConfigRemediationClientWUAHandler
-    $LogShare = Get-XMLConfigLoggingShare
+
+    <#
+    if ($Webservice -ne $null) {
+        $Configuration = Get-ConfigFromWebservice -URI $Webservice
+
+        $clientCacheSize = $Configuration.clientCacheSize
+        [String]$clientAutoUpgrade = $Configuration.clientAutoUpgrade
+        $clientAutoUpgrade = $clientAutoUpgrade.ToLower()
+        $AdminShare = $Configuration.remediationAdminShare
+        $ClientProvisioningMode = $Configuration.remediationClientProvisioningMode
+        $ClientStateMessages = $Configuration.remediationClientStateMessages
+        $ClientWUAHandler = $Configuration.remediationClientWuahandler
+        $LogShare = $Configuration.logFileShare
+
+    }
+    #>
 
     # Create a DataTable to store all changes to log files to be processed later. This to prevent false positives to remediate the next time script runs if error is already remediated.
     $SCCMLogJobs = New-Object System.Data.DataTable
