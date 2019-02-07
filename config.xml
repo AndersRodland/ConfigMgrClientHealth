@@ -24,7 +24,7 @@
 	<Option Name="DNSCheck" Fix="True" Enable="True" />
 	<Option Name="Drivers" Enable="True" />
 	<Option Name="Updates" Share="\\CM01.rodland.lab\ClientHealth$\Updates" Fix="True" Enable="False" />
-	<Option Name="PendingReboot" StartRebootApplication="True"  Enable="True" />
+	<Option Name="PendingReboot" StartRebootApplication="True" Enable="True" />
 	<Option Name="RebootApplication" Application="\\CM01.rodland.lab\ClientHealth$\RebootApp\shutdowntool.exe /t:7200 /m:1440" Enable="False" />
 	<Option Name="MaxRebootDays" Days="7" Enable="True" />
 	<Option Name="OSDiskFreeSpace">10</Option>
@@ -45,3 +45,16 @@
 	<Remediation Name="ClientWUAHandler" Fix="True"  Days="30"/>
 	<Remediation Name="ClientCertificate" Fix="True" />
 </Configuration>
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>

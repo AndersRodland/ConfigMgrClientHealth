@@ -893,7 +893,7 @@ Begin {
             Write-Host $dnsFail
         }
 
-        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
+        $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
 
         switch ($obj) {
             $false {
@@ -2044,7 +2044,7 @@ Begin {
 
     Function Test-MissingDrivers {
         Param([Parameter(Mandatory=$true)]$Log)
-        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
+        $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
         $i = 0
         if ($PowerShellVersion -ge 6) { $devices = Get-CimInstance Win32_PNPEntity | Where-Object{ ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
         else { $devices = Get-WmiObject Win32_PNPEntity | Where-Object{ ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
@@ -2311,7 +2311,7 @@ Begin {
     function Test-SQLConnection {    
         $SQLServer = Get-XMLConfigSQLServer
         $Database = 'ClientHealth'
-        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
+        $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
 
         $ConnectionString = "Server={0};Database={1};Integrated Security=True;" -f $SQLServer,$Database
 
@@ -2491,39 +2491,93 @@ Begin {
     }
 
     Function Get-XMLConfigClientMaxLogSizeEnabled {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientMaxLogSizeEnable
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientCache {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Value'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Value'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientCacheSize
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientCacheDeleteOrphanedData {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'DeleteOrphanedData'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'DeleteOrphanedData'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.remediationDeleteCacheOrphanedFiles
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientCacheEnable {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Enable'
+        #if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Enable'
+        <#}
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.
+        }
+        #>
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientShare {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Share'} | Select-Object -ExpandProperty '#text' -ErrorAction SilentlyContinue
-		if(!($obj)){$obj=$global:ScriptPath} #If Client share is empty, default to the script folder.
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Share'} | Select-Object -ExpandProperty '#text' -ErrorAction SilentlyContinue
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientShare
+        }
+        
+        if(!($obj)){$obj=$global:ScriptPath} #If Client share is empty, default to the script folder.
         Write-Output $obj
     }
 
     Function Get-XMLConfigUpdatesShare {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Share'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Share'
+        }
+        <#
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.remediationUpdates
+        }
+        #>
+
         If (!($obj)){$obj = Join-Path $global:ScriptPath "Updates"}
         Return $obj
     }
 
     Function Get-XMLConfigUpdatesEnable {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Enable'
+        <#
+        .SYNOPSIS
+        Short description
+        
+        .DESCRIPTION
+        Long description
+        
+        .EXAMPLE
+        An example
+        
+        .NOTES
+        General notes
+        #>
+        # NOT FINISHED - NEED TESTING ### TODO
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.remediationUpdates
+        }
         Write-Output $obj
     }
 
@@ -2533,178 +2587,437 @@ Begin {
     }
 
     Function Get-XMLConfigLoggingShare {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Share'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Share'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.logFileShare
+        }
+
         $obj = $ExecutionContext.InvokeCommand.ExpandString($obj)
         Return $obj
     }
 
     Function Get-XMLConfigLoggingLocalFile {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'LocalLogFile'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'LocalLogFile'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.localFiles
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingEnable {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.logFileShareEnable
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingMaxHistory {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'MaxLogHistory'
+        # Currently not configurable through console extension and webservice. TODO
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'MaxLogHistory'
+        }
+        if ($Webservice -ne $null) {
+            $obj = 10
+        }
         Write-Output $obj
     }
 
-    Function Get-XMLConfigLogginLevel {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Level'
+    Function Get-XMLConfigLoggingLevel {
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Level'
+        }
+        if ($Webservice -ne $null) {
+            $ll = $Configuration.logLevel
+            switch ($ll) {
+                0 { $obj = "Full"}
+                1 { $obj = "ClientInstall"}
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingTimeFormat {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'Time'} | Select-Object -ExpandProperty 'Format'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'Time'} | Select-Object -ExpandProperty 'Format'
+        }
+        if ($Webservice -ne $null) {
+            $ltf = $Configuration.logTimeFormat
+            switch ($ltf) {
+                0 { $obj = "ClientLocal"}
+                1 { $obj = "UTF"}
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigPendingRebootApp {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PendingReboot'} | Select-Object -ExpandProperty 'StartRebootApplication'
+        <#
+        .SYNOPSIS
+        Short description
+        
+        .DESCRIPTION
+        Long description
+        
+        .EXAMPLE
+        An example
+        
+        .NOTES
+        General notes
+        #>
+        # TODO verify this function
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PendingReboot'} | Select-Object -ExpandProperty 'StartRebootApplication'
+        }
+        if ($Webservice -ne $null) {
+            $pr = $Configuration.remediationPendingReboot
+            switch ($pr) {
+                0 { $obj = "false"}
+                1 { $obj = "false"}
+                2 { $obj = "true"}
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigMaxRebootDays {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'MaxRebootDays'} | Select-Object -ExpandProperty 'Days'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'MaxRebootDays'} | Select-Object -ExpandProperty 'Days'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.remediationMaxRebootDays
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRebootApplication {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RebootApplication'} | Select-Object -ExpandProperty 'Application'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RebootApplication'} | Select-Object -ExpandProperty 'Application'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.remediationRebootApplication
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRebootApplicationEnable {
+        ### TODO implement in webservice
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RebootApplication'} | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
     }
 
     Function Get-XMLConfigDNSCheck {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Enable'
+        # TODO verify switch, skip test and monitor for console extension
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationDns
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor, test enabled
+                2 { $obj = "True"}  # Fix, test enabled
+            }
+        }
         Write-Output $obj
     }
     
     Function Get-XMLConfigCcmSQLCELog {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'CcmSQLCELog'} | Select-Object -ExpandProperty 'Enable'
+        # TODO implement monitor mode
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'CcmSQLCELog'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationCcmSqlcelog
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor (this enables test for now. Monitor not implemented)
+                2 { $obj = "True"}  # Enable remediation
+            }
+        }
+
         Write-Output $obj
     }
 
     Function Get-XMLConfigDNSFix {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationDns
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"} # Monitor, so disable fix
+                2 { $obj = "True"}  # Enable fix
+            }
+        }   
         Write-Output $obj
     }
 
     Function Get-XMLConfigDrivers {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Drivers'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Drivers'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationDrivers
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor, enable test
+            }
+        } 
         Write-Output $obj
     }
 
     Function Get-XMLConfigPatchLevel {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PatchLevel'} | Select-Object -ExpandProperty 'Enable'
+        #$obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PatchLevel'} | Select-Object -ExpandProperty 'Enable'
+        $obj = "True"
         Write-Output $obj
     }
 
     Function Get-XMLConfigOSDiskFreeSpace {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSDiskFreeSpace'} | Select-Object -ExpandProperty '#text'
+        #$obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSDiskFreeSpace'} | Select-Object -ExpandProperty '#text'
+        $obj = "True"
         Write-Output $obj
     }
 
     Function Get-XMLConfigHardwareInventoryEnable {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationHardwareInventory
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor, enable check
+                2 { $obj = "True"}  # Enable check
+            }
+        } 
         Write-Output $obj
     }
 
     Function Get-XMLConfigHardwareInventoryFix {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationHardwareInventory
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix
+                2 { $obj = "True"}  # Enable fix
+            }
+        } 
         Write-Output $obj
     }
 
     Function Get-XMLConfigSoftwareMeteringEnable {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Enable'
+        }
+        <#  TODO implement this check in console extension and webservice
+        if ($Webservice -ne $null) {
+            $s = $Configuration.
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
+        #>
         Write-Output $obj
     }
 
     Function Get-XMLConfigSoftwareMeteringFix {
+        # TODO implement this check in console extension and webservice
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Fix'
         Write-Output $obj
     }
 
     Function Get-XMLConfigHardwareInventoryDays {
+        # TODO implement this check in console extension and webservice
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Days'
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationAdminShare {
-        $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'AdminShare'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'AdminShare'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationAdminShare
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix # TODO implement monitoring of this check
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientProvisioningMode {
-        $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientProvisioningMode'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientProvisioningMode'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationClientProvisioningMode
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix # TODO implement monitoring of this check
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientStateMessages {
-        $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientStateMessages'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientStateMessages'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationClientStateMessages
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix # TODO implement monitoring of this check
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientWUAHandler {
-        $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationClientWuahandler
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix # TODO implement monitoring of this check
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientWUAHandlerDays {
+        # TODO implement days in console extension and webservice
         $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Days'
         Write-Output $obj
     }
 
     Function Get-XMLConfigBITSCheck {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationBits
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor, enable
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 	
     Function Get-XMLConfigBITSCheckFix {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationBits
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor, disable fix
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 		
 	Function Get-XMLConfigClientSettingsCheck {
+        # TODO implement in console extension and webservice
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientSettingsCheck'} | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
 	}
 
 	Function Get-XMLConfigClientSettingsCheckFix {
+        # TODO implement in console extension and webservice
         $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientSettingsCheck'} | Select-Object -ExpandProperty 'Fix'
         Write-Output $obj
 	}
 
     Function Get-XMLConfigWMI {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Enable'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationWmi
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "True"}  # Monitor, enable check
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigWMIRepairEnable {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationWmi
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRefreshComplianceState {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RefreshComplianceState'} | Select-Object -ExpandProperty 'Enable'
+        # Measured in days
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RefreshComplianceState'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($Webservice -ne $null) {
+            $i = $Configuration.remediationRefreshComplianceState
+            if ($i -eq 0) { $obj = "False" }
+            else { $obj = "True" }
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRefreshComplianceStateDays {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RefreshComplianceState'} | Select-Object -ExpandProperty 'Days'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RefreshComplianceState'} | Select-Object -ExpandProperty 'Days'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.remediationRefreshComplianceState
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientCertificate {
-        $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientCertificate'} | Select-Object -ExpandProperty 'Fix'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientCertificate'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($Webservice -ne $null) {
+            $s = $Configuration.remediationClientCertificate
+            switch ($s) {
+                0 { $obj = "False"} # Test disabled
+                1 { $obj = "False"}  # Monitor, disable fix # TODO implement in script
+                2 { $obj = "True"}  # Enable fix
+            }
+        }
         Write-Output $obj
     }
 
@@ -3103,7 +3416,7 @@ Process {
     if ($Config -ne $null) {
         $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
         $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
-        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
+        $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
         $SQLLogging = ((Get-XMLConfigSQLLoggingEnable).ToString()).ToLower()
         
     }
