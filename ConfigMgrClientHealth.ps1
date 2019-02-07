@@ -173,7 +173,7 @@ Begin {
         $URI = $URI + "/ConfigurationProfile"
         if ($ProfileID -ge 0) { $URI = $URI + "/$ProfileID"}
 
-        Write-Verbose "Retrieving configuration"
+        Write-Verbose "Retrieving configuration from webservice"
         try {
             $Obj = Invoke-RestMethod -Uri $URI 
         }
@@ -182,6 +182,35 @@ Begin {
             Exit 1
         }
 
+        Write-Output $Obj
+    }
+
+    Function Get-ConfigClientInstallPropertiesFromWebService {
+        Param(
+            [Parameter(Mandatory=$true)][String]$URI,
+            [Parameter(Mandatory=$true)][String]$ProfileID
+            )
+
+            $URI = $URI + "/ClientInstallProperties"
+
+            Write-Verbose "Retrieving client install properties from webservice"
+        try {
+            $CIP = Invoke-RestMethod -Uri $URI
+        }
+        catch {
+            Write-Host "Error retrieving client install properties from webservice $URI. Exception: $ExceptionMessage" -ForegroundColor Red
+            Exit 1
+        }
+
+        $string = $CIP | Where-Object {$_.profileId -eq $ProfileID} | Select-Object -ExpandProperty cmd
+        $obj = ""
+        
+        foreach ($i in $string) {
+            $obj += $i + " "
+        }
+
+        # Remove the trailing space from the last parameter caused by the foreach loop
+        $obj = $obj.Substring(0,$obj.Length-1)
         Write-Output $Obj
     }
 
@@ -2387,39 +2416,77 @@ Begin {
 
     # Start Getters - XML config file
     Function Get-LocalFilesPath {
-        $obj = $Xml.Configuration.LocalFiles
-        $obj=$ExecutionContext.InvokeCommand.ExpandString($obj)
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.LocalFiles
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.localFiles
+        }
+
+        $obj = $ExecutionContext.InvokeCommand.ExpandString($obj)
         if ($obj -eq $null) { $obj = Join-path $env:SystemDrive "ClientHealth" }
         Return $obj
     }
     
     Function Get-XMLConfigClientVersion {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Version'} | Select-Object -ExpandProperty '#text'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Version'} | Select-Object -ExpandProperty '#text'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientVersion
+        }
+        
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientSitecode {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'SiteCode'} | Select-Object -ExpandProperty '#text'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'SiteCode'} | Select-Object -ExpandProperty '#text'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientShare
+        }
+
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientDomain {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Domain'} | Select-Object -ExpandProperty '#text'
+        #if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Domain'} | Select-Object -ExpandProperty '#text'
+        #}
+        #if ($Webservice -ne $null) {
+        #    $obj = $Configuration.
+        #}
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientAutoUpgrade {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'AutoUpgrade'} | Select-Object -ExpandProperty '#text'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'AutoUpgrade'} | Select-Object -ExpandProperty '#text'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientAutoUpgrade
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientMaxLogSize {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogSize'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogSize'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientMaxLogSize
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientMaxLogHistory {
-        $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogHistory'
+        if ($config -ne $null) {
+            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogHistory'
+        }
+        if ($Webservice -ne $null) {
+            $obj = $Configuration.clientMaxLogHistory
+        }
         Write-Output $obj
     }
 
@@ -2687,14 +2754,23 @@ Begin {
     Function Test-ConfigMgrHealthLogging {
         # Verifies that logfiles are not bigger than max history
 
-        $localLogging = (Get-XMLConfigLoggingLocalFile).ToLower()
+        if ($Config -ne $null) {
+            $localLogging = (Get-XMLConfigLoggingLocalFile).ToLower()
+            $fileshareLogging = (Get-XMLConfigLoggingEnable).ToLower()
+        }
+
+        if ($Webservice -ne $null) {
+            $localLogging = $Configuration.localFiles.ToString().ToLower()
+            $fileshareLogging = $Configuration.logFileShareEnable.ToString().ToLower()
+        }
+        
         if ($localLogging -eq "true") {
             $clientpath = Get-LocalFilesPath
             $logfile = "$clientpath\ClientHealth.log"
             Test-LogFileHistory -Logfile $logfile
         }
 
-        $fileshareLogging = (Get-XMLConfigLoggingEnable).ToLower()
+        
         if ($fileshareLogging -eq "true") {
             $logfile = Get-LogFileName
             Test-LogFileHistory -Logfile $logfile
@@ -2961,7 +3037,7 @@ Begin {
             $propertyString = $propertyString + ' '
         }
         $clientCacheSize = Get-XMLConfigClientCache
-        $clientInstallProperties = $propertyString + "SMSCACHESIZE=$clientCacheSize"
+        $clientInstallProperties = $propertyString
         $clientAutoUpgrade = (Get-XMLConfigClientAutoUpgrade).ToLower()
         $AdminShare = Get-XMLConfigRemediationAdminShare
         $ClientProvisioningMode = Get-XMLConfigRemediationClientProvisioningMode
@@ -2970,10 +3046,11 @@ Begin {
         $LogShare = Get-XMLConfigLoggingShare
     }
 
-    <#
+    
     if ($Webservice -ne $null) {
         $Configuration = Get-ConfigFromWebservice -URI $Webservice
-
+        $ProfileID = $Configuration.id
+        $clientInstallProperties = Get-ConfigClientInstallPropertiesFromWebService -URI $Webservice -ProfileID $ProfileID
         $clientCacheSize = $Configuration.clientCacheSize
         [String]$clientAutoUpgrade = $Configuration.clientAutoUpgrade
         $clientAutoUpgrade = $clientAutoUpgrade.ToLower()
@@ -2982,9 +3059,8 @@ Begin {
         $ClientStateMessages = $Configuration.remediationClientStateMessages
         $ClientWUAHandler = $Configuration.remediationClientWuahandler
         $LogShare = $Configuration.logFileShare
-
     }
-    #>
+    
 
     # Create a DataTable to store all changes to log files to be processed later. This to prevent false positives to remediate the next time script runs if error is already remediated.
     $SCCMLogJobs = New-Object System.Data.DataTable
@@ -3023,11 +3099,22 @@ Process {
     }
 
     
+    # If config.xml is used
+    if ($Config -ne $null) {
+        $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
+        $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
+        $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
+        $SQLLogging = ((Get-XMLConfigSQLLoggingEnable).ToString()).ToLower()
+        
+    }
 
-    $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
-    $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
-    $FileLogLevel = ((Get-XMLConfigLogginLevel).ToString()).ToLower()
-    $SQLLogging = ((Get-XMLConfigSQLLoggingEnable).ToString()).ToLower()
+    if ($Webservice -ne $null) {
+        $LocalLogging = $Configuration.localFiles.ToString().ToLower()
+        $FileLogging = $Configuration.logFileShareEnable.ToString().ToLower()
+        $FileLogLevel = $Configuration.logLevel.ToString().ToLower()
+        $SQLLogging = "true"
+    }
+
     $RegistryKey = "HKLM:\Software\ConfigMgrClientHealth"
     $LastRunRegistryValueName = "LastRun"
 
