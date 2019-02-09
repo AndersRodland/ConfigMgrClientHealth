@@ -1530,6 +1530,7 @@ Begin {
             }
 			
             Write-Verbose "Trigger ConfigMgr Client installation using Invoke-Expression."
+            Write-Verbose "Client install string: $ClientShare\ccmsetup.exe $ClientInstallProperties"
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
 			
 			$launched = $true
@@ -1736,7 +1737,7 @@ Begin {
         $log.Services = 'OK'
 
         # Test services defined by config.xml
-        if ($Config -ne $null)
+        if ($Config)
         {
             Write-Verbose 'Test services from XML configuration file'
             foreach ($service in $Xml.Configuration.Service)
@@ -1745,7 +1746,7 @@ Begin {
                 
                 if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
                 
-                if ($service.uptime -ne $null) {
+                if ($service.uptime) {
                     $uptime = ($service.Uptime).ToLower()
                     Test-Service -Name $service.Name -StartupType $service.StartupType -State $service.State -Log $log -Uptime $uptime
                 }
@@ -1771,14 +1772,12 @@ Begin {
 
                 $stat = $service.state
                 switch ($stat) {
-                    0 { $state = "stopped"}
-                    1 { $state = "running"}
+                    "False" { $state = "stopped"}
+                    "True" { $state = "running"}
                 }
 
                 $uptime = $service.uptime
-
-                if ($service.uptime -ne $null) {
-                    $uptime = ($service.Uptime).ToLower()
+                if ($uptime -ge 1) {
                     Test-Service -Name $service.Name -StartupType $StartupType -State $state -Log $log -Uptime $uptime
                 }
                 else {
@@ -2600,11 +2599,9 @@ Begin {
         if ($config) {
             $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Enable'
         }
-        <#
         if ($Webservice)  {
-            $obj = $Configuration.
+            $obj = "True"
         }
-        #>
         Write-Output $obj
     }
 
@@ -2844,14 +2841,24 @@ Begin {
     }
 
     Function Get-XMLConfigPatchLevel {
-        #$obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PatchLevel'} | Select-Object -ExpandProperty 'Enable'
-        $obj = "True"
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PatchLevel'} | Select-Object -ExpandProperty 'Enable'
+        }
+        if ($webservice) {
+            # Default this to enabled. No reason not to log this
+            $obj = "true"
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigOSDiskFreeSpace {
-        #$obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSDiskFreeSpace'} | Select-Object -ExpandProperty '#text'
-        $obj = 10
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSDiskFreeSpace'} | Select-Object -ExpandProperty '#text'
+        }
+        if ($webservice) {
+            # TODO implement properly in webservice. hardcode 10% warning for now
+            $obj = 10
+        }
         Write-Output $obj
     }
 
@@ -2889,28 +2896,41 @@ Begin {
         if ($config) {
             $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Enable'
         }
-        <#  TODO implement this check in console extension and webservice
-        if ($Webservice)  {
+        if ($webservice) {
+            
+            <#  TODO implement this check in console extension and webservice
             $s = $Configuration.
             switch ($s) {
                 0 { $obj = "False"} # Test disabled
                 1 { $obj = "False"}  # Monitor, disable fix
                 2 { $obj = "True"}  # Enable fix
             }
+            #>
+
+            $obj = "true"
         }
-        #>
         Write-Output $obj
     }
 
     Function Get-XMLConfigSoftwareMeteringFix {
         # TODO implement this check in console extension and webservice
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Fix'
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Fix'
+        }
+        if ($webservice) {
+            $obj = "true"
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigHardwareInventoryDays {
         # TODO implement this check in console extension and webservice
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Days'
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Days'
+        }
+        if ($webservice) {
+            $obj = 30
+        }
         Write-Output $obj
     }
 
@@ -2976,7 +2996,12 @@ Begin {
 
     Function Get-XMLConfigRemediationClientWUAHandlerDays {
         # TODO implement days in console extension and webservice
-        $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Days'
+        if ($config) {
+            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Days'
+        }
+        if ($webservice) {
+            $obj = 30
+        }
         Write-Output $obj
     }
 
@@ -3142,7 +3167,9 @@ Begin {
         }
 
         if ($Webservice) {
-            $localLogging = $Configuration.localFiles.ToString().ToLower()
+            # TODO implement properly with webservice and console extension
+            #$localLogging = $Configuration.localFiles.ToString().ToLower()
+            $localLogging = "true"
             $fileshareLogging = $Configuration.logFileShareEnable.ToString().ToLower()
         }
         
@@ -3431,17 +3458,41 @@ Begin {
 
     
     if ($Webservice) {
-        Write-Host "in webservice"
         $Configuration = Get-ConfigFromWebservice -URI $Webservice
         $ProfileID = $Configuration.id
         $clientInstallProperties = Get-ConfigClientInstallPropertiesFromWebService -URI $Webservice -ProfileID $ProfileID
         $clientCacheSize = $Configuration.clientCacheSize
         [String]$clientAutoUpgrade = $Configuration.clientAutoUpgrade
         $clientAutoUpgrade = $clientAutoUpgrade.ToLower()
-        $AdminShare = $Configuration.remediationAdminShare
-        $ClientProvisioningMode = $Configuration.remediationClientProvisioningMode
-        $ClientStateMessages = $Configuration.remediationClientStateMessages
-        $ClientWUAHandler = $Configuration.remediationClientWuahandler
+
+        $AS = $Configuration.remediationAdminShare
+        switch ($AS) {
+            0 { $AdminShare = "False"; break} #Disable
+            1 { $AdminShare = "True"; break}  #Monitor
+            2 { $AdminShare = "True"; break}  #Enable
+        }
+        
+        $CPM = $Configuration.remediationClientProvisioningMode
+        switch ($CPM) {
+            0 { $ClientProvisioningMode = "False"; break} #Disable
+            1 { $ClientProvisioningMode = "True"; break}  #Monitor
+            2 { $ClientProvisioningMode = "True"; break}  #Enable
+        }
+        
+        $CSM = $Configuration.remediationClientStateMessages
+        switch ($CSM) {
+            0 { $ClientStateMessages = "False"; break} #Disable
+            1 { $ClientStateMessages = "True"; break}  #Monitor
+            2 { $ClientStateMessages = "True"; break}  #Enable
+        }
+
+        $CWUA = $Configuration.remediationClientWuahandler
+        switch ($CWUA) {
+            0 { $ClientWUAHandler = "False"; break} #Disable
+            1 { $ClientWUAHandler = "True"; break}  #Monitor
+            2 { $ClientWUAHandler = "True"; break}  #Enable
+        }
+
         $LogShare = $Configuration.logFileShare
     }
     
@@ -3493,10 +3544,19 @@ Process {
     }
 
     if ($Webservice) {
-        $LocalLogging = $Configuration.localFiles.ToString().ToLower()
+        $LocalLogging = "true"
+        #$LocalLogging = $Configuration.localFiles.ToString().ToLower()
         $FileLogging = $Configuration.logFileShareEnable.ToString().ToLower()
-        $FileLogLevel = $Configuration.logLevel.ToString().ToLower()
+        $FLL = $Configuration.logLevel.ToString().ToLower()
+        switch ($FLL) {
+            0 { $FileLogLevel = "Full"}
+            1 { $FileLogLevel = "ClientInstall"}
+        }
         $SQLLogging = "true"
+
+        Write-Host "LocalLogging: $LocalLogging" -ForegroundColor Yellow
+        Write-Host "FileLogging: $FileLogging" -ForegroundColor Yellow
+        Write-Host "FileLogLevel: $FileLogLevel" -ForegroundColor Yellow
     }
 
     $RegistryKey = "HKLM:\Software\ConfigMgrClientHealth"
@@ -3534,9 +3594,9 @@ Process {
     }
 
     Write-Verbose 'Determining if compliance state should be resent...'
-    $RefreshComplianceState=Get-XMLConfigRefreshComplianceState
-    if ($RefreshComplianceState -like 'True') {
-        $RefreshComplianceStateDays=Get-XMLConfigRefreshComplianceStateDays
+    $RefreshComplianceState = Get-XMLConfigRefreshComplianceState
+    if ( ($RefreshComplianceState -like 'True') -or ($RefreshComplianceState -ge 1)) {
+        $RefreshComplianceStateDays = Get-XMLConfigRefreshComplianceStateDays
 
         Write-Verbose "Checking if compliance state should be resent after $($RefreshComplianceStateDays) days."
         Test-RefreshComplianceState -Days $RefreshComplianceStateDays -RegistryKey $RegistryKey  -log $Log
@@ -3563,7 +3623,8 @@ Process {
     #>
 
     Write-Verbose 'Validating services...'
-    Test-Services -Xml $Xml -log $log
+    if ($config) { Test-Services -Xml $Xml -log $log }
+    if ($webservice) { Test-Services -Webservice $Webservice -ProfileID $ProfileID -log $log }
 
     Write-Verbose 'Validating SMSTSMgr service is depenent on CCMExec service...'
     Test-SMSTSMgr

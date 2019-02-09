@@ -19,5 +19,6 @@ Note: Script version 0.8.2 requires database version 0.8.2.
 * Script will now stop services that are in a degraded state
 * Updated database to allow null for LastLoggedOnUser
 * Check client version is now run at end of script in case client was upgraded by script
+* Config is stored in SQL database and presented to script through webservice
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
