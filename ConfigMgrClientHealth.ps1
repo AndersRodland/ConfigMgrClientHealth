@@ -624,6 +624,16 @@ Begin {
         }
     }
 
+    Function Test-InTaskSequence {
+        try { $tsenv = New-Object -COMObject Microsoft.SMS.TSEnvironment }
+        catch { $tsenv = $null }
+        
+        if ($tsenv) {
+            Write-Host "Configuration Manager Task Sequence detected on computer. Exiting script"
+            Exit 2
+        }
+    }
+
 
     Function Test-BITS {
         Param([Parameter(Mandatory=$true)]$Log)
@@ -2529,9 +2539,9 @@ Begin {
         if ($config) {
             $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Domain'} | Select-Object -ExpandProperty '#text'
         }
-        #if ($Webservice)  { #TODOD IMPLEMENT
-        #    $obj = $Configuration.
-        #}
+        if ($Webservice)  {
+            $obj = $Configuration.ClientDomain
+        }
         Write-Output $obj
     }
 
@@ -2632,18 +2642,31 @@ Begin {
     }
 
     Function Get-XMLConfigUpdatesEnable {
-        # NOT FINISHED - NEED TESTING ### TODO
         if ($config) {
             $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Enable'
         }
         if ($Webservice) {
-            $obj = $Configuration.remediationUpdates
+            $var = $Configuration.remediationUpdates
+            switch ($var) {
+                0 { $obj = "False"} # Disable
+                1 { $obj = "True"}  # Monitor
+                2 { $obj = "True"}  # Remediate
+            }
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigUpdatesFix {
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Fix'
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Fix' }
+        if ($Webservice) {
+            $var = $Configuration.remediationUpdates
+            switch ($var) {
+                0 { $obj = "False"} # Disable
+                1 { $obj = "False"} # Monitor
+                2 { $obj = "True"}  # Remediate
+            }
+        }
         Write-Output $obj
     }
 
@@ -2719,29 +2742,15 @@ Begin {
     }
 
     Function Get-XMLConfigPendingRebootApp {
-        <#
-        .SYNOPSIS
-        Short description
-        
-        .DESCRIPTION
-        Long description
-        
-        .EXAMPLE
-        An example
-        
-        .NOTES
-        General notes
-        #>
         # TODO verify this function
         if ($config) {
             $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PendingReboot'} | Select-Object -ExpandProperty 'StartRebootApplication'
         }
         if ($Webservice)  {
-            $pr = $Configuration.remediationPendingReboot
+            $pr = $Configuration.remediationPendingReboot # misleading name for this variable, may change this in the future.
             switch ($pr) {
-                0 { $obj = "false"}
-                1 { $obj = "false"}
-                2 { $obj = "true"}
+                0 { $obj = "False"}
+                1 { $obj = "True"}
             }
         }
         Write-Output $obj
@@ -2856,7 +2865,7 @@ Begin {
             $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSDiskFreeSpace'} | Select-Object -ExpandProperty '#text'
         }
         if ($webservice) {
-            # TODO implement properly in webservice. hardcode 10% warning for now
+            # TODO consider implementing this in console extension / webservice. Relevance?
             $obj = 10
         }
         Write-Output $obj
@@ -3515,6 +3524,9 @@ Process {
         Exit 1
     }
     else {
+        # Will exit with errorcode 2 if in task sequence
+        Test-InTaskSequence
+        
         $StartupText1 = "PowerShell version: " + $PSVersionTable.PSVersion + ". Script executing with Administrator rights."
         Write-Host $StartupText1
         
