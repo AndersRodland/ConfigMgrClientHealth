@@ -13,7 +13,29 @@
     <DataSet Name="DS_Rpt_Conf">
       <Query>
         <DataSourceName>DQ_RptConf</DataSourceName>
-        <CommandText>SELECT  *
+        <CommandText>SELECT
+  Report_Theme.Theme
+  ,Report_Theme.BG_01
+  ,Report_Theme.FG_01
+  ,Report_Theme.BG_02
+  ,Report_Theme.FG_02
+  ,Report_Theme.BG_03
+  ,Report_Theme.FG_03
+  ,Report_Theme.BG_04
+  ,Report_Theme.FG_04
+  ,Report_Theme.BG_red
+  ,Report_Theme.BG_green
+  ,Report_Theme.BG_header
+  ,Report_Theme.FG_header
+  ,Report_Theme.BG_footer
+  ,Report_Theme.FG_Footer
+  ,Report_Theme.BG_Info
+  ,Report_Theme.BG_State_OK
+  ,Report_Theme.FG_State_OK
+  ,Report_Theme.BG_State_Repair
+  ,Report_Theme.FG_State_Repair
+  ,Report_Theme.BG_State_Error
+  ,Report_Theme.FG_State_Error
 FROM
   Report_Theme</CommandText>
         <rd:DesignerState>
@@ -35,6 +57,12 @@ FROM
               <ColumnExpression ColumnOwner="Report_Theme" ColumnName="BG_footer" />
               <ColumnExpression ColumnOwner="Report_Theme" ColumnName="FG_Footer" />
               <ColumnExpression ColumnOwner="Report_Theme" ColumnName="BG_Info" />
+              <ColumnExpression ColumnOwner="Report_Theme" ColumnName="BG_State_OK" />
+              <ColumnExpression ColumnOwner="Report_Theme" ColumnName="FG_State_OK" />
+              <ColumnExpression ColumnOwner="Report_Theme" ColumnName="BG_State_Repair" />
+              <ColumnExpression ColumnOwner="Report_Theme" ColumnName="FG_State_Repair" />
+              <ColumnExpression ColumnOwner="Report_Theme" ColumnName="BG_State_Error" />
+              <ColumnExpression ColumnOwner="Report_Theme" ColumnName="FG_State_Error" />
             </SelectedColumns>
           </QueryDefinition>
         </rd:DesignerState>
@@ -102,6 +130,30 @@ FROM
         </Field>
         <Field Name="BG_green">
           <DataField>BG_green</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="BG_State_OK">
+          <DataField>BG_State_OK</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="FG_State_OK">
+          <DataField>FG_State_OK</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="BG_State_Repair">
+          <DataField>BG_State_Repair</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="FG_State_Repair">
+          <DataField>FG_State_Repair</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="BG_State_Error">
+          <DataField>BG_State_Error</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="FG_State_Error">
+          <DataField>FG_State_Error</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
@@ -567,13 +619,13 @@ order by position</CommandText>
                       <Width>3.74354cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>7.33663cm</Width>
+                      <Width>8.20659cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.8487cm</Width>
+                      <Width>4.2cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.79646cm</Width>
+                      <Width>4.2cm</Width>
                     </TablixColumn>
                     <TablixColumn>
                       <Width>4.20354cm</Width>
@@ -582,10 +634,10 @@ order by position</CommandText>
                       <Width>2.39225cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.5cm</Width>
+                      <Width>2.70354cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>3.79646cm</Width>
+                      <Width>4.2cm</Width>
                     </TablixColumn>
                     <TablixColumn>
                       <Width>2.5cm</Width>
@@ -703,7 +755,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox14</rd:DefaultName>
@@ -740,7 +794,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox18</rd:DefaultName>
@@ -808,7 +864,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox7</rd:DefaultName>
@@ -842,7 +900,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox9</rd:DefaultName>
@@ -876,7 +936,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox11</rd:DefaultName>
@@ -910,7 +972,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox6</rd:DefaultName>
@@ -1185,6 +1249,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1218,6 +1283,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1241,7 +1307,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Timestamp</rd:DefaultName>
@@ -1251,6 +1319,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1274,7 +1343,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>LastBootTime1</rd:DefaultName>
@@ -1284,6 +1355,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1317,6 +1389,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1340,7 +1413,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Architecture</rd:DefaultName>
@@ -1350,6 +1425,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1373,7 +1449,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>ClientVersion</rd:DefaultName>
@@ -1383,6 +1461,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1406,7 +1485,9 @@ order by position</CommandText>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>LastBootTime</rd:DefaultName>
@@ -1416,6 +1497,7 @@ order by position</CommandText>
                                   <Style>Solid</Style>
                                 </Border>
                                 <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1435,11 +1517,18 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!PendingReboot.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!PendingReboot.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "Black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
-                                  <Style />
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>PendingReboot</rd:DefaultName>
@@ -1448,7 +1537,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!PendingReboot.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1468,7 +1563,12 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!Services.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!Services.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "Black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -1483,7 +1583,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!Services.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1503,7 +1609,12 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!AdminShare.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!AdminShare.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!AdminShare.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!AdminShare.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!AdminShare.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "Black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -1518,7 +1629,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!AdminShare.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!AdminShare.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!AdminShare.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!AdminShare.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1538,7 +1655,12 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!StateMessages.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!StateMessages.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!StateMessages.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!StateMessages.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!StateMessages.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -1553,7 +1675,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!StateMessages.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!StateMessages.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!StateMessages.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!StateMessages.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1573,7 +1701,12 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!WUAHandler.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!WUAHandler.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "Black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -1588,7 +1721,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!WUAHandler.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1608,7 +1747,12 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!WMI.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!WMI.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!WMI.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WMI.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WMI.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "Black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -1623,7 +1767,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!WMI.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!WMI.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WMI.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WMI.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1643,7 +1793,12 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!BITS.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!BITS.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Restarted",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,First(Fields!FG_02.Value, "DS_Rpt_Conf"), "Black"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -1658,7 +1813,13 @@ order by position</CommandText>
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+switch(
+Fields!BITS.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
                                 <PaddingTop>2pt</PaddingTop>
@@ -1704,7 +1865,7 @@ order by position</CommandText>
                 <Top>0.73378cm</Top>
                 <Left>0.0635cm</Left>
                 <Height>1.2cm</Height>
-                <Width>47.11758cm</Width>
+                <Width>51.34946cm</Width>
                 <ZIndex>1</ZIndex>
                 <Style>
                   <Border>
@@ -1717,7 +1878,7 @@ order by position</CommandText>
             <Top>11.75195cm</Top>
             <Left>0.3175cm</Left>
             <Height>2.07962cm</Height>
-            <Width>47.40295cm</Width>
+            <Width>51.86275cm</Width>
             <Style>
               <Border>
                 <Color>#706f6f</Color>
@@ -2093,7 +2254,7 @@ order by position</CommandText>
                 <Top>1.05516cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>6.5875cm</Height>
-                <Width>34.94961cm</Width>
+                <Width>37.94961cm</Width>
                 <ZIndex>1</ZIndex>
                 <Style>
                   <Border>
@@ -5068,7 +5229,6 @@ order by position</CommandText>
                                 <BackgroundGradientType>None</BackgroundGradientType>
                               </Style>
                             </Chart>
-                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                       </TablixCells>
@@ -6036,7 +6196,7 @@ order by position</CommandText>
                 </TablixRowHierarchy>
                 <DataSetName>DS_ClientData</DataSetName>
                 <Top>1.05516cm</Top>
-                <Left>36.13358cm</Left>
+                <Left>38.99108cm</Left>
                 <Height>5.4cm</Height>
                 <Width>9.5475cm</Width>
                 <ZIndex>2</ZIndex>
@@ -6051,7 +6211,7 @@ order by position</CommandText>
             <Top>0.10583cm</Top>
             <Left>0.3175cm</Left>
             <Height>7.9337cm</Height>
-            <Width>47.40295cm</Width>
+            <Width>51.86275cm</Width>
             <ZIndex>1</ZIndex>
             <Style>
               <Border>
@@ -6069,82 +6229,82 @@ order by position</CommandText>
                       <Width>7.1278cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.42062cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5475cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.5cm</Width>
+                      <Width>1.7cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -9887,7 +10047,7 @@ order by position</CommandText>
                 <Top>0.127cm</Top>
                 <Left>0.08516cm</Left>
                 <Height>2.8cm</Height>
-                <Width>47.09592cm</Width>
+                <Width>51.3278cm</Width>
                 <Style>
                   <Border>
                     <Style>None</Style>
@@ -9899,7 +10059,7 @@ order by position</CommandText>
             <Top>8.33501cm</Top>
             <Left>0.3175cm</Left>
             <Height>3.12146cm</Height>
-            <Width>47.40295cm</Width>
+            <Width>51.86275cm</Width>
             <ZIndex>2</ZIndex>
             <Style>
               <Border>
@@ -9916,7 +10076,7 @@ order by position</CommandText>
           </Border>
         </Style>
       </Body>
-      <Width>481.68045mm</Width>
+      <Width>526.30043mm</Width>
       <Page>
         <PageHeader>
           <Height>2.80459cm</Height>
@@ -10005,7 +10165,7 @@ order by position</CommandText>
                   <TextRuns>
                     <TextRun>
                       <Value>="ConfigMgrclientHealth Dashboard"  &amp; Chr(13) &amp; Chr(10) &amp;
-"Report: " &amp; Globals!ReportFolder &amp; "\" &amp; Globals!ReportName &amp; " - v 0.02, 09-02-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+"Report: " &amp; Globals!ReportFolder &amp; "\" &amp; Globals!ReportName &amp; " - v 0.02, 12-02-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 "Page (" + Globals!PageNumber.ToString() + " of " + Globals!OverallTotalPages.ToString() + "); generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>
@@ -10133,6 +10293,27 @@ order by position</CommandText>
         </DataSetReference>
       </ValidValues>
     </ReportParameter>
+    <ReportParameter Name="UseColoredOutput">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>true</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>use colored Output</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>true</Value>
+            <Label>yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>false</Value>
+            <Label>no</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
@@ -10163,6 +10344,11 @@ order by position</CommandText>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>6</RowIndex>
           <ParameterName>HistorydateFilter</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>6</RowIndex>
+          <ParameterName>UseColoredOutput</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
