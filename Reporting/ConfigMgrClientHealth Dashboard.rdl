@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>client health dashboard</Description>
   <Author>Klaus Bilger</Author>
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
@@ -601,6 +602,114 @@ order by position</CommandText>
         <Field Name="Component_Count_ERROR">
           <DataField>Component_Count_ERROR</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS_SCCMClientVersion">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@DateFilterDiff">
+            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@UseHistorydate">
+            <Value>=Parameters!UseHistorydate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@HistorydateFilter">
+            <Value>=Parameters!HistorydateFilter.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_SCCMClientVersion</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="ClientVersion">
+          <DataField>ClientVersion</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="SCCMAgent_Count_OK">
+          <DataField>SCCMAgent_Count_OK</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SCCMAgent_Count_toOld">
+          <DataField>SCCMAgent_Count_toOld</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SCCMAgent_Count_Newer">
+          <DataField>SCCMAgent_Count_Newer</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS_Client_Activities">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@DateFilterDiff">
+            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_Client_Activities</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="State">
+          <DataField>State</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Total_Count">
+          <DataField>Total_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ActiveClients_Count">
+          <DataField>ActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="NonActiveClients_Count">
+          <DataField>NonActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="percent">
+          <Value>=Fields!ActiveClients_Count.Value/Fields!Total_Count.Value</Value>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS__ClientMainDiagramData">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@DateFilterDiff">
+            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@UseHistorydate">
+            <Value>=Parameters!UseHistorydate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@HistorydateFilter">
+            <Value>=Parameters!HistorydateFilter.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_ClientMainDiagramData</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="ClientTarget">
+          <DataField>ClientTarget</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ActiveClients_Count">
+          <DataField>ActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="NonActiveClients_Count">
+          <DataField>NonActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Date">
+          <DataField>date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -1566,7 +1675,8 @@ switch(
 Fields!PendingReboot.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!PendingReboot.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
 Fields!PendingReboot.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
-Fields!PendingReboot.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+Fields!PendingReboot.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Unknown","#f2f2f2", true, "Orange"),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
                                 <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
@@ -1574,6 +1684,7 @@ Fields!PendingReboot.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Co
                                 <PaddingBottom>2pt</PaddingBottom>
                               </Style>
                             </Textbox>
+                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                         <TablixCell>
@@ -1612,7 +1723,8 @@ switch(
 Fields!Services.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!Services.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
 Fields!Services.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
-Fields!Services.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+Fields!Services.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf"),
+Fields!Services.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
                                 <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
@@ -1750,7 +1862,11 @@ switch(
 Fields!WUAHandler.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!WUAHandler.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
 Fields!WUAHandler.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
-Fields!WUAHandler.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+Fields!WUAHandler.Value="Repaired (Event Log)",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Repaired (File Age)",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Repaired (WUAHandler Log)",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!WUAHandler.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf"),
+Fields!PendingReboot.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
                                 <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
@@ -1842,7 +1958,9 @@ switch(
 Fields!BITS.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!BITS.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
 Fields!BITS.Value="Restarted",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
-Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
+Fields!BITS.Value="Remediated",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf"),
+Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2"))</BackgroundColor>
                                 <VerticalAlign>Middle</VerticalAlign>
                                 <PaddingLeft>2pt</PaddingLeft>
                                 <PaddingRight>2pt</PaddingRight>
@@ -1878,7 +1996,9 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                 <TablixRowHierarchy>
                   <TablixMembers>
                     <TablixMember>
+                      <FixedData>true</FixedData>
                       <KeepWithGroup>After</KeepWithGroup>
+                      <KeepTogether>true</KeepTogether>
                     </TablixMember>
                     <TablixMember>
                       <Group Name="Details" />
@@ -1899,8 +2019,8 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
               </Tablix>
             </ReportItems>
             <KeepTogether>true</KeepTogether>
-            <Top>11.75195cm</Top>
-            <Left>0.3175cm</Left>
+            <Top>18.61524cm</Top>
+            <Left>0.09525cm</Left>
             <Height>2.07962cm</Height>
             <Width>51.86275cm</Width>
             <Style>
@@ -1919,9 +2039,11 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   <Paragraph>
                     <TextRuns>
                       <TextRun>
-                        <Value>Health Summary State</Value>
+                        <Value>Health Summary </Value>
                         <Style>
                           <FontFamily>Verdana</FontFamily>
+                          <FontSize>14pt</FontSize>
+                          <FontWeight>Bold</FontWeight>
                           <Color>#706f6f</Color>
                         </Style>
                       </TextRun>
@@ -1930,9 +2052,9 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   </Paragraph>
                 </Paragraphs>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
-                <Top>0.13053cm</Top>
-                <Left>0.23147cm</Left>
-                <Height>0.59972cm</Height>
+                <Top>0.20285cm</Top>
+                <Left>0.27745cm</Left>
+                <Height>0.91722cm</Height>
                 <Width>24.33972cm</Width>
                 <Style>
                   <Border>
@@ -1944,351 +2066,6 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   <PaddingBottom>2pt</PaddingBottom>
                 </Style>
               </Textbox>
-              <Chart Name="Chart1">
-                <ChartCategoryHierarchy>
-                  <ChartMembers>
-                    <ChartMember>
-                      <Group Name="Chart1_CategoryGroup">
-                        <GroupExpressions>
-                          <GroupExpression>=Fields!TimeStampAsDate.Value</GroupExpression>
-                        </GroupExpressions>
-                      </Group>
-                      <SortExpressions>
-                        <SortExpression>
-                          <Value>=Fields!TimeStampAsDate.Value</Value>
-                        </SortExpression>
-                      </SortExpressions>
-                      <Label>=Fields!TimeStampAsDate.Value</Label>
-                    </ChartMember>
-                  </ChartMembers>
-                </ChartCategoryHierarchy>
-                <ChartSeriesHierarchy>
-                  <ChartMembers>
-                    <ChartMember>
-                      <Label>Hostname</Label>
-                    </ChartMember>
-                  </ChartMembers>
-                </ChartSeriesHierarchy>
-                <ChartData>
-                  <ChartSeriesCollection>
-                    <ChartSeries Name="Hostname">
-                      <ChartDataPoints>
-                        <ChartDataPoint>
-                          <ChartDataPointValues>
-                            <Y>=Count(Fields!Hostname.Value)</Y>
-                          </ChartDataPointValues>
-                          <ChartDataLabel>
-                            <Style />
-                          </ChartDataLabel>
-                          <Style />
-                          <ChartMarker>
-                            <Style />
-                          </ChartMarker>
-                          <DataElementOutput>Output</DataElementOutput>
-                        </ChartDataPoint>
-                      </ChartDataPoints>
-                      <Style />
-                      <ChartEmptyPoints>
-                        <Style />
-                        <ChartMarker>
-                          <Style />
-                        </ChartMarker>
-                        <ChartDataLabel>
-                          <Style />
-                        </ChartDataLabel>
-                      </ChartEmptyPoints>
-                      <ValueAxisName>Primary</ValueAxisName>
-                      <CategoryAxisName>Primary</CategoryAxisName>
-                      <ChartSmartLabel>
-                        <CalloutLineColor>Black</CalloutLineColor>
-                        <MinMovingDistance>0pt</MinMovingDistance>
-                      </ChartSmartLabel>
-                    </ChartSeries>
-                  </ChartSeriesCollection>
-                </ChartData>
-                <ChartAreas>
-                  <ChartArea Name="Default">
-                    <ChartCategoryAxes>
-                      <ChartAxis Name="Primary">
-                        <Style>
-                          <Border>
-                            <Color>Gainsboro</Color>
-                            <Style>None</Style>
-                          </Border>
-                          <FontSize>8pt</FontSize>
-                          <Color>#5c5c5c</Color>
-                        </Style>
-                        <ChartAxisTitle>
-                          <Caption />
-                          <Style>
-                            <FontSize>9pt</FontSize>
-                            <Color>#5c5c5c</Color>
-                          </Style>
-                        </ChartAxisTitle>
-                        <ChartMajorGridLines>
-                          <Enabled>False</Enabled>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                        </ChartMajorGridLines>
-                        <ChartMinorGridLines>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>Dotted</Style>
-                            </Border>
-                          </Style>
-                        </ChartMinorGridLines>
-                        <ChartMajorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>None</Style>
-                            </Border>
-                          </Style>
-                        </ChartMajorTickMarks>
-                        <ChartMinorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                          <Length>0.5</Length>
-                        </ChartMinorTickMarks>
-                        <CrossAt>NaN</CrossAt>
-                        <Minimum>NaN</Minimum>
-                        <Maximum>NaN</Maximum>
-                        <ChartAxisScaleBreak>
-                          <Style />
-                        </ChartAxisScaleBreak>
-                      </ChartAxis>
-                      <ChartAxis Name="Secondary">
-                        <Style>
-                          <Border>
-                            <Color>Gainsboro</Color>
-                            <Style>None</Style>
-                          </Border>
-                          <FontSize>8pt</FontSize>
-                          <Color>#5c5c5c</Color>
-                        </Style>
-                        <ChartAxisTitle>
-                          <Caption />
-                          <Style>
-                            <FontSize>9pt</FontSize>
-                            <Color>#5c5c5c</Color>
-                          </Style>
-                        </ChartAxisTitle>
-                        <ChartMajorGridLines>
-                          <Enabled>False</Enabled>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                        </ChartMajorGridLines>
-                        <ChartMinorGridLines>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>Dotted</Style>
-                            </Border>
-                          </Style>
-                        </ChartMinorGridLines>
-                        <ChartMajorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>None</Style>
-                            </Border>
-                          </Style>
-                        </ChartMajorTickMarks>
-                        <ChartMinorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                          <Length>0.5</Length>
-                        </ChartMinorTickMarks>
-                        <CrossAt>NaN</CrossAt>
-                        <Location>Opposite</Location>
-                        <Minimum>NaN</Minimum>
-                        <Maximum>NaN</Maximum>
-                        <ChartAxisScaleBreak>
-                          <Style />
-                        </ChartAxisScaleBreak>
-                      </ChartAxis>
-                    </ChartCategoryAxes>
-                    <ChartValueAxes>
-                      <ChartAxis Name="Primary">
-                        <Style>
-                          <Border>
-                            <Color>Gainsboro</Color>
-                            <Style>None</Style>
-                          </Border>
-                          <FontSize>8pt</FontSize>
-                          <Color>#5c5c5c</Color>
-                        </Style>
-                        <ChartAxisTitle>
-                          <Caption />
-                          <Style>
-                            <FontSize>9pt</FontSize>
-                            <Color>#5c5c5c</Color>
-                          </Style>
-                        </ChartAxisTitle>
-                        <ChartMajorGridLines>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                        </ChartMajorGridLines>
-                        <ChartMinorGridLines>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>Dotted</Style>
-                            </Border>
-                          </Style>
-                        </ChartMinorGridLines>
-                        <ChartMajorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>None</Style>
-                            </Border>
-                          </Style>
-                        </ChartMajorTickMarks>
-                        <ChartMinorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                          <Length>0.5</Length>
-                        </ChartMinorTickMarks>
-                        <CrossAt>NaN</CrossAt>
-                        <Minimum>NaN</Minimum>
-                        <Maximum>NaN</Maximum>
-                        <ChartAxisScaleBreak>
-                          <Style />
-                        </ChartAxisScaleBreak>
-                      </ChartAxis>
-                      <ChartAxis Name="Secondary">
-                        <Style>
-                          <Border>
-                            <Color>Gainsboro</Color>
-                            <Style>None</Style>
-                          </Border>
-                          <FontSize>8pt</FontSize>
-                          <Color>#5c5c5c</Color>
-                        </Style>
-                        <ChartAxisTitle>
-                          <Caption />
-                          <Style>
-                            <FontSize>9pt</FontSize>
-                            <Color>#5c5c5c</Color>
-                          </Style>
-                        </ChartAxisTitle>
-                        <ChartMajorGridLines>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                        </ChartMajorGridLines>
-                        <ChartMinorGridLines>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>Dotted</Style>
-                            </Border>
-                          </Style>
-                        </ChartMinorGridLines>
-                        <ChartMajorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                              <Style>None</Style>
-                            </Border>
-                          </Style>
-                        </ChartMajorTickMarks>
-                        <ChartMinorTickMarks>
-                          <Style>
-                            <Border>
-                              <Color>Gainsboro</Color>
-                            </Border>
-                          </Style>
-                          <Length>0.5</Length>
-                        </ChartMinorTickMarks>
-                        <CrossAt>NaN</CrossAt>
-                        <Location>Opposite</Location>
-                        <Minimum>NaN</Minimum>
-                        <Maximum>NaN</Maximum>
-                        <ChartAxisScaleBreak>
-                          <Style />
-                        </ChartAxisScaleBreak>
-                      </ChartAxis>
-                    </ChartValueAxes>
-                    <Style>
-                      <BackgroundColor>#00ffffff</BackgroundColor>
-                      <BackgroundGradientType>None</BackgroundGradientType>
-                    </Style>
-                  </ChartArea>
-                </ChartAreas>
-                <ChartLegends>
-                  <ChartLegend Name="Default">
-                    <Style>
-                      <BackgroundGradientType>None</BackgroundGradientType>
-                      <FontSize>8pt</FontSize>
-                    </Style>
-                    <Position>TopLeft</Position>
-                    <ChartLegendTitle>
-                      <Caption />
-                      <Style>
-                        <FontSize>8pt</FontSize>
-                        <FontWeight>Bold</FontWeight>
-                        <TextAlign>Center</TextAlign>
-                      </Style>
-                    </ChartLegendTitle>
-                    <HeaderSeparatorColor>Black</HeaderSeparatorColor>
-                    <ColumnSeparatorColor>Black</ColumnSeparatorColor>
-                  </ChartLegend>
-                </ChartLegends>
-                <Palette>Pacific</Palette>
-                <ChartBorderSkin>
-                  <Style>
-                    <BackgroundColor>Gray</BackgroundColor>
-                    <BackgroundGradientType>None</BackgroundGradientType>
-                    <Color>White</Color>
-                  </Style>
-                </ChartBorderSkin>
-                <ChartNoDataMessage Name="NoDataMessage">
-                  <Caption>Keine Daten verfügbar</Caption>
-                  <Style>
-                    <BackgroundGradientType>None</BackgroundGradientType>
-                    <FontWeight>Bold</FontWeight>
-                    <TextAlign>General</TextAlign>
-                    <VerticalAlign>Top</VerticalAlign>
-                  </Style>
-                </ChartNoDataMessage>
-                <DataSetName>DS_ClientData</DataSetName>
-                <Top>1.05516cm</Top>
-                <Left>0.23147cm</Left>
-                <Height>6.5875cm</Height>
-                <Width>37.94961cm</Width>
-                <ZIndex>1</ZIndex>
-                <Style>
-                  <Border>
-                    <Color>LightGrey</Color>
-                    <Style>None</Style>
-                  </Border>
-                  <BackgroundColor>White</BackgroundColor>
-                  <BackgroundGradientType>None</BackgroundGradientType>
-                </Style>
-              </Chart>
               <Tablix Name="Tablix3">
                 <TablixBody>
                   <TablixColumns>
@@ -2320,6 +2097,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                     <TextRun>
                                       <Value>Component Name</Value>
                                       <Style>
+                                        <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -2354,6 +2132,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                     <TextRun>
                                       <Value># OK</Value>
                                       <Style>
+                                        <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -2390,6 +2169,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                     <TextRun>
                                       <Value># Error</Value>
                                       <Style>
+                                        <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -2424,8 +2204,9 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value />
+                                      <Value>Rating (good/errors)</Value>
                                       <Style>
+                                        <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -2589,7 +2370,9 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                         <ChartDataLabel>
                                           <Style />
                                         </ChartDataLabel>
-                                        <Style />
+                                        <Style>
+                                          <Color>=First(Fields!BG_State_OK.Value, "DS_Rpt_Conf")</Color>
+                                        </Style>
                                         <ChartMarker>
                                           <Style />
                                         </ChartMarker>
@@ -2624,7 +2407,9 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                         <ChartDataLabel>
                                           <Style />
                                         </ChartDataLabel>
-                                        <Style />
+                                        <Style>
+                                          <Color>=First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")</Color>
+                                        </Style>
                                         <ChartMarker>
                                           <Style />
                                         </ChartMarker>
@@ -2898,7 +2683,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                   </ChartElementPosition>
                                 </ChartArea>
                               </ChartAreas>
-                              <Palette>BrightPastel</Palette>
+                              <Palette>PacificSemiTransparent</Palette>
                               <ChartBorderSkin>
                                 <Style>
                                   <BackgroundColor>Gray</BackgroundColor>
@@ -2951,7 +2736,346 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_ClientData_ActionResult</DataSetName>
-                <Top>0.13053cm</Top>
+                <Top>4.17865cm</Top>
+                <Left>38.74449cm</Left>
+                <Height>1.2cm</Height>
+                <Width>12.66847cm</Width>
+                <ZIndex>1</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Tablix>
+              <Tablix Name="Tablix4">
+                <TablixBody>
+                  <TablixColumns>
+                    <TablixColumn>
+                      <Width>4.61847cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>3.05cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2.5cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2.5cm</Width>
+                    </TablixColumn>
+                  </TablixColumns>
+                  <TablixRows>
+                    <TablixRow>
+                      <Height>0.6cm</Height>
+                      <TablixCells>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox16">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>Client Version</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style />
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox16</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox41">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>Count actual</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox41</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox47">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>Count to old</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox47</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox49">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>Count newer</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox49</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                      </TablixCells>
+                    </TablixRow>
+                    <TablixRow>
+                      <Height>0.6cm</Height>
+                      <TablixCells>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="ClientVersion1">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!ClientVersion.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style />
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>ClientVersion1</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="SCCMAgent_Count_OK">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!SCCMAgent_Count_OK.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>SCCMAgent_Count_OK</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="SCCMAgent_Count_toOld">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!SCCMAgent_Count_toOld.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>SCCMAgent_Count_toOld</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="SCCMAgent_Count_Newer">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!SCCMAgent_Count_Newer.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>SCCMAgent_Count_Newer</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                      </TablixCells>
+                    </TablixRow>
+                  </TablixRows>
+                </TablixBody>
+                <TablixColumnHierarchy>
+                  <TablixMembers>
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                  </TablixMembers>
+                </TablixColumnHierarchy>
+                <TablixRowHierarchy>
+                  <TablixMembers>
+                    <TablixMember>
+                      <KeepWithGroup>After</KeepWithGroup>
+                    </TablixMember>
+                    <TablixMember>
+                      <Group Name="Details3" />
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixRowHierarchy>
+                <DataSetName>DS_SCCMClientVersion</DataSetName>
+                <Top>2.80196cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
                 <Width>12.66847cm</Width>
@@ -2962,11 +3086,887 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   </Border>
                 </Style>
               </Tablix>
+              <Tablix Name="Tablix5">
+                <TablixBody>
+                  <TablixColumns>
+                    <TablixColumn>
+                      <Width>4.61847cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2.05cm</Width>
+                    </TablixColumn>
+                  </TablixColumns>
+                  <TablixRows>
+                    <TablixRow>
+                      <Height>0.6cm</Height>
+                      <TablixCells>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox51">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>State</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox51</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox54">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value># Total </Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox54</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox56">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value># Active</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox56</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox76">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>percent</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox76</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox65">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value># Non Active </Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox65</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                      </TablixCells>
+                    </TablixRow>
+                    <TablixRow>
+                      <Height>0.6cm</Height>
+                      <TablixCells>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="State">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!State.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style />
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>State</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Total_Count">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!Total_Count.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Total_Count</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="ActiveClients_Count">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!ActiveClients_Count.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>ActiveClients_Count</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="percent">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!percent.Value</Value>
+                                      <Style>
+                                        <Format>0%</Format>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>percent</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="NonActiveClients_Count">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!NonActiveClients_Count.Value</Value>
+                                      <Style>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>NonActiveClients_Count</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                      </TablixCells>
+                    </TablixRow>
+                  </TablixRows>
+                </TablixBody>
+                <TablixColumnHierarchy>
+                  <TablixMembers>
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                  </TablixMembers>
+                </TablixColumnHierarchy>
+                <TablixRowHierarchy>
+                  <TablixMembers>
+                    <TablixMember>
+                      <KeepWithGroup>After</KeepWithGroup>
+                    </TablixMember>
+                    <TablixMember>
+                      <Group Name="Details4" />
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixRowHierarchy>
+                <DataSetName>DS_Client_Activities</DataSetName>
+                <Top>1.42557cm</Top>
+                <Left>38.74449cm</Left>
+                <Height>1.2cm</Height>
+                <Width>12.66847cm</Width>
+                <ZIndex>3</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Tablix>
+              <Chart Name="Chart1">
+                <ChartCategoryHierarchy>
+                  <ChartMembers>
+                    <ChartMember>
+                      <Group Name="Chart1_CategoryGroup">
+                        <GroupExpressions>
+                          <GroupExpression>=FormatDateTime(Fields!Date.Value, Dateformat.ShortDate )</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression>
+                          <Value>=Fields!Date.Value</Value>
+                        </SortExpression>
+                      </SortExpressions>
+                      <Label>=Fields!Date.Value</Label>
+                    </ChartMember>
+                  </ChartMembers>
+                </ChartCategoryHierarchy>
+                <ChartSeriesHierarchy>
+                  <ChartMembers>
+                    <ChartMember>
+                      <Label>Active Clients Count</Label>
+                    </ChartMember>
+                    <ChartMember>
+                      <Label>Non Active Clients Count</Label>
+                    </ChartMember>
+                    <ChartMember>
+                      <Label>Client Target</Label>
+                    </ChartMember>
+                  </ChartMembers>
+                </ChartSeriesHierarchy>
+                <ChartData>
+                  <ChartSeriesCollection>
+                    <ChartSeries Name="ActiveClients_Count">
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=(Fields!ActiveClients_Count.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style />
+                          </ChartDataLabel>
+                          <Style>
+                            <Border>
+                              <Width>3pt</Width>
+                            </Border>
+                            <Color>=First(Fields!BG_green.Value, "DS_Rpt_Conf")</Color>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Auto</Type>
+                            <Style />
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                    <ChartSeries Name="NonActiveClients_Count">
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=(Fields!NonActiveClients_Count.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style />
+                          </ChartDataLabel>
+                          <Style>
+                            <Border>
+                              <Width>3pt</Width>
+                            </Border>
+                            <Color>=First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")</Color>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Auto</Type>
+                            <Style>
+                              <Border>
+                                <Width>2pt</Width>
+                              </Border>
+                            </Style>
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                    <ChartSeries Name="ClientTarget">
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=Max(Fields!ClientTarget.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style />
+                          </ChartDataLabel>
+                          <Style>
+                            <Border>
+                              <Width>3pt</Width>
+                            </Border>
+                            <Color>#4f81bd</Color>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Auto</Type>
+                            <Style />
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                  </ChartSeriesCollection>
+                </ChartData>
+                <ChartAreas>
+                  <ChartArea Name="Default">
+                    <ChartCategoryAxes>
+                      <ChartAxis Name="Primary">
+                        <Style>
+                          <Border>
+                            <Color>Gainsboro</Color>
+                            <Style>None</Style>
+                          </Border>
+                          <FontSize>8pt</FontSize>
+                          <Format>dd-MMM-yy</Format>
+                          <Color>#5c5c5c</Color>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption />
+                          <Style>
+                            <FontSize>9pt</FontSize>
+                            <Color>#5c5c5c</Color>
+                          </Style>
+                        </ChartAxisTitle>
+                        <ChartMajorGridLines>
+                          <Enabled>False</Enabled>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMajorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </ChartMajorTickMarks>
+                        <ChartMinorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Minimum>NaN</Minimum>
+                        <Maximum>NaN</Maximum>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                      <ChartAxis Name="Secondary">
+                        <Style>
+                          <Border>
+                            <Color>Gainsboro</Color>
+                            <Style>None</Style>
+                          </Border>
+                          <FontSize>8pt</FontSize>
+                          <Color>#5c5c5c</Color>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption />
+                          <Style>
+                            <FontSize>9pt</FontSize>
+                            <Color>#5c5c5c</Color>
+                          </Style>
+                        </ChartAxisTitle>
+                        <ChartMajorGridLines>
+                          <Enabled>False</Enabled>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMajorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </ChartMajorTickMarks>
+                        <ChartMinorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Location>Opposite</Location>
+                        <Minimum>NaN</Minimum>
+                        <Maximum>NaN</Maximum>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                    </ChartCategoryAxes>
+                    <ChartValueAxes>
+                      <ChartAxis Name="Primary">
+                        <Style>
+                          <Border>
+                            <Color>Gainsboro</Color>
+                            <Style>None</Style>
+                          </Border>
+                          <FontSize>8pt</FontSize>
+                          <Color>#5c5c5c</Color>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption />
+                          <Style>
+                            <FontSize>9pt</FontSize>
+                            <Color>#5c5c5c</Color>
+                          </Style>
+                        </ChartAxisTitle>
+                        <ChartMajorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMajorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMajorTickMarks>
+                        <ChartMinorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <InterlacedColor>CornflowerBlue</InterlacedColor>
+                        <Minimum>NaN</Minimum>
+                        <Maximum>=Fields!ClientTarget.Value * 103%</Maximum>
+                        <LogBase>24</LogBase>
+                        <ChartAxisScaleBreak>
+                          <Enabled>true</Enabled>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                      <ChartAxis Name="Secondary">
+                        <Style>
+                          <Border>
+                            <Color>Gainsboro</Color>
+                            <Style>None</Style>
+                          </Border>
+                          <FontSize>8pt</FontSize>
+                          <Color>#5c5c5c</Color>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption />
+                          <Style>
+                            <FontSize>9pt</FontSize>
+                            <Color>#5c5c5c</Color>
+                          </Style>
+                        </ChartAxisTitle>
+                        <ChartMajorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMajorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </ChartMajorTickMarks>
+                        <ChartMinorTickMarks>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Location>Opposite</Location>
+                        <Minimum>NaN</Minimum>
+                        <Maximum>NaN</Maximum>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                    </ChartValueAxes>
+                    <Style>
+                      <BackgroundColor>#00ffffff</BackgroundColor>
+                      <BackgroundGradientType>None</BackgroundGradientType>
+                    </Style>
+                  </ChartArea>
+                </ChartAreas>
+                <ChartLegends>
+                  <ChartLegend Name="Default">
+                    <Style>
+                      <BackgroundGradientType>None</BackgroundGradientType>
+                      <FontSize>8pt</FontSize>
+                    </Style>
+                    <Position>TopLeft</Position>
+                    <ChartLegendTitle>
+                      <Caption />
+                      <Style>
+                        <FontSize>8pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                      </Style>
+                    </ChartLegendTitle>
+                    <HeaderSeparatorColor>Black</HeaderSeparatorColor>
+                    <ColumnSeparatorColor>Black</ColumnSeparatorColor>
+                  </ChartLegend>
+                </ChartLegends>
+                <ChartTitles>
+                  <ChartTitle Name="Default">
+                    <Caption>client total / client active / Client non-active</Caption>
+                    <Style>
+                      <BackgroundGradientType>None</BackgroundGradientType>
+                      <FontSize>12pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <TextAlign>Left</TextAlign>
+                      <VerticalAlign>Top</VerticalAlign>
+                      <Color>#a6a6a6</Color>
+                    </Style>
+                    <Position>TopLeft</Position>
+                  </ChartTitle>
+                </ChartTitles>
+                <Palette>Excel</Palette>
+                <ChartBorderSkin>
+                  <Style>
+                    <BackgroundColor>Gray</BackgroundColor>
+                    <BackgroundGradientType>None</BackgroundGradientType>
+                    <Color>White</Color>
+                  </Style>
+                </ChartBorderSkin>
+                <ChartNoDataMessage Name="NoDataMessage">
+                  <Caption>Keine Daten verfügbar</Caption>
+                  <Style>
+                    <BackgroundGradientType>None</BackgroundGradientType>
+                    <FontWeight>Bold</FontWeight>
+                    <TextAlign>General</TextAlign>
+                    <VerticalAlign>Top</VerticalAlign>
+                  </Style>
+                </ChartNoDataMessage>
+                <DataSetName>DS__ClientMainDiagramData</DataSetName>
+                <Top>1.42557cm</Top>
+                <Left>0.23147cm</Left>
+                <Height>13.11248cm</Height>
+                <Width>37.58149cm</Width>
+                <ZIndex>4</ZIndex>
+                <Style>
+                  <Border>
+                    <Color>LightGrey</Color>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundColor>White</BackgroundColor>
+                  <BackgroundGradientType>None</BackgroundGradientType>
+                </Style>
+              </Chart>
             </ReportItems>
             <KeepTogether>true</KeepTogether>
-            <Top>0.10583cm</Top>
-            <Left>0.3175cm</Left>
-            <Height>7.9337cm</Height>
+            <Top>0.15875cm</Top>
+            <Left>0.09525cm</Left>
+            <Height>15.01133cm</Height>
             <Width>51.86275cm</Width>
             <ZIndex>1</ZIndex>
             <Style>
@@ -6812,8 +7812,8 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
               </Tablix>
             </ReportItems>
             <KeepTogether>true</KeepTogether>
-            <Top>8.33501cm</Top>
-            <Left>0.3175cm</Left>
+            <Top>15.33193cm</Top>
+            <Left>0.09525cm</Left>
             <Height>3.12146cm</Height>
             <Width>51.86275cm</Width>
             <ZIndex>2</ZIndex>
@@ -6825,17 +7825,17 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
             </Style>
           </Rectangle>
         </ReportItems>
-        <Height>141.67904mm</Height>
+        <Height>208.35403mm</Height>
         <Style>
           <Border>
             <Style>None</Style>
           </Border>
         </Style>
       </Body>
-      <Width>526.30043mm</Width>
+      <Width>522.06708mm</Width>
       <Page>
         <PageHeader>
-          <Height>2.80459cm</Height>
+          <Height>2.56434cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -6861,8 +7861,8 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox2</rd:DefaultName>
-              <Top>0.5292cm</Top>
-              <Left>0.3175cm</Left>
+              <Top>0.2117cm</Top>
+              <Left>0.09525cm</Left>
               <Height>2.03514cm</Height>
               <Width>48.01296cm</Width>
               <Style>
@@ -6888,8 +7888,8 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   </Action>
                 </Actions>
               </ActionInfo>
-              <Top>0.47468cm</Top>
-              <Left>48.56887cm</Left>
+              <Top>0.17129cm</Top>
+              <Left>48.79112cm</Left>
               <Height>2.08966cm</Height>
               <Width>3.16159cm</Width>
               <ZIndex>1</ZIndex>
@@ -6909,7 +7909,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
           </Style>
         </PageHeader>
         <PageFooter>
-          <Height>15.86885mm</Height>
+          <Height>14.54593mm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -6921,7 +7921,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                   <TextRuns>
                     <TextRun>
                       <Value>="ConfigMgrclientHealth Dashboard"  &amp; Chr(13) &amp; Chr(10) &amp;
-"Report: " &amp; Globals!ReportFolder &amp; "\" &amp; Globals!ReportName &amp; " - v 0.03, 13-02-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+"Report: " &amp; Globals!ReportFolder &amp; "\" &amp; Globals!ReportName &amp; " - v 0.04, 16-02-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 "Page (" + Globals!PageNumber.ToString() + " of " + Globals!OverallTotalPages.ToString() + "); generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>
@@ -6934,10 +7934,10 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>Textbox2</rd:DefaultName>
-              <Top>0.2211cm</Top>
-              <Left>0.3175cm</Left>
+              <Top>0.17639cm</Top>
+              <Left>0.09525cm</Left>
               <Height>1.07474cm</Height>
-              <Width>19.30544cm</Width>
+              <Width>51.85746cm</Width>
               <Style>
                 <Border>
                   <Style>None</Style>
@@ -6991,7 +7991,7 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>3</Value>
+          <Value>5</Value>
         </Values>
       </DefaultValue>
       <Prompt>Clients Active older as</Prompt>
@@ -7016,10 +8016,10 @@ Fields!BITS.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>1</Value>
+          <Value>0</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Use Historydate</Prompt>
+      <Prompt>use historical data</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
