@@ -163,12 +163,12 @@ FROM
           <FilterExpression>=Fields!Theme.Value</FilterExpression>
           <Operator>Equal</Operator>
           <FilterValues>
-            <FilterValue>=Parameters!ParaTheme.Value</FilterValue>
+            <FilterValue>=Parameters!Para_Theme.Value</FilterValue>
           </FilterValues>
         </Filter>
       </Filters>
     </DataSet>
-    <DataSet Name="DS_Rpt_ParaSel">
+    <DataSet Name="DS_Para_Rpt_Theme">
       <Query>
         <DataSourceName>DQ_ClientHealthDB</DataSourceName>
         <CommandText>SELECT
@@ -190,10 +190,10 @@ FROM
         </Field>
       </Fields>
     </DataSet>
-    <DataSet Name="DS_ClientsActiveOlderas">
+    <DataSet Name="DS_Para_Actual_Term">
       <Query>
         <DataSourceName>DQ_ClientHealthDB</DataSourceName>
-        <CommandText>SELECT  value FROM [dbo].[udf_Split] ((Select Top 1 ConfigValue  from [dbo].[SCCM_Config] where ConfigItem = 'RptClientsActiveOlderAs'),',')
+        <CommandText>SELECT  value FROM [dbo].[udf_Split] ((Select Top 1 ConfigValue  from [dbo].[SCCM_Config] where ConfigItem = 'Para_Actual_Term'),',')
 order by position</CommandText>
         <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
       </Query>
@@ -208,14 +208,17 @@ order by position</CommandText>
       <Query>
         <DataSourceName>DQ_ClientHealthDB</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@DateFilterDiff">
-            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
+          <QueryParameter Name="@Para_Actual_Term">
+            <Value>=Parameters!Para_Actual_Term.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@UseHistorydate">
-            <Value>=Parameters!UseHistorydate.Value</Value>
+          <QueryParameter Name="@Para_Use_Long_Term_Data">
+            <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@HistorydateFilter">
-            <Value>=Parameters!HistorydateFilter.Value</Value>
+          <QueryParameter Name="@Para_Long_Term">
+            <Value>=Parameters!Para_Long_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Device">
+            <Value>=Parameters!Para_Device.Value</Value>
           </QueryParameter>
         </QueryParameters>
         <CommandType>StoredProcedure</CommandType>
@@ -384,68 +387,193 @@ order by position</CommandText>
         </Field>
       </Fields>
     </DataSet>
+    <DataSet Name="DS_Para_Long_Term">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <CommandText>SELECT  value FROM [dbo].[udf_Split] ((Select Top 1 ConfigValue  from [dbo].[SCCM_Config] where ConfigItem = 'Para_Long_Term'),',')
+order by position</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="value">
+          <DataField>value</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS_ClientData_ActionResult">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Para_Actual_Term">
+            <Value>=Parameters!Para_Actual_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Use_Long_Term_Data">
+            <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Long_Term">
+            <Value>=Parameters!Para_Long_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Device">
+            <Value>=Parameters!Para_Device.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_ClientData_ActionResult</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Component_Name">
+          <DataField>Component_Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Component_Count_OK">
+          <DataField>Component_Count_OK</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Component_Count_ERROR">
+          <DataField>Component_Count_ERROR</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS_SCCMClientVersion">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Para_Actual_Term">
+            <Value>=Parameters!Para_Actual_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Use_Long_Term_Data">
+            <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Long_Term">
+            <Value>=Parameters!Para_Long_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Device">
+            <Value>=Parameters!Para_Device.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_SCCMClientVersion</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="ClientVersion">
+          <DataField>ClientVersion</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="SCCMAgent_Count_OK">
+          <DataField>SCCMAgent_Count_OK</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SCCMAgent_Count_toOld">
+          <DataField>SCCMAgent_Count_toOld</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SCCMAgent_Count_Newer">
+          <DataField>SCCMAgent_Count_Newer</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS_Client_Activities">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Para_Actual_Term">
+            <Value>=Parameters!Para_Actual_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Device">
+            <Value>=Parameters!Para_Device.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_Client_Activities</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="State">
+          <DataField>State</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Total_Count">
+          <DataField>Total_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ActiveClients_Count">
+          <DataField>ActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="NonActiveClients_Count">
+          <DataField>NonActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="percent">
+          <Value>=Fields!ActiveClients_Count.Value/Fields!Total_Count.Value</Value>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DS_ClientMainDiagramData">
+      <Query>
+        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Para_Actual_Term">
+            <Value>=Parameters!Para_Actual_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Use_Long_Term_Data">
+            <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Long_Term">
+            <Value>=Parameters!Para_Long_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Device">
+            <Value>=Parameters!Para_Device.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>up_get_ClientMainDiagramData</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="ClientTarget">
+          <DataField>ClientTarget</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ActiveClients_Count">
+          <DataField>ActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="NonActiveClients_Count">
+          <DataField>NonActiveClients_Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Date">
+          <DataField>date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
     <DataSet Name="DS_OS_SummaryData">
       <Query>
         <DataSourceName>DQ_ClientHealthDB</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@DateFilterDiff">
-            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
+          <QueryParameter Name="@Para_Actual_Term">
+            <Value>=Parameters!Para_Actual_Term.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@UseHistorydate">
-            <Value>=Parameters!UseHistorydate.Value</Value>
+          <QueryParameter Name="@Para_Use_Long_Term_Data">
+            <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@HistorydateFilter">
-            <Value>=Parameters!HistorydateFilter.Value</Value>
+          <QueryParameter Name="@Para_Long_Term">
+            <Value>=Parameters!Para_Long_Term.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Para_Device">
+            <Value>=Parameters!Para_Device.Value</Value>
           </QueryParameter>
         </QueryParameters>
         <CommandType>StoredProcedure</CommandType>
         <CommandText>up_get_OS_Summary_data</CommandText>
-        <rd:DesignerState>
-          <QueryDefinition xmlns="http://schemas.microsoft.com/ReportingServices/QueryDefinition/Relational">
-            <Functions>
-              <SProc ColumnOwner="up_get_OS_Summary_data">
-                <Parameter Name="@DateFilterDiff">
-                  <Value>1</Value>
-                </Parameter>
-                <Parameter Name="@UseHistorydate">
-                  <Value>1</Value>
-                </Parameter>
-                <Parameter Name="@HistorydateFilter">
-                  <Value>30</Value>
-                </Parameter>
-              </SProc>
-            </Functions>
-            <SelectedColumns>
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="OperatingSystem" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="TotalCount" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ClientCertificate_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ClientCertificate_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ClientVersion_Actual" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ClientVersion_Newer" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ClientVersion_Older" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ProvisioningMode_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="ProvisioningMode_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="DNS_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="DNS_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="Drivers_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="Drivers_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="PendingReboot_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="PendingReboot_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="Services_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="Services_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="AdminShare_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="AdminShare_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="StateMessages_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="StateMessages_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="WUAHandler_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="WUAHandler_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="WMI_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="WMI_Error" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="BITS_OK" />
-              <ColumnExpression ColumnOwner="up_get_OS_Summary_data" ColumnName="BITS_Error" />
-            </SelectedColumns>
-          </QueryDefinition>
-        </rd:DesignerState>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
       </Query>
       <Fields>
         <Field Name="OperatingSystem">
@@ -468,20 +596,20 @@ order by position</CommandText>
           <DataField>ClientVersion_Actual</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="ProvisioningMode_OK">
-          <DataField>ProvisioningMode_OK</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
         <Field Name="ClientVersion_Newer">
           <DataField>ClientVersion_Newer</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="ProvisioningMode_Error">
-          <DataField>ProvisioningMode_Error</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
         <Field Name="ClientVersion_Older">
           <DataField>ClientVersion_Older</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ProvisioningMode_OK">
+          <DataField>ProvisioningMode_OK</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ProvisioningMode_Error">
+          <DataField>ProvisioningMode_Error</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
         <Field Name="DNS_OK">
@@ -555,161 +683,6 @@ order by position</CommandText>
         <Field Name="BITS_Error">
           <DataField>BITS_Error</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DS_ClientsHistoryOlderAs">
-      <Query>
-        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
-        <CommandText>SELECT  value FROM [dbo].[udf_Split] ((Select Top 1 ConfigValue  from [dbo].[SCCM_Config] where ConfigItem = 'RptClientsHistoricalOlderAs'),',')
-order by position</CommandText>
-        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
-      </Query>
-      <Fields>
-        <Field Name="value">
-          <DataField>value</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DS_ClientData_ActionResult">
-      <Query>
-        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
-        <QueryParameters>
-          <QueryParameter Name="@DateFilterDiff">
-            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@UseHistorydate">
-            <Value>=Parameters!UseHistorydate.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@HistorydateFilter">
-            <Value>=Parameters!HistorydateFilter.Value</Value>
-          </QueryParameter>
-        </QueryParameters>
-        <CommandType>StoredProcedure</CommandType>
-        <CommandText>up_get_ClientData_ActionResult</CommandText>
-        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
-      </Query>
-      <Fields>
-        <Field Name="Component_Name">
-          <DataField>Component_Name</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Component_Count_OK">
-          <DataField>Component_Count_OK</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="Component_Count_ERROR">
-          <DataField>Component_Count_ERROR</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DS_SCCMClientVersion">
-      <Query>
-        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
-        <QueryParameters>
-          <QueryParameter Name="@DateFilterDiff">
-            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@UseHistorydate">
-            <Value>=Parameters!UseHistorydate.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@HistorydateFilter">
-            <Value>=Parameters!HistorydateFilter.Value</Value>
-          </QueryParameter>
-        </QueryParameters>
-        <CommandType>StoredProcedure</CommandType>
-        <CommandText>up_get_SCCMClientVersion</CommandText>
-        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
-      </Query>
-      <Fields>
-        <Field Name="ClientVersion">
-          <DataField>ClientVersion</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="SCCMAgent_Count_OK">
-          <DataField>SCCMAgent_Count_OK</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="SCCMAgent_Count_toOld">
-          <DataField>SCCMAgent_Count_toOld</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="SCCMAgent_Count_Newer">
-          <DataField>SCCMAgent_Count_Newer</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DS_Client_Activities">
-      <Query>
-        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
-        <QueryParameters>
-          <QueryParameter Name="@DateFilterDiff">
-            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
-          </QueryParameter>
-        </QueryParameters>
-        <CommandType>StoredProcedure</CommandType>
-        <CommandText>up_get_Client_Activities</CommandText>
-        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
-      </Query>
-      <Fields>
-        <Field Name="State">
-          <DataField>State</DataField>
-          <rd:TypeName>System.String</rd:TypeName>
-        </Field>
-        <Field Name="Total_Count">
-          <DataField>Total_Count</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="ActiveClients_Count">
-          <DataField>ActiveClients_Count</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="NonActiveClients_Count">
-          <DataField>NonActiveClients_Count</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="percent">
-          <Value>=Fields!ActiveClients_Count.Value/Fields!Total_Count.Value</Value>
-        </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="DS__ClientMainDiagramData">
-      <Query>
-        <DataSourceName>DQ_ClientHealthDB</DataSourceName>
-        <QueryParameters>
-          <QueryParameter Name="@DateFilterDiff">
-            <Value>=Parameters!ClientsActiveOlderAs.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@UseHistorydate">
-            <Value>=Parameters!UseHistorydate.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@HistorydateFilter">
-            <Value>=Parameters!HistorydateFilter.Value</Value>
-          </QueryParameter>
-        </QueryParameters>
-        <CommandType>StoredProcedure</CommandType>
-        <CommandText>up_get_ClientMainDiagramData</CommandText>
-        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
-      </Query>
-      <Fields>
-        <Field Name="ClientTarget">
-          <DataField>ClientTarget</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="ActiveClients_Count">
-          <DataField>ActiveClients_Count</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="NonActiveClients_Count">
-          <DataField>NonActiveClients_Count</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="Date">
-          <DataField>date</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -1650,7 +1623,7 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!PendingReboot.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!PendingReboot.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!PendingReboot.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1670,7 +1643,7 @@ Fields!PendingReboot.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Co
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!PendingReboot.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!PendingReboot.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1684,7 +1657,6 @@ Fields!PendingReboot.Value="Unknown","#f2f2f2", true, "Orange"),IIF(RowNumber(No
                                 <PaddingBottom>2pt</PaddingBottom>
                               </Style>
                             </Textbox>
-                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                         <TablixCell>
@@ -1698,7 +1670,7 @@ Fields!PendingReboot.Value="Unknown","#f2f2f2", true, "Orange"),IIF(RowNumber(No
                                     <TextRun>
                                       <Value>=Fields!Services.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!Services.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!Services.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1718,7 +1690,7 @@ Fields!Services.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf"))
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!Services.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!Services.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1745,7 +1717,7 @@ Fields!Services.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothi
                                     <TextRun>
                                       <Value>=Fields!AdminShare.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!AdminShare.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!AdminShare.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1765,7 +1737,7 @@ Fields!AdminShare.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf"
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!AdminShare.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!AdminShare.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1791,7 +1763,7 @@ Fields!AdminShare.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf"
                                     <TextRun>
                                       <Value>=Fields!StateMessages.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!StateMessages.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!StateMessages.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1811,7 +1783,7 @@ Fields!StateMessages.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Co
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!StateMessages.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!StateMessages.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1837,7 +1809,7 @@ Fields!StateMessages.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Co
                                     <TextRun>
                                       <Value>=Fields!WUAHandler.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!WUAHandler.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!WUAHandler.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1857,7 +1829,7 @@ Fields!WUAHandler.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf"
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!WUAHandler.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!WUAHandler.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1887,7 +1859,7 @@ Fields!PendingReboot.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(
                                     <TextRun>
                                       <Value>=Fields!WMI.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!WMI.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!WMI.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1907,7 +1879,7 @@ Fields!WMI.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF(
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!WMI.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!WMI.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1933,7 +1905,7 @@ Fields!WMI.Value="Error",First(Fields!BG_State_Error.Value, "DS_Rpt_Conf")),IIF(
                                     <TextRun>
                                       <Value>=Fields!BITS.Value</Value>
                                       <Style>
-                                        <Color>=iif(Parameters!UseColoredOutput.Value = "true",
+                                        <Color>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!BITS.Value="OK",First(Fields!FG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!BITS.Value="Started",First(Fields!FG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -1953,7 +1925,7 @@ Fields!BITS.Value="Error",First(Fields!FG_State_Error.Value, "DS_Rpt_Conf")),IIF
                                   <Color>LightGrey</Color>
                                   <Style>Solid</Style>
                                 </Border>
-                                <BackgroundColor>=iif(Parameters!UseColoredOutput.Value = "true",
+                                <BackgroundColor>=iif(Parameters!Para_Colored_Output.Value = "true",
 switch(
 Fields!BITS.Value="OK",First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),
 Fields!BITS.Value="Started",First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf"),
@@ -2683,7 +2655,6 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                                   </ChartElementPosition>
                                 </ChartArea>
                               </ChartAreas>
-                              <Palette>PacificSemiTransparent</Palette>
                               <ChartBorderSkin>
                                 <Style>
                                   <BackgroundColor>Gray</BackgroundColor>
@@ -2711,6 +2682,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                                 <BackgroundGradientType>None</BackgroundGradientType>
                               </Style>
                             </Chart>
+                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                       </TablixCells>
@@ -3947,7 +3919,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                     <VerticalAlign>Top</VerticalAlign>
                   </Style>
                 </ChartNoDataMessage>
-                <DataSetName>DS__ClientMainDiagramData</DataSetName>
+                <DataSetName>DS_ClientMainDiagramData</DataSetName>
                 <Top>1.42557cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>13.11248cm</Height>
@@ -7846,7 +7818,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Paragraph>
                   <TextRuns>
                     <TextRun>
-                      <Value>=iif(Parameters!UseHistorydate.Value = 1, "ConfigMgr Client Health Dashboard with historical Data", "ConfigMgr Client Health Dashboard without historical Data")</Value>
+                      <Value>=iif(Parameters!Para_Use_Long_Term_Data.Value = 1, "ConfigMgr Client Health Dashboard with historical Data", "ConfigMgr Client Health Dashboard without historical Data")</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>
                         <FontSize>36pt</FontSize>
@@ -7971,7 +7943,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
     </ReportSection>
   </ReportSections>
   <ReportParameters>
-    <ReportParameter Name="ParaTheme">
+    <ReportParameter Name="Para_Theme">
       <DataType>String</DataType>
       <DefaultValue>
         <Values>
@@ -7981,29 +7953,29 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
       <Prompt>Report Layout:</Prompt>
       <ValidValues>
         <DataSetReference>
-          <DataSetName>DS_Rpt_ParaSel</DataSetName>
+          <DataSetName>DS_Para_Rpt_Theme</DataSetName>
           <ValueField>Theme</ValueField>
           <LabelField>Theme</LabelField>
         </DataSetReference>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="ClientsActiveOlderAs">
+    <ReportParameter Name="Para_Long_Term">
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>5</Value>
+          <Value>30</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Clients Active older as</Prompt>
+      <Prompt>long term</Prompt>
       <ValidValues>
         <DataSetReference>
-          <DataSetName>DS_ClientsActiveOlderas</DataSetName>
+          <DataSetName>DS_Para_Long_Term</DataSetName>
           <ValueField>value</ValueField>
           <LabelField>value</LabelField>
         </DataSetReference>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="Device">
+    <ReportParameter Name="Para_Device">
       <DataType>String</DataType>
       <DefaultValue>
         <Values>
@@ -8012,14 +7984,14 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
       </DefaultValue>
       <Prompt>Device</Prompt>
     </ReportParameter>
-    <ReportParameter Name="UseHistorydate">
+    <ReportParameter Name="Para_Use_Long_Term_Data">
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
           <Value>0</Value>
         </Values>
       </DefaultValue>
-      <Prompt>use historical data</Prompt>
+      <Prompt>use long term data</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
@@ -8033,30 +8005,30 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
         </ParameterValues>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="HistorydateFilter">
+    <ReportParameter Name="Para_Actual_Term">
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>30</Value>
+          <Value>5</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Historydate Filter</Prompt>
+      <Prompt>actual term</Prompt>
       <ValidValues>
         <DataSetReference>
-          <DataSetName>DS_ClientsHistoryOlderAs</DataSetName>
+          <DataSetName>DS_Para_Actual_Term</DataSetName>
           <ValueField>value</ValueField>
           <LabelField>value</LabelField>
         </DataSetReference>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="UseColoredOutput">
+    <ReportParameter Name="Para_Colored_Output">
       <DataType>Boolean</DataType>
       <DefaultValue>
         <Values>
           <Value>true</Value>
         </Values>
       </DefaultValue>
-      <Prompt>use colored Output</Prompt>
+      <Prompt>colored output</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
@@ -8079,32 +8051,32 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>ParaTheme</ParameterName>
+          <ParameterName>Para_Theme</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>4</RowIndex>
-          <ParameterName>ClientsActiveOlderAs</ParameterName>
+          <ParameterName>Para_Long_Term</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>4</RowIndex>
-          <ParameterName>Device</ParameterName>
+          <ParameterName>Para_Device</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>5</RowIndex>
-          <ParameterName>UseHistorydate</ParameterName>
+          <ParameterName>Para_Use_Long_Term_Data</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>6</RowIndex>
-          <ParameterName>HistorydateFilter</ParameterName>
+          <ParameterName>Para_Actual_Term</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>6</RowIndex>
-          <ParameterName>UseColoredOutput</ParameterName>
+          <ParameterName>Para_Colored_Output</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
