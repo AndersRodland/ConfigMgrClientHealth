@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <Description>client health dashboard</Description>
-  <Author>Klaus Bilger</Author>
+  <Author>Klaus.Bilger@C-S-L.BIZ</Author>
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="DQ_ClientHealthDB">
@@ -693,40 +693,6 @@ order by position</CommandText>
         <ReportItems>
           <Rectangle Name="Rectangle1">
             <ReportItems>
-              <Textbox Name="Textbox74">
-                <CanGrow>true</CanGrow>
-                <KeepTogether>true</KeepTogether>
-                <Paragraphs>
-                  <Paragraph>
-                    <TextRuns>
-                      <TextRun>
-                        <Value>Detailed status for Client Health</Value>
-                        <Style>
-                          <FontFamily>Verdana</FontFamily>
-                          <FontSize>12pt</FontSize>
-                          <FontWeight>Bold</FontWeight>
-                          <Color>#706f6f</Color>
-                        </Style>
-                      </TextRun>
-                    </TextRuns>
-                    <Style />
-                  </Paragraph>
-                </Paragraphs>
-                <rd:DefaultName>Textbox71</rd:DefaultName>
-                <Top>0.0635cm</Top>
-                <Left>0.0635cm</Left>
-                <Height>0.59972cm</Height>
-                <Width>9.525cm</Width>
-                <Style>
-                  <Border>
-                    <Style>None</Style>
-                  </Border>
-                  <PaddingLeft>2pt</PaddingLeft>
-                  <PaddingRight>2pt</PaddingRight>
-                  <PaddingTop>2pt</PaddingTop>
-                  <PaddingBottom>2pt</PaddingBottom>
-                </Style>
-              </Textbox>
               <Tablix Name="Tablix1">
                 <TablixBody>
                   <TablixColumns>
@@ -773,7 +739,7 @@ order by position</CommandText>
                       <Width>2.5cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.5cm</Width>
+                      <Width>2.53601cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -1978,22 +1944,62 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_ClientData</DataSetName>
-                <Top>0.73378cm</Top>
-                <Left>0.0635cm</Left>
+                <Top>0.98778cm</Top>
+                <Left>0.20981cm</Left>
                 <Height>1.2cm</Height>
-                <Width>51.34946cm</Width>
-                <ZIndex>1</ZIndex>
+                <Width>51.38547cm</Width>
                 <Style>
                   <Border>
                     <Style>None</Style>
                   </Border>
                 </Style>
               </Tablix>
+              <Textbox Name="Textbox81">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>Detailed status for Client Health</Value>
+                        <Style>
+                          <FontFamily>Verdana</FontFamily>
+                          <FontSize>14pt</FontSize>
+                          <FontWeight>Bold</FontWeight>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Left</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <rd:DefaultName>Textbox71</rd:DefaultName>
+                <Top>0.16404cm</Top>
+                <Left>0.20981cm</Left>
+                <Height>0.77258cm</Height>
+                <Width>51.38547cm</Width>
+                <ZIndex>1</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundImage>
+                    <Source>Embedded</Source>
+                    <Value>bg</Value>
+                    <BackgroundRepeat>RepeatX</BackgroundRepeat>
+                  </BackgroundImage>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
             </ReportItems>
             <KeepTogether>true</KeepTogether>
-            <Top>18.61524cm</Top>
-            <Left>0.09525cm</Left>
-            <Height>2.07962cm</Height>
+            <Top>18.92745cm</Top>
+            <Left>0.11691cm</Left>
+            <Height>2.42358cm</Height>
             <Width>51.86275cm</Width>
             <Style>
               <Border>
@@ -2016,22 +2022,28 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                           <FontFamily>Verdana</FontFamily>
                           <FontSize>14pt</FontSize>
                           <FontWeight>Bold</FontWeight>
-                          <Color>#706f6f</Color>
                         </Style>
                       </TextRun>
                     </TextRuns>
-                    <Style />
+                    <Style>
+                      <TextAlign>Left</TextAlign>
+                    </Style>
                   </Paragraph>
                 </Paragraphs>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
                 <Top>0.20285cm</Top>
-                <Left>0.27745cm</Left>
-                <Height>0.91722cm</Height>
-                <Width>24.33972cm</Width>
+                <Left>0.23147cm</Left>
+                <Height>0.77258cm</Height>
+                <Width>37.58149cm</Width>
                 <Style>
                   <Border>
                     <Style>None</Style>
                   </Border>
+                  <BackgroundImage>
+                    <Source>Embedded</Source>
+                    <Value>bg</Value>
+                    <BackgroundRepeat>RepeatX</BackgroundRepeat>
+                  </BackgroundImage>
                   <PaddingLeft>2pt</PaddingLeft>
                   <PaddingRight>2pt</PaddingRight>
                   <PaddingTop>2pt</PaddingTop>
@@ -2682,7 +2694,6 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                                 <BackgroundGradientType>None</BackgroundGradientType>
                               </Style>
                             </Chart>
-                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                       </TablixCells>
@@ -2708,7 +2719,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_ClientData_ActionResult</DataSetName>
-                <Top>4.17865cm</Top>
+                <Top>6.02015cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
                 <Width>12.66847cm</Width>
@@ -3047,7 +3058,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_SCCMClientVersion</DataSetName>
-                <Top>2.80196cm</Top>
+                <Top>3.50046cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
                 <Width>12.66847cm</Width>
@@ -3463,7 +3474,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_Client_Activities</DataSetName>
-                <Top>1.42557cm</Top>
+                <Top>1.04457cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
                 <Width>12.66847cm</Width>
@@ -3920,7 +3931,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </Style>
                 </ChartNoDataMessage>
                 <DataSetName>DS_ClientMainDiagramData</DataSetName>
-                <Top>1.42557cm</Top>
+                <Top>1.05657cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>13.11248cm</Height>
                 <Width>37.58149cm</Width>
@@ -3934,11 +3945,134 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <BackgroundGradientType>None</BackgroundGradientType>
                 </Style>
               </Chart>
+              <Textbox Name="Textbox72">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>Client Summary</Value>
+                        <Style>
+                          <FontFamily>Verdana</FontFamily>
+                          <FontSize>14pt</FontSize>
+                          <FontWeight>Bold</FontWeight>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Left</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <rd:DefaultName>Textbox71</rd:DefaultName>
+                <Top>0.20285cm</Top>
+                <Left>38.74449cm</Left>
+                <Height>0.77258cm</Height>
+                <Width>12.66847cm</Width>
+                <ZIndex>5</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundImage>
+                    <Source>Embedded</Source>
+                    <Value>bg</Value>
+                    <BackgroundRepeat>RepeatX</BackgroundRepeat>
+                  </BackgroundImage>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
+              <Textbox Name="Textbox77">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>Client Versions</Value>
+                        <Style>
+                          <FontFamily>Verdana</FontFamily>
+                          <FontSize>14pt</FontSize>
+                          <FontWeight>Bold</FontWeight>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Left</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <rd:DefaultName>Textbox71</rd:DefaultName>
+                <Top>2.67437cm</Top>
+                <Left>38.74449cm</Left>
+                <Height>0.77258cm</Height>
+                <Width>12.66847cm</Width>
+                <ZIndex>6</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundImage>
+                    <Source>Embedded</Source>
+                    <Value>bg</Value>
+                    <BackgroundRepeat>RepeatX</BackgroundRepeat>
+                  </BackgroundImage>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
+              <Textbox Name="Textbox79">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>Client Components Summary</Value>
+                        <Style>
+                          <FontFamily>Verdana</FontFamily>
+                          <FontSize>14pt</FontSize>
+                          <FontWeight>Bold</FontWeight>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Left</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <rd:DefaultName>Textbox71</rd:DefaultName>
+                <Top>5.18792cm</Top>
+                <Left>38.74449cm</Left>
+                <Height>0.77258cm</Height>
+                <Width>12.66847cm</Width>
+                <ZIndex>7</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundImage>
+                    <Source>Embedded</Source>
+                    <Value>bg</Value>
+                    <BackgroundRepeat>RepeatX</BackgroundRepeat>
+                  </BackgroundImage>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
             </ReportItems>
             <KeepTogether>true</KeepTogether>
             <Top>0.15875cm</Top>
             <Left>0.09525cm</Left>
-            <Height>15.01133cm</Height>
+            <Height>14.42925cm</Height>
             <Width>51.86275cm</Width>
             <ZIndex>1</ZIndex>
             <Style>
@@ -7772,8 +7906,8 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_OS_SummaryData</DataSetName>
-                <Top>0.127cm</Top>
-                <Left>0.08516cm</Left>
+                <Top>0.98954cm</Top>
+                <Left>0.23147cm</Left>
                 <Height>2.8cm</Height>
                 <Width>51.3278cm</Width>
                 <Style>
@@ -7782,11 +7916,52 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </Border>
                 </Style>
               </Tablix>
+              <Textbox Name="Textbox80">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>Client Info</Value>
+                        <Style>
+                          <FontFamily>Verdana</FontFamily>
+                          <FontSize>14pt</FontSize>
+                          <FontWeight>Bold</FontWeight>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Left</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <rd:DefaultName>Textbox71</rd:DefaultName>
+                <Top>0.127cm</Top>
+                <Left>0.23147cm</Left>
+                <Height>0.77258cm</Height>
+                <Width>51.3278cm</Width>
+                <ZIndex>1</ZIndex>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundImage>
+                    <Source>Embedded</Source>
+                    <Value>bg</Value>
+                    <BackgroundRepeat>RepeatX</BackgroundRepeat>
+                  </BackgroundImage>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
             </ReportItems>
             <KeepTogether>true</KeepTogether>
-            <Top>15.33193cm</Top>
+            <Top>14.69693cm</Top>
             <Left>0.09525cm</Left>
-            <Height>3.12146cm</Height>
+            <Height>4.07396cm</Height>
             <Width>51.86275cm</Width>
             <ZIndex>2</ZIndex>
             <Style>
@@ -7797,17 +7972,17 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
             </Style>
           </Rectangle>
         </ReportItems>
-        <Height>208.35403mm</Height>
+        <Height>214.43945mm</Height>
         <Style>
           <Border>
             <Style>None</Style>
           </Border>
         </Style>
       </Body>
-      <Width>522.06708mm</Width>
+      <Width>521.91327mm</Width>
       <Page>
         <PageHeader>
-          <Height>2.56434cm</Height>
+          <Height>2.45851cm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -7931,6 +8106,8 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
         </PageFooter>
         <PageHeight>21cm</PageHeight>
         <PageWidth>29.7cm</PageWidth>
+        <InteractiveHeight>60cm</InteractiveHeight>
+        <InteractiveWidth>29.7cm</InteractiveWidth>
         <LeftMargin>1cm</LeftMargin>
         <RightMargin>1cm</RightMargin>
         <TopMargin>1cm</TopMargin>
@@ -8133,6 +8310,11 @@ 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</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="bg">
+      <MIMEType>image/jpeg</MIMEType>
+      <ImageData>/9j/4AAQSkZJRgABAQEAYABgAAD/4QBmRXhpZgAATU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAAExAAIAAAAQAAAATgAAAAAAAABgAAAAAQAAAGAAAAABcGFpbnQubmV0IDQuMS41AP/bAEMAAgEBAgEBAgICAgICAgIDBQMDAwMDBgQEAwUHBgcHBwYHBwgJCwkICAoIBwcKDQoKCwwMDAwHCQ4PDQwOCwwMDP/bAEMBAgICAwMDBgMDBgwIBwgMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDP/AABEIACYAKgMBIgACEQEDEQH/xAAfAAABBQEBAQEBAQAAAAAAAAAAAQIDBAUGBwgJCgv/xAC1EAACAQMDAgQDBQUEBAAAAX0BAgMABBEFEiExQQYTUWEHInEUMoGRoQgjQrHBFVLR8CQzYnKCCQoWFxgZGiUmJygpKjQ1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vHy8/T19vf4+fr/xAAfAQADAQEBAQEBAQEBAAAAAAAAAQIDBAUGBwgJCgv/xAC1EQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEKFiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo6ery8/T19vf4+fr/2gAMAwEAAhEDEQA/APsT/hH/AGo/4R/2ruP7B/2f0o/sH/Z/
+Sv3j68fnP1V9jh/+Ef8Aaj/hH/au4/sH/Z/Sj+wf9n9KPrwfVX2OH/4R/wBqP+Ef9q7j+wf9n9KP7B/2f0o+vB9VfY7T+wv9ij+wv9iuu/sf2o/sf2r5D64e97A5H+wv9ij+wv8AYrrv7H9qP7H9qPrgewOR/sL/AGKP7C/2K67+x/aj+x/aj64HsDq/7LX2o/stfaiivC5mejyoP7LX2o/stfaiijmYcqD+y19qP7LX2ooo5mHKj//Z</ImageData>
     </EmbeddedImage>
   </EmbeddedImages>
   <Language>=User!Language</Language>
