@@ -212,7 +212,7 @@ order by position</CommandText>
             <Value>=Parameters!Para_Actual_Term.Value</Value>
           </QueryParameter>
           <QueryParameter Name="@Para_Use_Long_Term_Data">
-            <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+            <Value>0</Value>
           </QueryParameter>
           <QueryParameter Name="@Para_Long_Term">
             <Value>=Parameters!Para_Long_Term.Value</Value>
@@ -494,7 +494,7 @@ order by position</CommandText>
       </Query>
       <Fields>
         <Field Name="State">
-          <DataField>State</DataField>
+          <DataField>state</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Total_Count">
@@ -536,20 +536,28 @@ order by position</CommandText>
         <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
       </Query>
       <Fields>
-        <Field Name="ClientTarget">
-          <DataField>ClientTarget</DataField>
+        <Field Name="TargetCount">
+          <DataField>TargetCount</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="ActiveClients_Count">
-          <DataField>ActiveClients_Count</DataField>
+        <Field Name="ClientCountAll">
+          <DataField>ClientCountAll</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="NonActiveClients_Count">
-          <DataField>NonActiveClients_Count</DataField>
+        <Field Name="ClientOK">
+          <DataField>ClientOK</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
-        <Field Name="Date">
-          <DataField>date</DataField>
+        <Field Name="ClientFixed">
+          <DataField>ClientFixed</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ClientError">
+          <DataField>ClientError</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ClientDate">
+          <DataField>ClientDate</DataField>
           <rd:TypeName>System.DateTime</rd:TypeName>
         </Field>
       </Fields>
@@ -1961,7 +1969,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <Paragraph>
                     <TextRuns>
                       <TextRun>
-                        <Value>Detailed status for Client Health</Value>
+                        <Value>client Version (actual data)</Value>
                         <Style>
                           <FontFamily>Verdana</FontFamily>
                           <FontSize>14pt</FontSize>
@@ -2017,7 +2025,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <Paragraph>
                     <TextRuns>
                       <TextRun>
-                        <Value>Health Summary </Value>
+                        <Value>=iif(Parameters!Para_Use_Long_Term_Data.Value = 1, "Health Summary (all data)", "Health Summary (actual data)")</Value>
                         <Style>
                           <FontFamily>Verdana</FontFamily>
                           <FontSize>14pt</FontSize>
@@ -2063,7 +2071,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                       <Width>2.325cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>3.4cm</Width>
+                      <Width>3.60398cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -2722,7 +2730,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Top>6.02015cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
-                <Width>12.66847cm</Width>
+                <Width>12.87245cm</Width>
                 <ZIndex>1</ZIndex>
                 <Style>
                   <Border>
@@ -2734,16 +2742,16 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <TablixBody>
                   <TablixColumns>
                     <TablixColumn>
-                      <Width>4.61847cm</Width>
+                      <Width>4.66946cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>3.05cm</Width>
+                      <Width>3.10099cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.5cm</Width>
+                      <Width>2.55099cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.5cm</Width>
+                      <Width>2.55099cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -3061,7 +3069,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Top>3.50046cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
-                <Width>12.66847cm</Width>
+                <Width>12.87245cm</Width>
                 <ZIndex>2</ZIndex>
                 <Style>
                   <Border>
@@ -3073,19 +3081,19 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <TablixBody>
                   <TablixColumns>
                     <TablixColumn>
-                      <Width>4.61847cm</Width>
+                      <Width>4.65927cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2cm</Width>
+                      <Width>2.0408cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2cm</Width>
+                      <Width>2.0408cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2cm</Width>
+                      <Width>2.0408cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>2.05cm</Width>
+                      <Width>2.0908cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -3477,7 +3485,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Top>1.04457cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>1.2cm</Height>
-                <Width>12.66847cm</Width>
+                <Width>12.87245cm</Width>
                 <ZIndex>3</ZIndex>
                 <Style>
                   <Border>
@@ -3491,38 +3499,44 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                     <ChartMember>
                       <Group Name="Chart1_CategoryGroup">
                         <GroupExpressions>
-                          <GroupExpression>=FormatDateTime(Fields!Date.Value, Dateformat.ShortDate )</GroupExpression>
+                          <GroupExpression>=FormatDateTime(Fields!ClientDate.Value, dateformat.ShortDate )</GroupExpression>
                         </GroupExpressions>
                       </Group>
                       <SortExpressions>
                         <SortExpression>
-                          <Value>=Fields!Date.Value</Value>
+                          <Value>=Fields!ClientDate.Value</Value>
                         </SortExpression>
                       </SortExpressions>
-                      <Label>=Fields!Date.Value</Label>
+                      <Label>=Fields!ClientDate.Value</Label>
                     </ChartMember>
                   </ChartMembers>
                 </ChartCategoryHierarchy>
                 <ChartSeriesHierarchy>
                   <ChartMembers>
                     <ChartMember>
-                      <Label>Active Clients Count</Label>
+                      <Label>Client Count All</Label>
                     </ChartMember>
                     <ChartMember>
-                      <Label>Non Active Clients Count</Label>
+                      <Label>Client OK</Label>
                     </ChartMember>
                     <ChartMember>
-                      <Label>Client Target</Label>
+                      <Label>Client Fixed</Label>
+                    </ChartMember>
+                    <ChartMember>
+                      <Label>Client Error</Label>
+                    </ChartMember>
+                    <ChartMember>
+                      <Label>Target Count</Label>
                     </ChartMember>
                   </ChartMembers>
                 </ChartSeriesHierarchy>
                 <ChartData>
                   <ChartSeriesCollection>
-                    <ChartSeries Name="ActiveClients_Count">
+                    <ChartSeries Name="ClientCountAll">
                       <ChartDataPoints>
                         <ChartDataPoint>
                           <ChartDataPointValues>
-                            <Y>=(Fields!ActiveClients_Count.Value)</Y>
+                            <Y>=Sum(Fields!ClientCountAll.Value)</Y>
                           </ChartDataPointValues>
                           <ChartDataLabel>
                             <Style />
@@ -3531,7 +3545,6 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                             <Border>
                               <Width>3pt</Width>
                             </Border>
-                            <Color>=First(Fields!BG_green.Value, "DS_Rpt_Conf")</Color>
                           </Style>
                           <ChartMarker>
                             <Type>Auto</Type>
@@ -3558,11 +3571,90 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                         <MinMovingDistance>0pt</MinMovingDistance>
                       </ChartSmartLabel>
                     </ChartSeries>
-                    <ChartSeries Name="NonActiveClients_Count">
+                    <ChartSeries Name="ClientOK">
                       <ChartDataPoints>
                         <ChartDataPoint>
                           <ChartDataPointValues>
-                            <Y>=(Fields!NonActiveClients_Count.Value)</Y>
+                            <Y>=Sum(Fields!ClientOK.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style />
+                          </ChartDataLabel>
+                          <Style>
+                            <Border>
+                              <Width>3pt</Width>
+                            </Border>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Auto</Type>
+                            <Style />
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                    <ChartSeries Name="ClientFixed">
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=Sum(Fields!ClientFixed.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style />
+                          </ChartDataLabel>
+                          <Style>
+                            <Border>
+                              <Width>3pt</Width>
+                            </Border>
+                            <Color>=First(Fields!BG_State_Repair.Value, "DS_Rpt_Conf")</Color>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Auto</Type>
+                            <Style />
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                    <ChartSeries Name="ClientError">
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=Sum(Fields!ClientError.Value)</Y>
                           </ChartDataPointValues>
                           <ChartDataLabel>
                             <Style />
@@ -3575,11 +3667,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                           </Style>
                           <ChartMarker>
                             <Type>Auto</Type>
-                            <Style>
-                              <Border>
-                                <Width>2pt</Width>
-                              </Border>
-                            </Style>
+                            <Style />
                           </ChartMarker>
                           <DataElementOutput>Output</DataElementOutput>
                         </ChartDataPoint>
@@ -3602,20 +3690,21 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                         <MinMovingDistance>0pt</MinMovingDistance>
                       </ChartSmartLabel>
                     </ChartSeries>
-                    <ChartSeries Name="ClientTarget">
+                    <ChartSeries Name="TargetCount">
                       <ChartDataPoints>
                         <ChartDataPoint>
                           <ChartDataPointValues>
-                            <Y>=Max(Fields!ClientTarget.Value)</Y>
+                            <Y>=Sum(Fields!TargetCount.Value)</Y>
                           </ChartDataPointValues>
                           <ChartDataLabel>
                             <Style />
                           </ChartDataLabel>
                           <Style>
                             <Border>
+                              <Style>DashDot</Style>
                               <Width>3pt</Width>
                             </Border>
-                            <Color>#4f81bd</Color>
+                            <Color>Black</Color>
                           </Style>
                           <ChartMarker>
                             <Type>Auto</Type>
@@ -3811,7 +3900,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                         <CrossAt>NaN</CrossAt>
                         <InterlacedColor>CornflowerBlue</InterlacedColor>
                         <Minimum>NaN</Minimum>
-                        <Maximum>=Fields!ClientTarget.Value * 103%</Maximum>
+                        <Maximum>=Max(Fields!ClientCountAll.Value) * 103%</Maximum>
                         <LogBase>24</LogBase>
                         <ChartAxisScaleBreak>
                           <Enabled>true</Enabled>
@@ -3931,7 +4020,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </Style>
                 </ChartNoDataMessage>
                 <DataSetName>DS_ClientMainDiagramData</DataSetName>
-                <Top>1.05657cm</Top>
+                <Top>1.04457cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>13.11248cm</Height>
                 <Width>37.58149cm</Width>
@@ -3966,10 +4055,10 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </Paragraph>
                 </Paragraphs>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
-                <Top>0.20285cm</Top>
+                <Top>0.16616cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>0.77258cm</Height>
-                <Width>12.66847cm</Width>
+                <Width>12.87245cm</Width>
                 <ZIndex>5</ZIndex>
                 <Style>
                   <Border>
@@ -3993,7 +4082,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <Paragraph>
                     <TextRuns>
                       <TextRun>
-                        <Value>Client Versions</Value>
+                        <Value>=iif(Parameters!Para_Use_Long_Term_Data.Value = 1, "client Version (all data)", "client version (actual data)")</Value>
                         <Style>
                           <FontFamily>Verdana</FontFamily>
                           <FontSize>14pt</FontSize>
@@ -4007,10 +4096,10 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   </Paragraph>
                 </Paragraphs>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
-                <Top>2.67437cm</Top>
+                <Top>2.6926cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>0.77258cm</Height>
-                <Width>12.66847cm</Width>
+                <Width>12.87245cm</Width>
                 <ZIndex>6</ZIndex>
                 <Style>
                   <Border>
@@ -4034,7 +4123,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <Paragraph>
                     <TextRuns>
                       <TextRun>
-                        <Value>Client Components Summary</Value>
+                        <Value>=iif(Parameters!Para_Use_Long_Term_Data.Value = 1, "client components (all data)", "client components (actual data)")</Value>
                         <Style>
                           <FontFamily>Verdana</FontFamily>
                           <FontSize>14pt</FontSize>
@@ -4051,7 +4140,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Top>5.18792cm</Top>
                 <Left>38.74449cm</Left>
                 <Height>0.77258cm</Height>
-                <Width>12.66847cm</Width>
+                <Width>12.87245cm</Width>
                 <ZIndex>7</ZIndex>
                 <Style>
                   <Border>
@@ -4088,85 +4177,85 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <TablixBody>
                   <TablixColumns>
                     <TablixColumn>
-                      <Width>7.1278cm</Width>
+                      <Width>7.12994cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>1.7cm</Width>
+                      <Width>1.70214cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -7909,7 +7998,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Top>0.98954cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>2.8cm</Height>
-                <Width>51.3278cm</Width>
+                <Width>51.38547cm</Width>
                 <Style>
                   <Border>
                     <Style>None</Style>
@@ -7923,7 +8012,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <Paragraph>
                     <TextRuns>
                       <TextRun>
-                        <Value>Client Info</Value>
+                        <Value>=iif(Parameters!Para_Use_Long_Term_Data.Value = 1, "client info (all data)", "client info (actual data)")</Value>
                         <Style>
                           <FontFamily>Verdana</FontFamily>
                           <FontSize>14pt</FontSize>
@@ -7940,7 +8029,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                 <Top>0.127cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>0.77258cm</Height>
-                <Width>51.3278cm</Width>
+                <Width>51.38547cm</Width>
                 <ZIndex>1</ZIndex>
                 <Style>
                   <Border>
@@ -8068,7 +8157,7 @@ Fields!BITS.Value="Unknown","LightGrey", true, "Orange"),IIF(RowNumber(Nothing) 
                   <TextRuns>
                     <TextRun>
                       <Value>="ConfigMgrclientHealth Dashboard"  &amp; Chr(13) &amp; Chr(10) &amp;
-"Report: " &amp; Globals!ReportFolder &amp; "\" &amp; Globals!ReportName &amp; " - v 0.04, 16-02-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+"Report: " &amp; Globals!ReportFolder &amp; "\" &amp; Globals!ReportName &amp; " - v 0.05, 22-02-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 "Page (" + Globals!PageNumber.ToString() + " of " + Globals!OverallTotalPages.ToString() + "); generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>

@@ -42,7 +42,7 @@
     <TargetDatasetFolder>ConfigMgrClientHealt</TargetDatasetFolder>
     <TargetDatasourceFolder>ConfigMgrClientHealt</TargetDatasourceFolder>
     <TargetReportPartFolder>ConfigMgrClientHealt</TargetReportPartFolder>
-    <TargetServerURL>http://w2k16srvsccm.csl.local/reportserver</TargetServerURL>
+    <TargetServerURL>http://w2k16sccm.csl.local/reportserver</TargetServerURL>
     <StartItem>ConfigMgrClientHealth Dashboard.rdl</StartItem>
   </PropertyGroup>
   <PropertyGroup>
