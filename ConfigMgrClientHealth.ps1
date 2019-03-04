@@ -383,6 +383,7 @@ Begin {
                 15063 {$OSName = $OSName + " 1703"}
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
+                17763 {$OSName = $OSName + " 1809"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -999,6 +1000,7 @@ Begin {
                 15063 {$OSName = $OSName + " 1703"}
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
+                17763 {$OSName = $OSName + " 1809"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -3437,6 +3439,9 @@ Begin {
         else { Out-LogFile -Xml $xml -Text $text }
         Write-Verbose "End Update-LogFile"
     }
+
+    # Write-Log : CMTrace compatible log file
+    
     
     #endregion
     
