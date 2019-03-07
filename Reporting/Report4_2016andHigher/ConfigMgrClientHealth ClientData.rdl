@@ -235,6 +235,9 @@ order by position</CommandText>
           <QueryParameter Name="@Para_ListOfComponents">
             <Value>=Parameters!Para_ListOfComponents.Value</Value>
           </QueryParameter>
+          <QueryParameter Name="@Para_ActualRange">
+            <Value>=Parameters!Para_ActualRange.Value</Value>
+          </QueryParameter>
         </QueryParameters>
         <CommandType>StoredProcedure</CommandType>
         <CommandText>up_get_ClientData_flat</CommandText>
@@ -245,7 +248,7 @@ order by position</CommandText>
           <Value>=FormatDateTime(CDate(Fields!Timestamp.Value),Dateformat.ShortDate)</Value>
         </Field>
         <Field Name="Datasource">
-          <DataField>datasource</DataField>
+          <DataField>Datasource</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Hostname">
@@ -3339,7 +3342,7 @@ Metering</Value>
                             <RightBorder>
                               <Style>Solid</Style>
                             </RightBorder>
-                            <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                            <BackgroundColor>=iif(Parameters!Para_Actual_Term.Value &gt; DateDiff(DateInterval.Day,CDate(FormatDatetime(Fields!Timestamp.Value, DateFormat.ShortDate)), CDate(FormatDatetime(Now(), DateFormat.ShortDate))),First(Fields!BG_State_OK.Value, "DS_Rpt_Conf"),First(Fields!BG_State_Error.Value, "DS_Rpt_Conf"))</BackgroundColor>
                             <VerticalAlign>Middle</VerticalAlign>
                             <PaddingLeft>2pt</PaddingLeft>
                             <PaddingRight>2pt</PaddingRight>
@@ -4985,7 +4988,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
                               <TextRuns>
                                 <TextRun>
                                   <Value>="ConfigMgrclientHealth client data"  &amp; Chr(13) &amp; Chr(10) &amp;
-" +-- Report Version: - v 0.1.10, 04-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+" +-- Report Version: - v 0.1.10, 07-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 " +-- generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                                   <Style>
                                     <Color>=First(Fields!FG_Footer.Value, "DS_Rpt_Conf")</Color>
@@ -5011,7 +5014,6 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
                           </Style>
                         </Textbox>
                         <ColSpan>40</ColSpan>
-                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell />
@@ -5263,7 +5265,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>DS_ClientData</DataSetName>
-            <Top>0.05311in</Top>
+            <Top>0.04269in</Top>
             <Left>0.0625in</Left>
             <Height>3.00155in</Height>
             <Width>50.01922in</Width>
@@ -5689,7 +5691,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
               <BreakLocation>Start</BreakLocation>
             </PageBreak>
             <KeepTogether>true</KeepTogether>
-            <Top>8.0496cm</Top>
+            <Top>7.91768cm</Top>
             <Left>0.15875cm</Left>
             <Height>6.74716cm</Height>
             <Width>26.32517cm</Width>
@@ -5705,7 +5707,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
             </Style>
           </Rectangle>
         </ReportItems>
-        <Height>155.45787mm</Height>
+        <Height>148.57868mm</Height>
         <Style>
           <Border>
             <Style>None</Style>
@@ -5730,6 +5732,16 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
     </ReportSection>
   </ReportSections>
   <ReportParameters>
+    <ReportParameter Name="Para_Device">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>%</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>device</Prompt>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
     <ReportParameter Name="Para_OS">
       <DataType>String</DataType>
       <DefaultValue>
@@ -5738,15 +5750,60 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
         </Values>
       </DefaultValue>
       <Prompt>OS</Prompt>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="Para_Device">
+    <ReportParameter Name="Para_Theme">
       <DataType>String</DataType>
       <DefaultValue>
         <Values>
-          <Value>%</Value>
+          <Value>Default</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Device</Prompt>
+      <Prompt>Report Layout:</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_Para_Rpt_Theme</DataSetName>
+          <ValueField>Theme</ValueField>
+          <LabelField>Theme</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_Actual_Term">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>5</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>actual term</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_Para_Actual_Term</DataSetName>
+          <ValueField>value</ValueField>
+          <LabelField>value</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_ClientVersion">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>DS_StateList4ClientVersion</DataSetName>
+          <ValueField>Version</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>client version</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_StateList4ClientVersion</DataSetName>
+          <ValueField>Version</ValueField>
+          <LabelField>State</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="Para_Colored_Output">
       <DataType>Boolean</DataType>
@@ -5768,59 +5825,29 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           </ParameterValue>
         </ParameterValues>
       </ValidValues>
-    </ReportParameter>
-    <ReportParameter Name="Para_Theme">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>Default</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Report Layout:</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_Para_Rpt_Theme</DataSetName>
-          <ValueField>Theme</ValueField>
-          <LabelField>Theme</LabelField>
-        </DataSetReference>
-      </ValidValues>
-    </ReportParameter>
-    <ReportParameter Name="Para_ClientVersion">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DS_StateList4ClientVersion</DataSetName>
-          <ValueField>Version</ValueField>
-        </DataSetReference>
-      </DefaultValue>
-      <Prompt>Client Version</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_StateList4ClientVersion</DataSetName>
-          <ValueField>Version</ValueField>
-          <LabelField>State</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <MultiValue>true</MultiValue>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="Para_Use_Long_Term_Data">
-      <DataType>Integer</DataType>
+    <ReportParameter Name="Para_ActualRange">
+      <DataType>String</DataType>
       <DefaultValue>
         <Values>
           <Value>1</Value>
         </Values>
       </DefaultValue>
-      <Prompt>use long term data</Prompt>
+      <Prompt>actual range</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
             <Value>1</Value>
-            <Label>yes</Label>
+            <Label>ALL</Label>
           </ParameterValue>
           <ParameterValue>
-            <Value>0</Value>
-            <Label>no</Label>
+            <Value>2</Value>
+            <Label>active</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>3</Value>
+            <Label>older</Label>
           </ParameterValue>
         </ParameterValues>
       </ValidValues>
@@ -5833,7 +5860,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <ValueField>value</ValueField>
         </DataSetReference>
       </DefaultValue>
-      <Prompt>ListOfComponents</Prompt>
+      <Prompt>list of components</Prompt>
       <ValidValues>
         <DataSetReference>
           <DataSetName>DS_Listof_Components</DataSetName>
@@ -5878,7 +5905,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <Value>Fixed</Value>
         </Values>
       </DefaultValue>
-      <Prompt>ListOfComponentsType</Prompt>
+      <Prompt>list of components-type</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
@@ -5905,23 +5932,30 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <Value>true</Value>
         </Values>
       </DefaultValue>
-      <Prompt>Hide LongTermTree</Prompt>
+      <Prompt>hide long-Termtree</Prompt>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="Para_Actual_Term">
+    <ReportParameter Name="Para_Use_Long_Term_Data">
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>5</Value>
+          <Value>1</Value>
         </Values>
       </DefaultValue>
-      <Prompt>actual term</Prompt>
+      <Prompt>use long term data</Prompt>
       <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_Para_Actual_Term</DataSetName>
-          <ValueField>value</ValueField>
-          <LabelField>value</LabelField>
-        </DataSetReference>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>1</Value>
+            <Label>yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>0</Value>
+            <Label>no</Label>
+          </ParameterValue>
+        </ParameterValues>
       </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="Para_ListOf_Columns_To_Show">
       <DataType>String</DataType>
@@ -5931,7 +5965,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <ValueField>value</ValueField>
         </DataSetReference>
       </DefaultValue>
-      <Prompt>Columns to Show</Prompt>
+      <Prompt>columns to show</Prompt>
       <ValidValues>
         <DataSetReference>
           <DataSetName>DS_ListOf_Columns_To_Show</DataSetName>
@@ -5940,6 +5974,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
         </DataSetReference>
       </ValidValues>
       <MultiValue>true</MultiValue>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="Para_Debug">
       <DataType>Boolean</DataType>
@@ -5949,6 +5984,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
         </Values>
       </DefaultValue>
       <Prompt>Debug</Prompt>
+      <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
@@ -5958,27 +5994,27 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
       <CellDefinitions>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
-          <RowIndex>4</RowIndex>
+          <RowIndex>1</RowIndex>
           <ParameterName>Para_Actual_Term</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
-          <RowIndex>0</RowIndex>
+          <RowIndex>1</RowIndex>
           <ParameterName>Para_Colored_Output</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>0</ColumnIndex>
+          <ColumnIndex>1</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>Para_OS</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
-          <RowIndex>2</RowIndex>
+          <RowIndex>4</RowIndex>
           <ParameterName>Para_Use_Long_Term_Data</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>0</ColumnIndex>
-          <RowIndex>1</RowIndex>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
           <ParameterName>Para_Theme</ParameterName>
         </CellDefinition>
         <CellDefinition>
@@ -5992,7 +6028,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <ParameterName>Para_Long_Term</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
+          <ColumnIndex>0</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>Para_Device</ParameterName>
         </CellDefinition>
@@ -6025,6 +6061,11 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>4</RowIndex>
           <ParameterName>Para_Debug</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>Para_ActualRange</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

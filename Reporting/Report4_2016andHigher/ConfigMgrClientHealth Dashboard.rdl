@@ -240,9 +240,13 @@ order by position</CommandText>
         <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
       </Query>
       <Fields>
-        <Field Name="Component_Name">
-          <DataField>Component_Name</DataField>
+        <Field Name="Compoment_Name">
+          <DataField>Compoment_Name</DataField>
           <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Component_Count_total">
+          <DataField>Component_Count_total</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
         <Field Name="Component_Count_OK">
           <DataField>Component_Count_OK</DataField>
@@ -253,7 +257,7 @@ order by position</CommandText>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
         <Field Name="Component_Count_fixed">
-          <DataField>Component_Count_fixed</DataField>
+          <DataField>Component_Count_Fixed</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
       </Fields>
@@ -563,13 +567,16 @@ order by position</CommandText>
                       <Width>4.5cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>3.3cm</Width>
+                      <Width>2.5cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>3.3cm</Width>
+                      <Width>2.5cm</Width>
                     </TablixColumn>
                     <TablixColumn>
-                      <Width>3.4cm</Width>
+                      <Width>2.5cm</Width>
+                    </TablixColumn>
+                    <TablixColumn>
+                      <Width>2.49989cm</Width>
                     </TablixColumn>
                   </TablixColumns>
                   <TablixRows>
@@ -585,7 +592,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>Component Name</Value>
+                                      <Value>component name</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -613,6 +620,43 @@ order by position</CommandText>
                         </TablixCell>
                         <TablixCell>
                           <CellContents>
+                            <Textbox Name="Textbox5">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value># total</Value>
+                                      <Style>
+                                        <FontWeight>Bold</FontWeight>
+                                        <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox5</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=First(Fields!BG_01.Value, "DS_Rpt_Conf")</BackgroundColor>
+                                <VerticalAlign>Middle</VerticalAlign>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
                             <Textbox Name="Textbox26">
                               <CanGrow>true</CanGrow>
                               <KeepTogether>true</KeepTogether>
@@ -620,7 +664,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value># OK</Value>
+                                      <Value># ok</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -657,7 +701,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value># Error</Value>
+                                      <Value># error</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -694,7 +738,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value># Fixed</Value>
+                                      <Value># fixed</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -728,14 +772,14 @@ order by position</CommandText>
                       <TablixCells>
                         <TablixCell>
                           <CellContents>
-                            <Textbox Name="Component_Name">
+                            <Textbox Name="Compoment_Name">
                               <CanGrow>true</CanGrow>
                               <KeepTogether>true</KeepTogether>
                               <Paragraphs>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>=Fields!Component_Name.Value</Value>
+                                      <Value>=Fields!Compoment_Name.Value</Value>
                                       <Style>
                                         <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
@@ -744,7 +788,43 @@ order by position</CommandText>
                                   <Style />
                                 </Paragraph>
                               </Paragraphs>
-                              <rd:DefaultName>Component_Name</rd:DefaultName>
+                              <rd:DefaultName>Compoment_Name</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Color>LightGrey</Color>
+                                  <Style>Solid</Style>
+                                </Border>
+                                <BackgroundColor>=IIF(RowNumber(Nothing) MOD 2,"White", "#f2f2f2")</BackgroundColor>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Component_Count_total">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=Fields!Component_Count_total.Value</Value>
+                                      <Style>
+                                        <TextDecoration>None</TextDecoration>
+                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                      </Style>
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style>
+                                    <TextAlign>Center</TextAlign>
+                                  </Style>
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Component_Count_total</rd:DefaultName>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -770,6 +850,7 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!Component_Count_OK.Value</Value>
                                       <Style>
+                                        <TextDecoration>None</TextDecoration>
                                         <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -780,41 +861,6 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Component_Count_OK</rd:DefaultName>
-                              <ActionInfo>
-                                <Actions>
-                                  <Action>
-                                    <Drillthrough>
-                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
-                                      <Parameters>
-                                        <Parameter Name="Para_Actual_Term">
-                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Colored_Output">
-                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Theme">
-                                          <Value>=Parameters!Para_Theme.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Use_Long_Term_Data">
-                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Long_Term">
-                                          <Value>=Parameters!Para_Long_Term.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Device">
-                                          <Value>=Parameters!Para_Device.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_ListOfComponents">
-                                          <Value>=Fields!Component_Name.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_ListOfComponentsType">
-                                          <Value>OK</Value>
-                                        </Parameter>
-                                      </Parameters>
-                                    </Drillthrough>
-                                  </Action>
-                                </Actions>
-                              </ActionInfo>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -840,7 +886,9 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!Component_Count_ERROR.Value</Value>
                                       <Style>
-                                        <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
+                                        <FontWeight>=iif(Fields!Component_Count_ERROR.Value&gt;0,"ExtraBold","Default")</FontWeight>
+                                        <TextDecoration>=iif(Fields!Component_Count_ERROR.Value&gt;0,"Underline","Default")</TextDecoration>
+                                        <Color>=iif(Fields!Component_Count_ERROR.Value &gt;0, "Red",First(Fields!FG_02.Value, "DS_Rpt_Conf"))</Color>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -856,29 +904,29 @@ order by position</CommandText>
                                     <Drillthrough>
                                       <ReportName>ConfigMgrClientHealth ClientData</ReportName>
                                       <Parameters>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
                                         <Parameter Name="Para_Actual_Term">
                                           <Value>=Parameters!Para_Actual_Term.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Use_Long_Term_Data">
-                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Long_Term">
-                                          <Value>=Parameters!Para_Long_Term.Value</Value>
                                         </Parameter>
                                         <Parameter Name="Para_Colored_Output">
                                           <Value>=Parameters!Para_Colored_Output.Value</Value>
                                         </Parameter>
-                                        <Parameter Name="Para_Device">
-                                          <Value>=Parameters!Para_Device.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_ListOfComponents">
-                                          <Value>=Fields!Component_Name.Value</Value>
-                                        </Parameter>
                                         <Parameter Name="Para_ListOfComponentsType">
                                           <Value>Error</Value>
                                         </Parameter>
-                                        <Parameter Name="Para_Theme">
-                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>=Fields!Compoment_Name.Value</Value>
                                         </Parameter>
                                       </Parameters>
                                     </Drillthrough>
@@ -911,6 +959,7 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!Component_Count_fixed.Value</Value>
                                       <Style>
+                                        <TextDecoration>=iif(Fields!Component_Count_fixed.Value&gt;0,"Underline","Default")</TextDecoration>
                                         <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -927,26 +976,29 @@ order by position</CommandText>
                                     <Drillthrough>
                                       <ReportName>ConfigMgrClientHealth ClientData</ReportName>
                                       <Parameters>
-                                        <Parameter Name="Para_Actual_Term">
-                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Use_Long_Term_Data">
-                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Long_Term">
-                                          <Value>=Parameters!Para_Long_Term.Value</Value>
-                                        </Parameter>
-                                        <Parameter Name="Para_Colored_Output">
-                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
                                         </Parameter>
                                         <Parameter Name="Para_Theme">
                                           <Value>=Parameters!Para_Theme.Value</Value>
                                         </Parameter>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
                                         <Parameter Name="Para_ListOfComponents">
-                                          <Value>=Fields!Component_Name.Value</Value>
+                                          <Value>=Fields!Compoment_Name.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
                                         </Parameter>
                                         <Parameter Name="Para_ListOfComponentsType">
                                           <Value>Fixed</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
                                         </Parameter>
                                       </Parameters>
                                     </Drillthrough>
@@ -978,6 +1030,7 @@ order by position</CommandText>
                     <TablixMember />
                     <TablixMember />
                     <TablixMember />
+                    <TablixMember />
                   </TablixMembers>
                 </TablixColumnHierarchy>
                 <TablixRowHierarchy>
@@ -994,10 +1047,10 @@ order by position</CommandText>
                   </TablixMembers>
                 </TablixRowHierarchy>
                 <DataSetName>DS_ClientData_ActionResult</DataSetName>
-                <Top>5.96793cm</Top>
+                <Top>6.03143cm</Top>
                 <Left>37.11705cm</Left>
                 <Height>1.2cm</Height>
-                <Width>14.5cm</Width>
+                <Width>14.49989cm</Width>
                 <ZIndex>1</ZIndex>
                 <Style>
                   <Border>
@@ -1034,7 +1087,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>Client Version</Value>
+                                      <Value>client version</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1068,7 +1121,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>Count actual</Value>
+                                      <Value>count actual</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1104,7 +1157,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>Count to old</Value>
+                                      <Value>count to old</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1140,7 +1193,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>Count newer</Value>
+                                      <Value>count newer</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1451,7 +1504,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value># Total </Value>
+                                      <Value># total </Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1487,7 +1540,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value># Active</Value>
+                                      <Value># active</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1559,7 +1612,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value># Non Active </Value>
+                                      <Value># non active </Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -1809,7 +1862,7 @@ order by position</CommandText>
                                     <TextRun>
                                       <Value>=Fields!NonActiveClients_Count.Value</Value>
                                       <Style>
-                                        <TextDecoration>None</TextDecoration>
+                                        <TextDecoration>Underline</TextDecoration>
                                         <Color>=First(Fields!FG_02.Value, "DS_Rpt_Conf")</Color>
                                       </Style>
                                     </TextRun>
@@ -1820,6 +1873,35 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>NonActiveClients_Count</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ActualRange">
+                                          <Value>3</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
                               <ToolTip>click to open Report 'Client data'</ToolTip>
                               <Style>
                                 <Border>
@@ -1833,6 +1915,7 @@ order by position</CommandText>
                                 <PaddingBottom>2pt</PaddingBottom>
                               </Style>
                             </Textbox>
+                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                       </TablixCells>
@@ -2277,7 +2360,7 @@ order by position</CommandText>
                         <CrossAt>NaN</CrossAt>
                         <InterlacedColor>CornflowerBlue</InterlacedColor>
                         <Minimum>NaN</Minimum>
-                        <Maximum>=Max(Fields!ClientCountAll.Value) * 103%</Maximum>
+                        <Maximum>NaN</Maximum>
                         <LogBase>24</LogBase>
                         <ChartAxisScaleBreak>
                           <Enabled>true</Enabled>
@@ -2397,7 +2480,7 @@ order by position</CommandText>
                   </Style>
                 </ChartNoDataMessage>
                 <DataSetName>DS_ClientMainDiagramData</DataSetName>
-                <Top>1.04457cm</Top>
+                <Top>1.01672cm</Top>
                 <Left>0.23147cm</Left>
                 <Height>13.11248cm</Height>
                 <Width>36.06632cm</Width>
@@ -2475,7 +2558,7 @@ order by position</CommandText>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
                 <Top>2.66475cm</Top>
                 <Left>37.11705cm</Left>
-                <Height>0.77258cm</Height>
+                <Height>0.77611cm</Height>
                 <Width>14.5cm</Width>
                 <ZIndex>6</ZIndex>
                 <Style>
@@ -2516,8 +2599,8 @@ order by position</CommandText>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
                 <Top>5.16007cm</Top>
                 <Left>37.11705cm</Left>
-                <Height>0.77258cm</Height>
-                <Width>14.5cm</Width>
+                <Height>0.87136cm</Height>
+                <Width>14.49989cm</Width>
                 <ZIndex>7</ZIndex>
                 <Style>
                   <Border>
@@ -6457,9 +6540,9 @@ order by position</CommandText>
                   </Paragraph>
                 </Paragraphs>
                 <rd:DefaultName>Textbox71</rd:DefaultName>
-                <Top>0.127cm</Top>
+                <Top>0.11818cm</Top>
                 <Left>0.23147cm</Left>
-                <Height>0.77258cm</Height>
+                <Height>0.80786cm</Height>
                 <Width>51.38547cm</Width>
                 <ZIndex>1</ZIndex>
                 <Style>
@@ -6499,7 +6582,7 @@ order by position</CommandText>
           </Border>
         </Style>
       </Body>
-      <Width>539.15342mm</Width>
+      <Width>522.01467mm</Width>
       <Page>
         <PageHeader>
           <Height>2.45851cm</Height>
