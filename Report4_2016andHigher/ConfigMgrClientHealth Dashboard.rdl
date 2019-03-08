@@ -1915,7 +1915,6 @@ order by position</CommandText>
                                 <PaddingBottom>2pt</PaddingBottom>
                               </Style>
                             </Textbox>
-                            <rd:Selected>true</rd:Selected>
                           </CellContents>
                         </TablixCell>
                       </TablixCells>
@@ -6671,7 +6670,7 @@ order by position</CommandText>
                   <TextRuns>
                     <TextRun>
                       <Value>="ConfigMgrclientHealth dashboard"  &amp; Chr(13) &amp; Chr(10) &amp;
-" +-- Report Version: - v 0.1.10, 04-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+" +-- Report Version: - v 0.1.10, 08-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 " +-- generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>
@@ -6805,7 +6804,7 @@ order by position</CommandText>
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>0</Value>
+          <Value>1</Value>
         </Values>
       </DefaultValue>
       <Prompt>use long term data</Prompt>

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
-  <Description>client health dashboard</Description>
+  <Description>client health client data</Description>
   <Author>Klaus.Bilger@C-S-L.BIZ</Author>
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
@@ -5939,7 +5939,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
       <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>1</Value>
+          <Value>0</Value>
         </Values>
       </DefaultValue>
       <Prompt>use long term data</Prompt>
@@ -5984,6 +5984,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
         </Values>
       </DefaultValue>
       <Prompt>Debug</Prompt>
+      <Hidden>true</Hidden>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
   </ReportParameters>
