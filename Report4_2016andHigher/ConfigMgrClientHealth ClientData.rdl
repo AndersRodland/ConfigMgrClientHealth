@@ -4988,7 +4988,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
                               <TextRuns>
                                 <TextRun>
                                   <Value>="ConfigMgrclientHealth client data"  &amp; Chr(13) &amp; Chr(10) &amp;
-" +-- Report Version: - v 0.1.10, 07-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+" +-- Report Version: - v 0.1.11, 11-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 " +-- generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                                   <Style>
                                     <Color>=First(Fields!FG_Footer.Value, "DS_Rpt_Conf")</Color>
@@ -5014,6 +5014,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
                           </Style>
                         </Textbox>
                         <ColSpan>40</ColSpan>
+                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                     <TablixCell />

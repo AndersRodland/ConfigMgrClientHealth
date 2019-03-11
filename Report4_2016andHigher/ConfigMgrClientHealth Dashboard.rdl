@@ -1897,6 +1897,9 @@ order by position</CommandText>
                                         <Parameter Name="Para_ActualRange">
                                           <Value>3</Value>
                                         </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>0</Value>
+                                        </Parameter>
                                       </Parameters>
                                     </Drillthrough>
                                   </Action>
@@ -2359,8 +2362,9 @@ order by position</CommandText>
                         <CrossAt>NaN</CrossAt>
                         <InterlacedColor>CornflowerBlue</InterlacedColor>
                         <Minimum>NaN</Minimum>
-                        <Maximum>NaN</Maximum>
+                        <Maximum>=Min(Fields!TargetCount.Value) * 1.03</Maximum>
                         <LogBase>24</LogBase>
+                        <IncludeZero>false</IncludeZero>
                         <ChartAxisScaleBreak>
                           <Enabled>true</Enabled>
                           <Style />
@@ -6670,7 +6674,7 @@ order by position</CommandText>
                   <TextRuns>
                     <TextRun>
                       <Value>="ConfigMgrclientHealth dashboard"  &amp; Chr(13) &amp; Chr(10) &amp;
-" +-- Report Version: - v 0.1.10, 08-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+" +-- Report Version: - v 0.1.11, 11-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 " +-- generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>
