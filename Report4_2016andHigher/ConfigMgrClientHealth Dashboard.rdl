@@ -4609,6 +4609,7 @@ order by position</CommandText>
                                       <Value>=Fields!DNS_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!DNS_Error.Value &lt;&gt; 0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -4618,6 +4619,45 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>DNS_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>DNS</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with DNS 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -4679,6 +4719,7 @@ order by position</CommandText>
                                       <Value>=Fields!Drivers_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!DNS_Error.Value&gt;0,"Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -4688,6 +4729,45 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Drivers_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>Drivers</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with Driver 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -4749,6 +4829,7 @@ order by position</CommandText>
                                       <Value>=Fields!PendingReboot_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!PendingReboot_Error.Value &gt;0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -4758,6 +4839,45 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>PendingReboot_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>PendingReboot</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with Pending Reboot 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -4819,6 +4939,7 @@ order by position</CommandText>
                                       <Value>=Fields!Services_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!Services_Error.Value &lt;&gt; 0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -4828,6 +4949,45 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Services_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>Services</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>True</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with Services 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -4889,6 +5049,7 @@ order by position</CommandText>
                                       <Value>=Fields!AdminShare_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!AdminShare_Error.Value &lt;&gt;0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -4898,6 +5059,42 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>AdminShare_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>AdminShare</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with Admin Share 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -4959,6 +5156,7 @@ order by position</CommandText>
                                       <Value>=Fields!StateMessages_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!StateMessages_Error.Value &lt;&gt;0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -4968,6 +5166,44 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>StateMessages_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>StateMessages</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -5029,6 +5265,7 @@ order by position</CommandText>
                                       <Value>=Fields!WUAHandler_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!WUAHandler_Error.Value &lt;&gt; 0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -5038,6 +5275,45 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>WUAHandler_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>WUAHandler</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with WUA Handler 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -5099,6 +5375,7 @@ order by position</CommandText>
                                       <Value>=Fields!WMI_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!WMI_Error.Value &lt;&gt; 0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -5108,6 +5385,45 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>WMI_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>WMI</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Theme">
+                                          <Value>=Parameters!Para_Theme.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with WMI 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -5169,6 +5485,7 @@ order by position</CommandText>
                                       <Value>=Fields!BITS_Error.Value</Value>
                                       <Style>
                                         <Format>n0</Format>
+                                        <TextDecoration>=iif(Fields!BITS_Error.Value &lt;&gt;0, "Underline","Default")</TextDecoration>
                                       </Style>
                                     </TextRun>
                                   </TextRuns>
@@ -5178,6 +5495,42 @@ order by position</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>BITS_Error</rd:DefaultName>
+                              <ActionInfo>
+                                <Actions>
+                                  <Action>
+                                    <Drillthrough>
+                                      <ReportName>ConfigMgrClientHealth ClientData</ReportName>
+                                      <Parameters>
+                                        <Parameter Name="Para_Actual_Term">
+                                          <Value>=Parameters!Para_Actual_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OS">
+                                          <Value>=Fields!OperatingSystem.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Long_Term">
+                                          <Value>=Parameters!Para_Long_Term.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Device">
+                                          <Value>=Parameters!Para_Device.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Use_Long_Term_Data">
+                                          <Value>=Parameters!Para_Use_Long_Term_Data.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_ListOfComponents">
+                                          <Value>BITS</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_Colored_Output">
+                                          <Value>=Parameters!Para_Colored_Output.Value</Value>
+                                        </Parameter>
+                                        <Parameter Name="Para_OnlyNonOK_Data">
+                                          <Value>TRUE</Value>
+                                        </Parameter>
+                                      </Parameters>
+                                    </Drillthrough>
+                                  </Action>
+                                </Actions>
+                              </ActionInfo>
+                              <ToolTip>click to open the Detail report (show clients with BITS 'Error/Fixed')</ToolTip>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -5769,7 +6122,7 @@ order by position</CommandText>
                                 <Paragraph>
                                   <TextRuns>
                                     <TextRun>
-                                      <Value>=Sum(Fields!DNS_Error.Value)</Value>
+                                      <Value>=Sum(Fields!Drivers_Error.Value)</Value>
                                       <Style>
                                         <FontWeight>Bold</FontWeight>
                                         <Color>=First(Fields!FG_01.Value, "DS_Rpt_Conf")</Color>
@@ -6662,7 +7015,7 @@ order by position</CommandText>
           </Style>
         </PageHeader>
         <PageFooter>
-          <Height>14.54593mm</Height>
+          <Height>14.01676mm</Height>
           <PrintOnFirstPage>true</PrintOnFirstPage>
           <PrintOnLastPage>true</PrintOnLastPage>
           <ReportItems>
@@ -6674,7 +7027,7 @@ order by position</CommandText>
                   <TextRuns>
                     <TextRun>
                       <Value>="ConfigMgrclientHealth dashboard"  &amp; Chr(13) &amp; Chr(10) &amp;
-" +-- Report Version: - v 0.1.11, 11-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+" +-- Report Version: - v 0.1.13, 13-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 " +-- generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                       <Style>
                         <FontFamily>Verdana</FontFamily>
@@ -6924,6 +7277,11 @@ Sv3j68fnP1V9jh/+Ef8Aaj/hH/au4/sH/Z/Sj+wf9n9KPrwfVX2OH/4R/wBqP+Ef9q7j+wf9n9KP7B/2
     </EmbeddedImage>
   </EmbeddedImages>
   <Language>=User!Language</Language>
+  <Variables>
+    <Variable Name="Var_Error_Fixed">
+      <Value>Fixed</Value>
+    </Variable>
+  </Variables>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>
   <rd:ReportServerUrl>http://vgs-cm1/ReportServer</rd:ReportServerUrl>
   <rd:ReportID>259e745f-96f4-46a7-b9dc-4e5be769353b</rd:ReportID>

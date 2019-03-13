@@ -238,6 +238,9 @@ order by position</CommandText>
           <QueryParameter Name="@Para_ActualRange">
             <Value>=Parameters!Para_ActualRange.Value</Value>
           </QueryParameter>
+          <QueryParameter Name="@Para_OnlyNonOK_Data">
+            <Value>=Parameters!Para_OnlyNonOK_Data.Value</Value>
+          </QueryParameter>
         </QueryParameters>
         <CommandType>StoredProcedure</CommandType>
         <CommandText>up_get_ClientData_flat</CommandText>
@@ -4988,7 +4991,7 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
                               <TextRuns>
                                 <TextRun>
                                   <Value>="ConfigMgrclientHealth client data"  &amp; Chr(13) &amp; Chr(10) &amp;
-" +-- Report Version: - v 0.1.11, 11-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
+" +-- Report Version: - v 0.1.13, 13-03-2019  -" &amp; Chr(13) &amp; Chr(10) &amp;
 " +-- generated: " + Globals!ExecutionTime.ToString()  &amp; Chr(13) &amp; Chr(10)</Value>
                                   <Style>
                                     <Color>=First(Fields!FG_Footer.Value, "DS_Rpt_Conf")</Color>
@@ -5733,43 +5736,6 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
     </ReportSection>
   </ReportSections>
   <ReportParameters>
-    <ReportParameter Name="Para_Device">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>%</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>device</Prompt>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
-    <ReportParameter Name="Para_OS">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>%</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>OS</Prompt>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
-    <ReportParameter Name="Para_Theme">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>Default</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>Report Layout:</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_Para_Rpt_Theme</DataSetName>
-          <ValueField>Theme</ValueField>
-          <LabelField>Theme</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
     <ReportParameter Name="Para_Actual_Term">
       <DataType>Integer</DataType>
       <DefaultValue>
@@ -5785,6 +5751,16 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
           <LabelField>value</LabelField>
         </DataSetReference>
       </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_OS">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>%</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>OS</Prompt>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
     <ReportParameter Name="Para_ClientVersion">
@@ -5806,22 +5782,67 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
       <MultiValue>true</MultiValue>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="Para_Colored_Output">
-      <DataType>Boolean</DataType>
+    <ReportParameter Name="Para_Long_Term">
+      <DataType>Integer</DataType>
       <DefaultValue>
         <Values>
-          <Value>true</Value>
+          <Value>30</Value>
         </Values>
       </DefaultValue>
-      <Prompt>colored output</Prompt>
+      <Prompt>long term</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_Para_Long_Term</DataSetName>
+          <ValueField>value</ValueField>
+          <LabelField>value</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Para_Device">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>%</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>device</Prompt>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_ListOf_Columns_To_Show">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>DS_Listof_DefaultColumns_To_Show</DataSetName>
+          <ValueField>value</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>columns to show</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_ListOf_Columns_To_Show</DataSetName>
+          <ValueField>value</ValueField>
+          <LabelField>value</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_Use_Long_Term_Data">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>0</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>use long term data</Prompt>
       <ValidValues>
         <ParameterValues>
           <ParameterValue>
-            <Value>true</Value>
+            <Value>1</Value>
             <Label>yes</Label>
           </ParameterValue>
           <ParameterValue>
-            <Value>false</Value>
+            <Value>0</Value>
             <Label>no</Label>
           </ParameterValue>
         </ParameterValues>
@@ -5853,50 +5874,6 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
         </ParameterValues>
       </ValidValues>
     </ReportParameter>
-    <ReportParameter Name="Para_ListOfComponents">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DS_Listof_Components</DataSetName>
-          <ValueField>value</ValueField>
-        </DataSetReference>
-      </DefaultValue>
-      <Prompt>list of components</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_Listof_Components</DataSetName>
-          <ValueField>value</ValueField>
-          <LabelField>value</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <MultiValue>true</MultiValue>
-    </ReportParameter>
-    <ReportParameter Name="Para_Actual_Term_without_active_time">
-      <DataType>Boolean</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>false</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>without active time</Prompt>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
-    <ReportParameter Name="Para_Long_Term">
-      <DataType>Integer</DataType>
-      <DefaultValue>
-        <Values>
-          <Value>30</Value>
-        </Values>
-      </DefaultValue>
-      <Prompt>long term</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_Para_Long_Term</DataSetName>
-          <ValueField>value</ValueField>
-          <LabelField>value</LabelField>
-        </DataSetReference>
-      </ValidValues>
-    </ReportParameter>
     <ReportParameter Name="Para_ListOfComponentsType">
       <DataType>String</DataType>
       <DefaultValue>
@@ -5926,6 +5903,73 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
       <MultiValue>true</MultiValue>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
+    <ReportParameter Name="Para_ListOfComponents">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>DS_Listof_Components</DataSetName>
+          <ValueField>value</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>list of components</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_Listof_Components</DataSetName>
+          <ValueField>value</ValueField>
+          <LabelField>value</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Para_Actual_Term_without_active_time">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>without active time</Prompt>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_Colored_Output">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>true</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>colored output</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>true</Value>
+            <Label>yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>false</Value>
+            <Label>no</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
+    <ReportParameter Name="Para_Theme">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>Default</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Report Layout:</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DS_Para_Rpt_Theme</DataSetName>
+          <ValueField>Theme</ValueField>
+          <LabelField>Theme</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
+    </ReportParameter>
     <ReportParameter Name="Para_Hide_LongTermTree">
       <DataType>Boolean</DataType>
       <DefaultValue>
@@ -5936,46 +5980,15 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
       <Prompt>hide long-Termtree</Prompt>
       <UsedInQuery>True</UsedInQuery>
     </ReportParameter>
-    <ReportParameter Name="Para_Use_Long_Term_Data">
-      <DataType>Integer</DataType>
+    <ReportParameter Name="Para_OnlyNonOK_Data">
+      <DataType>Boolean</DataType>
       <DefaultValue>
         <Values>
-          <Value>0</Value>
+          <Value>false</Value>
         </Values>
       </DefaultValue>
-      <Prompt>use long term data</Prompt>
-      <ValidValues>
-        <ParameterValues>
-          <ParameterValue>
-            <Value>1</Value>
-            <Label>yes</Label>
-          </ParameterValue>
-          <ParameterValue>
-            <Value>0</Value>
-            <Label>no</Label>
-          </ParameterValue>
-        </ParameterValues>
-      </ValidValues>
-      <UsedInQuery>True</UsedInQuery>
-    </ReportParameter>
-    <ReportParameter Name="Para_ListOf_Columns_To_Show">
-      <DataType>String</DataType>
-      <DefaultValue>
-        <DataSetReference>
-          <DataSetName>DS_Listof_DefaultColumns_To_Show</DataSetName>
-          <ValueField>value</ValueField>
-        </DataSetReference>
-      </DefaultValue>
-      <Prompt>columns to show</Prompt>
-      <ValidValues>
-        <DataSetReference>
-          <DataSetName>DS_ListOf_Columns_To_Show</DataSetName>
-          <ValueField>value</ValueField>
-          <LabelField>value</LabelField>
-        </DataSetReference>
-      </ValidValues>
-      <MultiValue>true</MultiValue>
-      <UsedInQuery>True</UsedInQuery>
+      <Prompt>show data no-ok</Prompt>
+      <Hidden>true</Hidden>
     </ReportParameter>
     <ReportParameter Name="Para_Debug">
       <DataType>Boolean</DataType>
@@ -5992,17 +6005,12 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
   <ReportParametersLayout>
     <GridLayoutDefinition>
       <NumberOfColumns>3</NumberOfColumns>
-      <NumberOfRows>5</NumberOfRows>
+      <NumberOfRows>6</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
-          <ColumnIndex>0</ColumnIndex>
+          <ColumnIndex>1</ColumnIndex>
           <RowIndex>1</RowIndex>
-          <ParameterName>Para_Actual_Term</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>2</ColumnIndex>
-          <RowIndex>1</RowIndex>
-          <ParameterName>Para_Colored_Output</ParameterName>
+          <ParameterName>Para_Device</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
@@ -6012,62 +6020,72 @@ Fields!WMI.Value="Unknown","LightGrey", true, First(Fields!BG_State_Repair.Value
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>4</RowIndex>
-          <ParameterName>Para_Use_Long_Term_Data</ParameterName>
+          <ParameterName>Para_Theme</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Para_Actual_Term</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>0</RowIndex>
-          <ParameterName>Para_Theme</ParameterName>
+          <ParameterName>Para_ClientVersion</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>Para_Colored_Output</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
           <RowIndex>2</RowIndex>
+          <ParameterName>Para_ActualRange</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>Para_ListOfComponents</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>3</RowIndex>
           <ParameterName>Para_Actual_Term_without_active_time</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
-          <RowIndex>3</RowIndex>
+          <RowIndex>1</RowIndex>
           <ParameterName>Para_Long_Term</ParameterName>
         </CellDefinition>
         <CellDefinition>
-          <ColumnIndex>0</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>Para_Device</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
-          <RowIndex>2</RowIndex>
-          <ParameterName>Para_ListOfComponents</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
           <ColumnIndex>2</ColumnIndex>
-          <RowIndex>3</RowIndex>
-          <ParameterName>Para_Hide_LongTermTree</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
-          <RowIndex>1</RowIndex>
-          <ParameterName>Para_ClientVersion</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
-          <RowIndex>3</RowIndex>
+          <RowIndex>2</RowIndex>
           <ParameterName>Para_ListOfComponentsType</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>4</RowIndex>
-          <ParameterName>Para_ListOf_Columns_To_Show</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>2</ColumnIndex>
-          <RowIndex>4</RowIndex>
-          <ParameterName>Para_Debug</ParameterName>
+          <ParameterName>Para_Hide_LongTermTree</ParameterName>
         </CellDefinition>
         <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>2</RowIndex>
-          <ParameterName>Para_ActualRange</ParameterName>
+          <ParameterName>Para_Use_Long_Term_Data</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Para_ListOf_Columns_To_Show</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>5</RowIndex>
+          <ParameterName>Para_Debug</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>5</RowIndex>
+          <ParameterName>Para_OnlyNonOK_Data</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

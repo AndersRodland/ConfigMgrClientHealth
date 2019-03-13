@@ -5,7 +5,7 @@
 *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** * 
 # Client Health DB Extension
 1) to create the new objects for the DB, start SQL Management Studio 
-    and run the SQL Script .\Create_All_Hist_Report_Object_0.1.11.sql
+    and run the SQL Script .\Create_All_Hist_Report_Object_0.1.13.sql
 
 *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** 
 *** depend on your Reporting Server Version you can use the 
@@ -27,7 +27,7 @@ if you use Report Server 2016 and higher
         .\Report4_2016andHigher\ConfigMgrClientHealth ClientData.rdl
 
 4) change the Data Source for the RDL to your Server and DB
-5) import the Data for the Tables, using the file from .\Raw_data_4_all_Tables_0.1.11.xls
+5) import the Data for the Tables, using the file from .\Raw_data_4_all_Tables_0.1.13.xls
    the best way is here to use the SQL Import data wizard
    see Install Guide to import the configuration data.htm
 
