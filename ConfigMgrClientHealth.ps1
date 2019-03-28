@@ -519,7 +519,7 @@ Begin {
     #>
     Function Test-CcmSDF {
         $ccmdir = Get-CCMDirectory
-        $files = Get-ChildItem "$ccmdir\*.sdf"
+        $files = @(Get-ChildItem "$ccmdir\*.sdf" -ErrorAction SilentlyContinue)
         if ($files.Count -lt 7) { $obj = $false }
         else { $obj = $true }
         Write-Output $obj
