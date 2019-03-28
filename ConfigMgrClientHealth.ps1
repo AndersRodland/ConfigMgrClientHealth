@@ -867,12 +867,13 @@ Begin {
         $content = ''
 
         # Handle the network share log file
-        if (Test-Path $logfile -ErrorAction SilentlyContinue)  { $content = Get-Content($logfile) }
+        if (Test-Path $logfile -ErrorAction SilentlyContinue)  { $content = Get-Content $logfile -ErrorAction SilentlyContinue }
+		else { return }
         $maxHistory = Get-XMLConfigLoggingMaxHistory
         $startCount = [regex]::matches($content,$startString).count
 
         # Delete logfile if more start and stop entries than max history
-        if ($startCount -ge $maxHistory) { if ((Test-Path -Path $logfile -ErrorAction SilentlyContinue) -eq $true) { Remove-Item $logfile -Force } }
+        if ($startCount -ge $maxHistory) { Remove-Item $logfile -Force }
     }
 
     Function Test-DNSConfiguration {
@@ -2056,7 +2057,6 @@ Begin {
         }
 
         if ($execute -eq $true) {
-
 
             [float]$maxRebootDays = Get-XMLConfigMaxRebootDays
             if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance Win32_OperatingSystem }
