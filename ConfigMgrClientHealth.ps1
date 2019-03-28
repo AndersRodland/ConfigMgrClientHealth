@@ -261,7 +261,7 @@ Begin {
 
         #First try and get the service start time based on the last start event message in the system log.
         Try{
-            [datetime]$ServiceStartTime = (Get-EventLog -LogName System -Source Service Control Manager -EntryType Information -Message *$($ServiceDisplayName)*running* -Newest 1).TimeGenerated
+            [datetime]$ServiceStartTime = (Get-EventLog -LogName System -Source "Service Control Manager" -EntryType Information -Message "*$($ServiceDisplayName)*running*" -Newest 1).TimeGenerated
             Return (New-TimeSpan -Start $ServiceStartTime -End (Get-Date)).Days
         }
         Catch {
@@ -305,22 +305,26 @@ Begin {
             }
             catch{
                 Write-Warning "Could not parse the line $($i) in '$($LogFile)': $($LogData[$i])"
+				continue
             }
 
             #If we have gone beyond the start time then stop searching.
             If ($LogTime -lt $StartTime) {
                 Write-Verbose "No log lines in $($LogFile) matched $($SearchStrings) before $($StartTime)."
-                Return
+                break loop
             }
 
             #Loop through each search string looking for a match.
             ForEach($String in $SearchStrings){
-                If ($LogMessage -match $String){return $LogData[$i]}
+                If ($LogMessage -match $String) {
+					Write-Output $LogData[$i]
+					break loop
+				}
             }
         }
 
         #Looped through log file without finding a match.
-        Return
+        #Return
     }
 
     Function Test-LocalLogging {
@@ -515,7 +519,7 @@ Begin {
     #>
     Function Test-CcmSDF {
         $ccmdir = Get-CCMDirectory
-        $files = Get-ChildItem "$ccmdir\*.sdf"
+        $files = @(Get-ChildItem "$ccmdir\*.sdf" -ErrorAction SilentlyContinue)
         if ($files.Count -lt 7) { $obj = $false }
         else { $obj = $true }
         Write-Output $obj
@@ -556,16 +560,16 @@ Begin {
 
                 try {
                     $files = Get-ChildItem "$ccmdir\*.sdf"
-                    $files | Remove-Item -Force | Out-Null
-                    Remove-Item -Path $logFile -Force | Out-Null
+                    $files | Remove-Item -Force -ErrorAction Stop
+                    Remove-Item -Path $logFile -Force -ErrorAction Stop
                 }
                 catch {
                     Write-Verbose "Obviously that wasn't enough time"
                     Start-Sleep -Seconds 30
                     # We try again
                     $files = Get-ChildItem "$ccmdir\*.sdf"
-                    $files | Remove-Item -Force | Out-Null
-                    Remove-Item -Path $logFile -Force | Out-Null
+                    $files | Remove-Item -Force -ErrorAction SilentlyContinue
+                    Remove-Item -Path $logFile -Force -ErrorAction SilentlyContinue
                 }
 
                 $obj = $true
@@ -618,7 +622,7 @@ Begin {
             $log.ClientCertificate = $error2
         }
 
-        if ($ok = $true) {
+        if ($ok -eq $true) {
             $text = 'ConfigMgr Client Certificate: OK'
             Write-Output $text
             $log.ClientCertificate = 'OK'
@@ -680,7 +684,7 @@ Begin {
 	Function Test-ClientSettingsConfiguration {
 		Param([Parameter(Mandatory=$true)]$Log)
 
-		$ClientSettingsConfig = Get-WMIObject CCM_ClientAgentConfig -Namespace 'root\ccm\policy\defaultmachine\RequestedConfig'
+		$ClientSettingsConfig = @(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where {$_.PolicySource -eq "CcmTaskSequence"})
 
 		if ($ClientSettingsConfig.Count -gt 0) {
 
@@ -867,12 +871,13 @@ Begin {
         $content = ''
 
         # Handle the network share log file
-        if (Test-Path $logfile -ErrorAction SilentlyContinue)  { $content = Get-Content($logfile) }
+        if (Test-Path $logfile -ErrorAction SilentlyContinue)  { $content = Get-Content $logfile -ErrorAction SilentlyContinue }
+		else { return }
         $maxHistory = Get-XMLConfigLoggingMaxHistory
         $startCount = [regex]::matches($content,$startString).count
 
         # Delete logfile if more start and stop entries than max history
-        if ($startCount -ge $maxHistory) { if ((Test-Path -Path $logfile -ErrorAction SilentlyContinue) -eq $true) { Remove-Item $logfile -Force } }
+        if ($startCount -ge $maxHistory) { Remove-Item $logfile -Force }
     }
 
     Function Test-DNSConfiguration {
@@ -887,8 +892,8 @@ Begin {
         if (($OSName -notlike "*Windows 7*") -and ($OSName -notlike "*Server 2008*")) {
             # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
             try {
-                $AvtiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
-                $dnsServers = Get-DnsClientServerAddress | Where-Object {$_.InterfaceAlias -Like $AvtiveAdapters} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
+                $ActiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
+                $dnsServers = Get-DnsClientServerAddress | Where-Object {$ActiveAdapters -contains $_.InterfaceAlias} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
                 $dnsAddressList = Resolve-DnsName -Name $fqdn -Server ($dnsServers | Select-Object -First 1) -Type A -DnsOnly | Select-Object -ExpandProperty IPAddress
             }
             catch {
@@ -2056,7 +2061,7 @@ Begin {
             $execute = $true
         }
 
-        if ($execute = $true) {
+        if ($execute -eq $true) {
 
             [float]$maxRebootDays = Get-XMLConfigMaxRebootDays
             if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance Win32_OperatingSystem }
@@ -2309,31 +2314,31 @@ Begin {
     Function Get-SCCMPolicySourceUpdateMessage {
         $trigger = "{00000000-0000-0000-0000-000000000032}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicySendUnsentStateMessages {
         $trigger = "{00000000-0000-0000-0000-000000000111}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyScanUpdateSource {
         $trigger = "{00000000-0000-0000-0000-000000000113}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyHardwareInventory {
         $trigger = "{00000000-0000-0000-0000-000000000001}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyMachineEvaluation {
         $trigger = "{00000000-0000-0000-0000-000000000022}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-Version {
@@ -3238,7 +3243,6 @@ Begin {
         $Architecture = ($OS.OSArchitecture -replace ('([^0-9])(\.*)', '')) + '-Bit'
         $Build = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').BuildLabEx
         $Manufacturer = $CS.Manufacturer
-        $Model = $Model
         $ClientVersion = 'Unknown'
         $Sitecode = Get-Sitecode
         $Domain = Get-Domain
@@ -3266,8 +3270,6 @@ Begin {
         $WUAHandler = 'Unknown'
         $WMI = 'Unknown'
         $RefreshComplianceState = Get-SmallDateTime
-        $Updates = 'Unknown'
-        $Services = 'Unknown'
         $smallDateTime = Get-SmallDateTime
         $smallDateTime = $smallDateTime -replace '\.', ':'
         [float]$PSVersion = [float]$psVersion = [float]$PSVersionTable.PSVersion.Major + ([float]$PSVersionTable.PSVersion.Minor / 10)
@@ -3295,7 +3297,7 @@ Begin {
             MaxLogSize = $MaxLogSize
             MaxLogHistory = $MaxLogHistory
             CacheSize = $CacheSize
-            ClientCertificate = $Certificate
+            ClientCertificate = $ClientCertificate
             ProvisioningMode = $ProvisioningMode
             DNS = $DNS
             Drivers = $Drivers
