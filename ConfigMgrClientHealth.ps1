@@ -176,6 +176,7 @@ Begin {
             )
 
         $URI = $URI + "/ConfigurationProfile"
+        #Write-Host "ProfileID = $ProfileID"
         if ($ProfileID -ge 0) { $URI = $URI + "/$ProfileID"}
 
         Write-Verbose "Retrieving configuration from webservice. URI: $URI"
@@ -297,7 +298,7 @@ Begin {
         $LogData = Get-Content $LogFile
 
         #Loop backwards through the log file.
-        for ($i=($LogData.Count - 1);$i -ge 0; $i--) {
+        :loop for ($i=($LogData.Count - 1);$i -ge 0; $i--) {
 
             #Parse the log line into its parts.
             try{
@@ -713,7 +714,7 @@ Begin {
 			$Obj = $false
 		}
 		Write-Host $text
-		Write-Output $Obj
+		#Write-Output $Obj
     }
 
     Function New-ClientInstalledReason {
@@ -2576,7 +2577,7 @@ Begin {
     }
 
     Function Get-XMLConfigClientMaxLogHistory {
-        if ($configl) {
+        if ($config) {
             $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogHistory'
         }
         if ($Webservice) {
@@ -3695,17 +3696,21 @@ Process {
 
     Write-Verbose 'Validating ClientSettings'
 	If (Get-XMLConfigClientSettingsCheck -like 'True') {
-		Test-ClientSettingsConfiguration -Log $log
+        Test-ClientSettingsConfiguration -Log $log
 	}
 
     if (($ClientWUAHandler -like 'True') -eq $true) {
 		Write-Verbose 'Validating Windows Update Scan not broken by bad group policy...'
         $days = Get-XMLConfigRemediationClientWUAHandlerDays
         Test-RegistryPol -Days $days -log $log -StartTime $LastRun
+        
     }
 
-    Write-Verbose 'Validating that CCMClient is sending state messages...'
-    if (($ClientStateMessages -like 'True') -eq $true) {Test-UpdateStore -log $log}
+    
+    if (($ClientStateMessages -like 'True') -eq $true) { 
+        Write-Verbose 'Validating that CCMClient is sending state messages...'
+        Test-UpdateStore -log $log
+    }
 
     Write-Verbose 'Validating Admin$ and C$ are shared...'
     if (($AdminShare -like 'True') -eq $true) {Test-AdminShare -log $log}
