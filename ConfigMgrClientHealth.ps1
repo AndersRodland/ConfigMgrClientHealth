@@ -3239,7 +3239,6 @@ Begin {
         $Architecture = ($OS.OSArchitecture -replace ('([^0-9])(\.*)', '')) + '-Bit'
         $Build = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').BuildLabEx
         $Manufacturer = $CS.Manufacturer
-        $Model = $Model
         $ClientVersion = 'Unknown'
         $Sitecode = Get-Sitecode
         $Domain = Get-Domain
@@ -3267,8 +3266,6 @@ Begin {
         $WUAHandler = 'Unknown'
         $WMI = 'Unknown'
         $RefreshComplianceState = Get-SmallDateTime
-        $Updates = 'Unknown'
-        $Services = 'Unknown'
         $smallDateTime = Get-SmallDateTime
         $smallDateTime = $smallDateTime -replace '\.', ':'
         [float]$PSVersion = [float]$psVersion = [float]$PSVersionTable.PSVersion.Major + ([float]$PSVersionTable.PSVersion.Minor / 10)
@@ -3296,7 +3293,7 @@ Begin {
             MaxLogSize = $MaxLogSize
             MaxLogHistory = $MaxLogHistory
             CacheSize = $CacheSize
-            ClientCertificate = $Certificate
+            ClientCertificate = $ClientCertificate
             ProvisioningMode = $ProvisioningMode
             DNS = $DNS
             Drivers = $Drivers
