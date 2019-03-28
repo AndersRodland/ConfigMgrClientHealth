@@ -261,7 +261,7 @@ Begin {
 
         #First try and get the service start time based on the last start event message in the system log.
         Try{
-            [datetime]$ServiceStartTime = (Get-EventLog -LogName System -Source Service Control Manager -EntryType Information -Message *$($ServiceDisplayName)*running* -Newest 1).TimeGenerated
+            [datetime]$ServiceStartTime = (Get-EventLog -LogName System -Source "Service Control Manager" -EntryType Information -Message "*$($ServiceDisplayName)*running*" -Newest 1).TimeGenerated
             Return (New-TimeSpan -Start $ServiceStartTime -End (Get-Date)).Days
         }
         Catch {
