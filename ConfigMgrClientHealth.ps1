@@ -560,16 +560,16 @@ Begin {
 
                 try {
                     $files = Get-ChildItem "$ccmdir\*.sdf"
-                    $files | Remove-Item -Force | Out-Null
-                    Remove-Item -Path $logFile -Force | Out-Null
+                    $files | Remove-Item -Force -ErrorAction Stop
+                    Remove-Item -Path $logFile -Force -ErrorAction Stop
                 }
                 catch {
                     Write-Verbose "Obviously that wasn't enough time"
                     Start-Sleep -Seconds 30
                     # We try again
                     $files = Get-ChildItem "$ccmdir\*.sdf"
-                    $files | Remove-Item -Force | Out-Null
-                    Remove-Item -Path $logFile -Force | Out-Null
+                    $files | Remove-Item -Force -ErrorAction SilentlyContinue
+                    Remove-Item -Path $logFile -Force -ErrorAction SilentlyContinue
                 }
 
                 $obj = $true
