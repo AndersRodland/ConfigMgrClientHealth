@@ -45,16 +45,3 @@
 	<Remediation Name="ClientWUAHandler" Fix="True"  Days="30"/>
 	<Remediation Name="ClientCertificate" Fix="True" />
 </Configuration>
-<#
-.SYNOPSIS
-Short description
-
-.DESCRIPTION
-Long description
-
-.EXAMPLE
-An example
-
-.NOTES
-General notes
-#>
