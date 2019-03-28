@@ -110,11 +110,13 @@ Begin {
     # Import Modules
     # Import BitsTransfer Module (Does not work on PowerShell Core (6), disable check if module failes to import.)
     $BitsCheckEnabled = $false
-    try {
-        Import-Module BitsTransfer -ErrorAction stop
-        $BitsCheckEnabled = $true
-    }
-    catch { $BitsCheckEnabled = $false }
+    if (Get-Module -ListAvailable -Name BitsTransfer) {
+		try {
+			Import-Module BitsTransfer -ErrorAction stop
+			$BitsCheckEnabled = $true
+		}
+		catch { $BitsCheckEnabled = $false }
+	}
 
     #region functions
     Function Get-DateTime {
@@ -887,8 +889,8 @@ Begin {
         if (($OSName -notlike "*Windows 7*") -and ($OSName -notlike "*Server 2008*")) {
             # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
             try {
-                $AvtiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
-                $dnsServers = Get-DnsClientServerAddress | Where-Object {$_.InterfaceAlias -Like $AvtiveAdapters} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
+                $ActiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
+                $dnsServers = Get-DnsClientServerAddress | Where-Object {$ActiveAdapters -contains $_.InterfaceAlias} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
                 $dnsAddressList = Resolve-DnsName -Name $fqdn -Server ($dnsServers | Select-Object -First 1) -Type A -DnsOnly | Select-Object -ExpandProperty IPAddress
             }
             catch {
@@ -2308,31 +2310,31 @@ Begin {
     Function Get-SCCMPolicySourceUpdateMessage {
         $trigger = "{00000000-0000-0000-0000-000000000032}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicySendUnsentStateMessages {
         $trigger = "{00000000-0000-0000-0000-000000000111}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyScanUpdateSource {
         $trigger = "{00000000-0000-0000-0000-000000000113}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyHardwareInventory {
         $trigger = "{00000000-0000-0000-0000-000000000001}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyMachineEvaluation {
         $trigger = "{00000000-0000-0000-0000-000000000022}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
-        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule $trigger -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-Version {
