@@ -110,13 +110,11 @@ Begin {
     # Import Modules
     # Import BitsTransfer Module (Does not work on PowerShell Core (6), disable check if module failes to import.)
     $BitsCheckEnabled = $false
-    if (Get-Module -ListAvailable -Name BitsTransfer) {
-		try {
-			Import-Module BitsTransfer -ErrorAction stop
-			$BitsCheckEnabled = $true
-		}
-		catch { $BitsCheckEnabled = $false }
-	}
+    try {
+        Import-Module BitsTransfer -ErrorAction stop
+        $BitsCheckEnabled = $true
+    }
+    catch { $BitsCheckEnabled = $false }
 
     #region functions
     Function Get-DateTime {
@@ -620,7 +618,7 @@ Begin {
             $log.ClientCertificate = $error2
         }
 
-        if ($ok = $true) {
+        if ($ok -eq $true) {
             $text = 'ConfigMgr Client Certificate: OK'
             Write-Output $text
             $log.ClientCertificate = 'OK'
@@ -2057,7 +2055,8 @@ Begin {
             $execute = $true
         }
 
-        if ($execute = $true) {
+        if ($execute -eq $true) {
+
 
             [float]$maxRebootDays = Get-XMLConfigMaxRebootDays
             if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance Win32_OperatingSystem }
