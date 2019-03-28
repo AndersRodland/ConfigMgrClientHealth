@@ -110,11 +110,13 @@ Begin {
     # Import Modules
     # Import BitsTransfer Module (Does not work on PowerShell Core (6), disable check if module failes to import.)
     $BitsCheckEnabled = $false
-    try {
-        Import-Module BitsTransfer -ErrorAction stop
-        $BitsCheckEnabled = $true
-    }
-    catch { $BitsCheckEnabled = $false }
+    if (Get-Module -ListAvailable -Name BitsTransfer) {
+		try {
+			Import-Module BitsTransfer -ErrorAction stop
+			$BitsCheckEnabled = $true
+		}
+		catch { $BitsCheckEnabled = $false }
+	}
 
     #region functions
     Function Get-DateTime {
