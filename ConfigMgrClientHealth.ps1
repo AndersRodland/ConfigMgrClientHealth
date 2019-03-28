@@ -1012,11 +1012,11 @@ Begin {
 
         $Updates = (Join-Path $UpdateShare $OSName)
         If ((Test-Path $Updates) -eq $true) {
-            $regex = "\b(?!(KB)+(\d+)\b)\w+"
-            $hotfixes = (Get-ChildItem $Updates | Select-Object -ExpandProperty Name)
+            $regex = '(?i)^.+-kb[0-9]{6,}-(?:v[0-9]+-)?x[0-9]+\.msu$'
+            $hotfixes = @(Get-ChildItem $Updates | Where-Object { $_.Name -match $regex } | Select-Object -ExpandProperty Name)
 
-            if ($PowerShellVersion -ge 6) { $installedUpdates = (Get-CimInstance Win32_QuickFixEngineering).HotFixID }
-            else { $installedUpdates = Get-Hotfix | Select-Object -ExpandProperty HotFixID }
+            if ($PowerShellVersion -ge 6) { $installedUpdates = @((Get-CimInstance Win32_QuickFixEngineering).HotFixID) }
+            else { $installedUpdates = @(Get-Hotfix | Select-Object -ExpandProperty HotFixID) }
 
             $count = $hotfixes.count
 
@@ -1028,9 +1028,10 @@ Begin {
             else {
                 $logEntry = $null
 
+				$regex = '\b(?!(KB)+(\d+)\b)\w+'
                 foreach ($hotfix in $hotfixes) {
                     $kb = $hotfix -replace $regex -replace "\." -replace "-"
-                    if ($installedUpdates -like $kb) {
+                    if ($installedUpdates -contains $kb) {
                         $text = "Update $hotfix" + ": OK"
                         Write-Output $text
                     }
