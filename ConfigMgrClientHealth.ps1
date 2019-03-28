@@ -305,22 +305,26 @@ Begin {
             }
             catch{
                 Write-Warning "Could not parse the line $($i) in '$($LogFile)': $($LogData[$i])"
+				continue
             }
 
             #If we have gone beyond the start time then stop searching.
             If ($LogTime -lt $StartTime) {
                 Write-Verbose "No log lines in $($LogFile) matched $($SearchStrings) before $($StartTime)."
-                Return
+                break loop
             }
 
             #Loop through each search string looking for a match.
             ForEach($String in $SearchStrings){
-                If ($LogMessage -match $String){return $LogData[$i]}
+                If ($LogMessage -match $String) {
+					Write-Output $LogData[$i]
+					break loop
+				}
             }
         }
 
         #Looped through log file without finding a match.
-        Return
+        #Return
     }
 
     Function Test-LocalLogging {
