@@ -684,7 +684,7 @@ Begin {
 	Function Test-ClientSettingsConfiguration {
 		Param([Parameter(Mandatory=$true)]$Log)
 
-		$ClientSettingsConfig = Get-WMIObject CCM_ClientAgentConfig -Namespace 'root\ccm\policy\defaultmachine\RequestedConfig'
+		$ClientSettingsConfig = @(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where {$_.PolicySource -eq "CcmTaskSequence"})
 
 		if ($ClientSettingsConfig.Count -gt 0) {
 
