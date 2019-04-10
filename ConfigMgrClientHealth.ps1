@@ -1138,9 +1138,13 @@ Begin {
                 if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
                 else { $WMI = Get-WmiObject -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
             } Catch {
-                Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Tagging client for reinstall to fix.'
+                Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Clearing WMI and tagging client for reinstall to fix.'
+
+                # Clear the WMI namespace to avoid having to uninstall first
+                # This is the same action the install after an uninstall would perform
+                Get-WmiObject -Query "Select * from __Namespace WHERE Name='CCM'" -Namespace root | Remove-WmiObject
+
                 $Reinstall = $true
-                $Uninstall = $true
                 New-ClientInstalledReason -Log $Log -Message "Failed to connect to SMS_Client WMI class."
             }
 
