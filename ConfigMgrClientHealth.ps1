@@ -1590,6 +1590,7 @@ Begin {
     Function Test-WMI {
         Param([Parameter(Mandatory=$true)]$Log)
         $vote = 0
+        $obj = $false
 
         $result = winmgmt /verifyrepository
         switch -wildcard ($result) {
@@ -1621,7 +1622,6 @@ Begin {
                 $text = 'WMI Check: OK'
                 $log.WMI = 'OK'
                 Write-Host $text
-                $obj = $false
             }
             else {
                 $fix = Get-XMLConfigWMIRepairEnable
@@ -3703,11 +3703,11 @@ Process {
 		Write-Verbose 'Validating Windows Update Scan not broken by bad group policy...'
         $days = Get-XMLConfigRemediationClientWUAHandlerDays
         Test-RegistryPol -Days $days -log $log -StartTime $LastRun
-        
+
     }
 
-    
-    if (($ClientStateMessages -like 'True') -eq $true) { 
+
+    if (($ClientStateMessages -like 'True') -eq $true) {
         Write-Verbose 'Validating that CCMClient is sending state messages...'
         Test-UpdateStore -log $log
     }
