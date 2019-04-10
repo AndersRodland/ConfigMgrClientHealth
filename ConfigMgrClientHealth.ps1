@@ -1133,6 +1133,17 @@ Begin {
                 }
             }
 
+            # Test that we are able to connect to SMS_Client WMI class
+            Try {
+                if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
+                else { $WMI = Get-WmiObject -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
+            } Catch {
+                Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Tagging client for reinstall to fix.'
+                $Reinstall = $true
+                $Uninstall = $true
+                New-ClientInstalledReason -Log $Log -Message "Failed to connect to SMS_Client WMI class."
+            }
+
             if ( $reinstall -eq $true) {
                 $text = "ConfigMgr Client Health thinks the agent need to be reinstalled.."
                 Write-Host $text
@@ -1609,14 +1620,6 @@ Begin {
         } Catch {
             Write-Verbose 'Failed to connect to WMI class "Win32_ComputerSystem". Voting for WMI fix...'
             $vote++
-        }
-
-        Try {
-            if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
-            else { $WMI = Get-WmiObject -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
-        } Catch {
-            Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Tagging client for reinstall instead of WMI fix.'
-            $obj = $true
         } Finally {
             if ($vote -eq 0) {
                 $text = 'WMI Check: OK'
