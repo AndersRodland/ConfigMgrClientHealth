@@ -138,8 +138,11 @@ Begin {
     }
 
     Function Get-Hostname {
+        <#
         if ($PowerShellVersion -ge 6) { $Obj = (Get-CimInstance Win32_ComputerSystem).Name }
         else { $Obj = (Get-WmiObject Win32_ComputerSystem).Name }
+        #>
+        $obj = $env:COMPUTERNAME
         Write-Output $Obj
     }
 
@@ -1569,7 +1572,7 @@ Begin {
                 Start-Sleep -Seconds 360
             }
 
-            # Client is reinstalled. Remove tag.
+            
 
         }
         else {
@@ -3241,7 +3244,7 @@ Begin {
         }
 
         # Handles different OS languages
-        $Hostname = Get-Computername
+        $Hostname = Get-Hostname
         $OperatingSystem = $OS.Caption
         $Architecture = ($OS.OSArchitecture -replace ('([^0-9])(\.*)', '')) + '-Bit'
         $Build = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').BuildLabEx
@@ -3784,6 +3787,16 @@ Process {
         $Log.MaxLogSize = Get-ClientMaxLogSize
         $Log.MaxLogHistory = Get-ClientMaxLogHistory
         $log.CacheSize = Get-ClientCache
+
+        # Verify that installed client version is now equal or better that minimum required client version
+        $NewClientVersion = Get-ClientVersion
+        $MinimumClientVersion = Get-XMLConfigClientVersion
+
+        if ( $NewClientVersion -lt $MinimumClientVersion) {
+            # ConfigMgr client version is still not at expected level.
+            # Log for now, remediation is comming
+            $Log.ClientInstalledReason += " Upgrade failed."
+        }
 
     }
 
