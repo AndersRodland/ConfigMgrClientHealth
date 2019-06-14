@@ -65,7 +65,8 @@ CREATE TABLE dbo.Clients
     SWMetering varchar(50),
     BITS varchar(50),
     PatchLevel int,
-    ClientInstalledReason varchar(200)
+    ClientInstalledReason varchar(200),
+    OSDiskCleanup varchar(50)
 )
 else
 
@@ -77,6 +78,7 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[C
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'PatchLevel') ALTER TABLE dbo.Clients ADD PatchLevel int
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'ClientInstalledReason') ALTER TABLE dbo.Clients ADD ClientInstalledReason varchar(200)
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'RefreshComplianceState') ALTER TABLE dbo.Clients ADD RefreshComplianceState smalldatetime
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE  object_id = OBJECT_ID(N'[dbo].[Clients]') AND name = 'OSDiskCleanup') ALTER TABLE dbo.Clients ADD OSDiskCleanup varchar(50)
 
 
 -- Modify columns if needed
@@ -97,13 +99,13 @@ GO
 begin tran
 if exists (SELECT * FROM dbo.Configuration WITH (updlock,serializable) WHERE Name='ClientHealth')
 begin
-    IF EXISTS (SELECT * FROM dbo.Configuration WITH (updlock,serializable) WHERE Name='ClientHealth' AND Version < '0.7.5')
-    UPDATE dbo.Configuration SET Version='0.7.5' WHERE Name = 'ClientHealth'
+    IF EXISTS (SELECT * FROM dbo.Configuration WITH (updlock,serializable) WHERE Name='ClientHealth' AND Version < '0.7.6')
+    UPDATE dbo.Configuration SET Version='0.7.6' WHERE Name = 'ClientHealth'
 end
 else
 begin
     INSERT INTO dbo.Configuration (Name, Version)
-    VALUES ('ClientHealth', '0.7.5')
+    VALUES ('ClientHealth', '0.7.6')
 end
 commit tran
 
