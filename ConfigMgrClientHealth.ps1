@@ -27,6 +27,7 @@
         * ConfigMgr Client Update Handler is working correctly with registry.pol
         * Windows Update Agent not working correctly, causing client not to receive patches.
         * Windows Update Agent missing patches that fixes known bugs.
+        * System drive less then x% freespace then cleanup using cleanmgr.exe
 .NOTES
     You should run this with at least local administrator rights. It is recommended to run this script under the SYSTEM context.
 
