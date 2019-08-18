@@ -64,12 +64,44 @@ Begin {
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
 
-#Region proxy functions
-$WriteHostMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Host)
-$WriteHostBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteHostMetadata)
-$WriteHostParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteHostMetadata)
-$WriteHostWrapped = {Microsoft.Powershell.Utility\Write-Host @PSBoundParameters; Out-LogFile -Text $Object}
-${Function:Write-Host} = '{0}param({1}) {2}' -f $WriteHostBinding, $WriteHostParams, $WriteHostWrapped
+    #region proxy functions for logging
+    # #Write-Verbose
+    # $WriteVerboseMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Verbose)
+    # $WriteVerboseBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteVerboseMetadata)
+    # $WriteVerboseParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteVerboseMetadata)
+    # $WriteVerboseWrapped = {Microsoft.Powershell.Utility\Write-Verbose @PSBoundParameters; Out-LogFile -Text $Message}
+    # ${Function:Write-Verbose} = '{0}param({1}) {2}' -f $WriteVerboseBinding, $WriteVerboseParams, $WriteVerboseWrapped
+
+    #Write-Host
+    $WriteHostMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Host)
+    $WriteHostBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteHostMetadata)
+    $WriteHostParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteHostMetadata)
+    $WriteHostWrapped = {Microsoft.Powershell.Utility\Write-Host @PSBoundParameters; Out-LogFile -Text $Object}
+    ${Function:Write-Host} = '{0}param({1}) {2}' -f $WriteHostBinding, $WriteHostParams, $WriteHostWrapped
+
+    # #Write-Information
+    # $WriteInformationMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Information)
+    # $WriteInformationBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteInformationMetadata)
+    # $WriteInformationParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteInformationMetadata)
+    # $WriteInformationWrapped = {Microsoft.Powershell.Utility\Write-Information @PSBoundParameters; Out-LogFile -Text $MessageData}
+    # ${Function:Write-Information} = '{0}param({1}) {2}' -f $WriteInformationBinding, $WriteInformationParams, $WriteInformationWrapped
+
+    #Write-Warning
+    $WriteWarningMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Warning)
+    $WriteWarningBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteWarningMetadata)
+    $WriteWarningParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteWarningMetadata)
+    $WriteWarningWrapped = {Microsoft.Powershell.Utility\Write-Warning @PSBoundParameters; Out-LogFile -Text "WARNING: $Message"}
+    ${Function:Write-Warning} = '{0}param({1}) {2}' -f $WriteWarningBinding, $WriteWarningParams, $WriteWarningWrapped
+
+    #Write-Error
+    $WriteErrorMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Error)
+    $WriteErrorBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteErrorMetadata)
+    $WriteErrorParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteErrorMetadata)
+    $WriteErrorWrapped = {Microsoft.Powershell.Utility\Write-Error @PSBoundParameters; Out-LogFile -Text "ERROR: $Message"}
+    ${Function:Write-Error} = '{0}param({1}) {2}' -f $WriteErrorBinding, $WriteErrorParams, $WriteErrorWrapped
+
+    #endregion proxy functions for logging
+
     Function Test-XML {
         <#
         .SYNOPSIS
