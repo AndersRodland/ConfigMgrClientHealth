@@ -355,7 +355,10 @@ Begin {
         }
         else { $Logfile = Get-LogFileName }
 
-        if ($mode -like "ClientInstall" ) { $text = "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation." }
+        if ($mode -like "ClientInstall" ) { 
+            $text = "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation." 
+            $Severity = 3
+        }
 
         foreach ($item in $text) {
             $item = '<![LOG[' + $item + ']LOG]!>'
@@ -975,15 +978,15 @@ Begin {
                     Write-Host $text
                     $log.DNS = $logFail
                     if (-NOT($FileLogLevel -like "clientlocal")) {
-                        Out-LogFile -Xml $xml -Text $text
-                        Out-LogFile -Xml $xml -Text $dnsFail
+                        Out-LogFile -Xml $xml -Text $text -Severity 2
+                        Out-LogFile -Xml $xml -Text $dnsFail -Severity 2
                     }
 
                 }
                 else {
                     $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Monitor mode only, no remediation'
                     $log.DNS = $logFail
-                    if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text }
+                    if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text  -Severity 2}
                     Write-Host $text
                 }
 
@@ -1180,7 +1183,7 @@ Begin {
 
             # Test again if agent is installed
             if (Get-Service -Name ccmexec -ErrorAction SilentlyContinue) {}
-            else { Out-LogFile -Mode "ClientInstall"}
+            else { Out-LogFile "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation."  -Mode "ClientInstall" -Severity 3}
         }
     }
 
@@ -2176,7 +2179,7 @@ Begin {
             foreach ($device in $devices) {
                 $text = 'Missing or faulty driver: ' +$device.Name + '. Device ID: ' + $device.DeviceID
                 Write-Warning $text
-                if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text }
+                if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text -Severity 2}
             }
         }
         else {
@@ -2371,7 +2374,7 @@ Begin {
     Function Get-Version {
         $text = 'ConfigMgr Client Health Version ' +$Version
         Write-Output $text
-        Out-LogFile -Xml $xml -Text $text
+        Out-LogFile -Xml $xml -Text $text -Severity 1
     }
 
     <# Trigger codes
@@ -2445,7 +2448,7 @@ Begin {
         catch {
             $text = "Error connecting to SQLDatabase $Database on SQL Server $SQLServer"
             Write-Error -Message $text
-            if (-NOT($FileLogLevel -like "clientinstall")) { Out-LogFile -Xml $xml -Text $text }
+            if (-NOT($FileLogLevel -like "clientinstall")) { Out-LogFile -Xml $xml -Text $text -Severity 3}
             $obj = $false;
             Write-Verbose "SQL connection test failed"
         }
@@ -3440,7 +3443,7 @@ Begin {
             $ErrorMessage = $_.Exception.Message
             $text = "Error updating SQL with the following query: $transactSQL. Error: $ErrorMessage"
             Write-Error $text
-            Out-LogFile -Xml $Xml -Text "ERROR Insert/Update SQL. SQL Query: $query `nSQL Error: $ErrorMessage"
+            Out-LogFile -Xml $Xml -Text "ERROR Insert/Update SQL. SQL Query: $query `nSQL Error: $ErrorMessage" -Severity 3
         }
         Write-Verbose "End Update-SQL"
     }
@@ -3464,9 +3467,9 @@ Begin {
         $text = $text.replace(" :",":")
         $text = $text -creplace '(?m)^\s*\r?\n',''
 
-        if ($Mode -eq 'Local') { Out-LogFile -Xml $xml -Text $text -Mode $Mode }
-        elseif ($Mode -eq 'ClientInstalledFailed') { Out-LogFile -Xml $xml -Text $text -Mode $Mode }
-        else { Out-LogFile -Xml $xml -Text $text }
+        if ($Mode -eq 'Local') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1}
+        elseif ($Mode -eq 'ClientInstalledFailed') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1}
+        else { Out-LogFile -Xml $xml -Text $text -Severity 1}
         Write-Verbose "End Update-LogFile"
     }
 
@@ -3554,7 +3557,7 @@ Process {
     If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
     {
         $text = 'ERROR: Powershell not running as Administrator! Client Health aborting.'
-        Out-LogFile -Xml $Xml -Text $text
+        Out-LogFile -Xml $Xml -Text $text -Severity 3
         Write-Error $text
         Exit 1
     }
