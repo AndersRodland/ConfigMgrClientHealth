@@ -64,6 +64,12 @@ Begin {
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
 
+#Region proxy functions
+$WriteHostMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Write-Host)
+$WriteHostBinding = [System.Management.Automation.ProxyCommand]::GetCmdletBindingAttribute($WriteHostMetadata)
+$WriteHostParams = [System.Management.Automation.ProxyCommand]::GetParamBlock($WriteHostMetadata)
+$WriteHostWrapped = {Microsoft.Powershell.Utility\Write-Host @PSBoundParameters; Out-LogFile -Text $Object}
+${Function:Write-Host} = '{0}param({1}) {2}' -f $WriteHostBinding, $WriteHostParams, $WriteHostWrapped
     Function Test-XML {
         <#
         .SYNOPSIS
