@@ -350,8 +350,22 @@ Begin {
 
         if ($mode -like "ClientInstall" ) { $text = "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation." }
 
-        $obj = '[' +(Get-DateTime) +'] '+$text
-        $obj | Out-File -Encoding utf8 -Append $logFile
+        foreach ($item in $text) {
+            $item = '<![LOG[' + $item + ']LOG]!>'
+            $time = 'time="' + (Get-Date -Format HH:mm:ss.fff) + '+000"' #Should actually be the bias
+            $date = 'date="' + (Get-Date -Format MM-dd-yyyy) + '"'
+            $component = 'component="ConfigMgrClientHealth"'
+            $context = 'context=""'
+            $type = 'type="1"'  #Severity 1=Information, 2=Warning, 3=Error
+            $thread = 'thread="' + $PID + '"'
+            $file = 'file=""'
+
+            $logblock = ($time, $date, $component, $context, $type, $thread, $file) -join ' '
+            $logblock = '<' + $logblock + '>'
+
+            $item + $logblock | Out-File -Encoding utf8 -Append $logFile
+        }
+        # $obj | Out-File -Encoding utf8 -Append $logFile
     }
 
     Function Get-OperatingSystem {
