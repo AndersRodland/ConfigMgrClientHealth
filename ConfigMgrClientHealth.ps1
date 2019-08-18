@@ -3417,7 +3417,7 @@ Begin {
         try { Invoke-SqlCmd2 -ServerInstance $SQLServer -Database $Database -Query $query }
         catch {
             $ErrorMessage = $_.Exception.Message
-            $text = "Error updating SQL with the following query: $transactSQL. Error: $ErrorMessage"
+            $text = "Error updating SQL with the following query: $query. Error: $ErrorMessage"
             Write-Error $text
             Out-LogFile -Xml $Xml -Text "ERROR Insert/Update SQL. SQL Query: $query `nSQL Error: $ErrorMessage"
         }
