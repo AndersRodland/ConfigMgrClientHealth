@@ -339,7 +339,14 @@ Begin {
     }
 
     Function Out-LogFile {
-        Param([Parameter(Mandatory=$false)][xml]$Xml, $Text, $Mode)
+        Param([Parameter(Mandatory = $false)][xml]$Xml, $Text, $Mode,
+            [Parameter(Mandatory = $false)][ValidateSet(1, 2, 3, 'Information', 'Warning', 'Error')]$Severity = 1)
+
+        switch ($Severity) {
+            'Information' {$Severity = 1}
+            'Warning' {$Severity = 2}
+            'Error' {$Severity = 3}
+        }
 
         if ($Mode -like "Local") {
             Test-LocalLogging
@@ -356,7 +363,7 @@ Begin {
             $date = 'date="' + (Get-Date -Format MM-dd-yyyy) + '"'
             $component = 'component="ConfigMgrClientHealth"'
             $context = 'context=""'
-            $type = 'type="1"'  #Severity 1=Information, 2=Warning, 3=Error
+            $type = 'type="' + $Severity + '"'  #Severity 1=Information, 2=Warning, 3=Error
             $thread = 'thread="' + $PID + '"'
             $file = 'file=""'
 
