@@ -375,6 +375,7 @@ Begin {
                 else { $OSName = "Windows Server 2012 " + $OSArchitecture }
             }
             "*Server 2016*" { $OSName = "Windows Server 2016 " + $OSArchitecture }
+            "*Server 2019*" { $OSName = "Windows Server 2019 " + $OSArchitecture }
         }
         Write-Output $OSName
     }
