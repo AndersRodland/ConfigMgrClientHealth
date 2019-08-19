@@ -3509,16 +3509,13 @@ Begin {
         Test-ValuesBeforeLogUpdate
         $logfile = $logfile = Get-LogFileName
         Test-LogFileHistory -Logfile $logfile
-        $text = "<--- ConfigMgr Client Health Check starting --->"
-        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
+        $text = $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
         $text = $text.replace("`t","")
         $text = $text.replace("  ","")
         $text = $text.replace(" :",":")
         $text = $text -creplace '(?m)^\s*\r?\n',''
 
-        if ($Mode -eq 'Local') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1}
-        elseif ($Mode -eq 'ClientInstalledFailed') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1}
-        else { Out-LogFile -Xml $xml -Text $text -Severity 1}
+        Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1
         Write-Verbose "End Update-LogFile"
     }
 
