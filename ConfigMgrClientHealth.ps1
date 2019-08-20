@@ -3547,6 +3547,11 @@ Begin {
         $ClientStateMessages = Get-XMLConfigRemediationClientStateMessages
         $ClientWUAHandler = Get-XMLConfigRemediationClientWUAHandler
         $LogShare = Get-XMLConfigLoggingShare
+
+        $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
+        $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
+        $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
+        $SQLLogging = ((Get-XMLConfigSQLLoggingEnable).ToString()).ToLower()
     }
 
 
@@ -3587,6 +3592,20 @@ Begin {
         }
 
         $LogShare = $Configuration.logFileShare
+
+        $LocalLogging = "true"
+        #$LocalLogging = $Configuration.localFiles.ToString().ToLower()
+        $FileLogging = $Configuration.logFileShareEnable.ToString().ToLower()
+        $FLL = $Configuration.logLevel.ToString().ToLower()
+        switch ($FLL) {
+            0 { $FileLogLevel = "Full"}
+            1 { $FileLogLevel = "ClientInstall"}
+        }
+        $SQLLogging = "true"
+
+        Write-Host "LocalLogging: $LocalLogging" -ForegroundColor Yellow
+        Write-Host "FileLogging: $FileLogging" -ForegroundColor Yellow
+        Write-Host "FileLogLevel: $FileLogLevel" -ForegroundColor Yellow
     }
 
 
@@ -3627,32 +3646,6 @@ Process {
             $StartupText2 = "ConfigMgr Client Health " +$Version+ " starting."
             Write-Host $StartupText2
          }
-    }
-
-
-    # If config.xml is used
-    if ($Config) {
-        $LocalLogging = ((Get-XMLConfigLoggingLocalFile).ToString()).ToLower()
-        $FileLogging = ((Get-XMLConfigLoggingEnable).ToString()).ToLower()
-        $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
-        $SQLLogging = ((Get-XMLConfigSQLLoggingEnable).ToString()).ToLower()
-
-    }
-
-    if ($Webservice) {
-        $LocalLogging = "true"
-        #$LocalLogging = $Configuration.localFiles.ToString().ToLower()
-        $FileLogging = $Configuration.logFileShareEnable.ToString().ToLower()
-        $FLL = $Configuration.logLevel.ToString().ToLower()
-        switch ($FLL) {
-            0 { $FileLogLevel = "Full"}
-            1 { $FileLogLevel = "ClientInstall"}
-        }
-        $SQLLogging = "true"
-
-        Write-Host "LocalLogging: $LocalLogging" -ForegroundColor Yellow
-        Write-Host "FileLogging: $FileLogging" -ForegroundColor Yellow
-        Write-Host "FileLogLevel: $FileLogLevel" -ForegroundColor Yellow
     }
 
     $RegistryKey = "HKLM:\Software\ConfigMgrClientHealth"
