@@ -3834,12 +3834,12 @@ End {
         Update-LogFile -Log $log
     }
 
-    if (($SQLLogging -like 'true') -and (($Webservice -eq $null) -or ($Webservice -eq ""))) {
+    if (($SQLLogging -eq 'true') -and -not $PSBoundParameters.ContainsKey('Webservice')) {
         Write-Output 'Updating SQL database with results'
         Update-SQL -Log $log
     }
 
-    if ($Webservice) {
+    if ($PSBoundParameters.ContainsKey('Webservice')) {
         Write-Output 'Updating SQL database with results using webservice'
         Update-Webservice -URI $Webservice -Log $Log
     }
