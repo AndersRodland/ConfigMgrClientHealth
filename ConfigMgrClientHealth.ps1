@@ -1137,6 +1137,21 @@ Begin {
                 }
             }
 
+            # Test that we are able to connect to SMS_Client WMI class
+            Try {
+                if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
+                else { $WMI = Get-WmiObject -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
+            } Catch {
+                Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Clearing WMI and tagging client for reinstall to fix.'
+
+                # Clear the WMI namespace to avoid having to uninstall first
+                # This is the same action the install after an uninstall would perform
+                Get-WmiObject -Query "Select * from __Namespace WHERE Name='CCM'" -Namespace root | Remove-WmiObject
+
+                $Reinstall = $true
+                New-ClientInstalledReason -Log $Log -Message "Failed to connect to SMS_Client WMI class."
+            }
+
             if ( $reinstall -eq $true) {
                 $text = "ConfigMgr Client Health thinks the agent need to be reinstalled.."
                 Write-Host $text
@@ -1594,6 +1609,7 @@ Begin {
     Function Test-WMI {
         Param([Parameter(Mandatory=$true)]$Log)
         $vote = 0
+        $obj = $false
 
         $result = winmgmt /verifyrepository
         switch -wildcard ($result) {
@@ -1612,20 +1628,11 @@ Begin {
         } Catch {
             Write-Verbose 'Failed to connect to WMI class "Win32_ComputerSystem". Voting for WMI fix...'
             $vote++
-        }
-
-        Try {
-            if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
-            else { $WMI = Get-WmiObject -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
-        } Catch {
-            Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Tagging client for reinstall instead of WMI fix.'
-            $obj = $true
         } Finally {
             if ($vote -eq 0) {
                 $text = 'WMI Check: OK'
                 $log.WMI = 'OK'
                 Write-Host $text
-                $obj = $false
             }
             else {
                 $fix = Get-XMLConfigWMIRepairEnable
@@ -3707,11 +3714,11 @@ Process {
 		Write-Verbose 'Validating Windows Update Scan not broken by bad group policy...'
         $days = Get-XMLConfigRemediationClientWUAHandlerDays
         Test-RegistryPol -Days $days -log $log -StartTime $LastRun
-        
+
     }
 
-    
-    if (($ClientStateMessages -like 'True') -eq $true) { 
+
+    if (($ClientStateMessages -like 'True') -eq $true) {
         Write-Verbose 'Validating that CCMClient is sending state messages...'
         Test-UpdateStore -log $log
     }
