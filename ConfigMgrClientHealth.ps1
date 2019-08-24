@@ -1891,7 +1891,7 @@ Begin {
                     $text = "Configuring service $Name StartupType to: Automatic (Trigger Start)..."
                     Set-Service -Name $service.Name -StartupType Automatic
                 }
-                else { "Service $Name startup: OK" }
+                else { $text = "Service $Name startup: OK" }
                 Write-Output $text
             }
             else {
