@@ -26,5 +26,11 @@ Note: Script version 0.8.2 requires database version 0.8.2.
 * Script will not restart services if another installation is running.
 * Hostname is now read from environmental variable and not WMI.
 * Several bugfixes to script thanks to Apila22.
+* Add Windows Server 2019 support (theaquamarine)
+* Improved WMI test and fix (theaquamarine)
+* Will only log to webservice if parameter is specificed (Cody Mathis)
+* Improved the error message when script fails to update SQL (theaquamarine)
+* Logfiles are now compatible with CMTrace (theaquamarine)
+
 
 This software is provided "AS IS" with no warranties. Use at your own risk.
