@@ -56,7 +56,10 @@ Begin {
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
     #If no config file was passed in, use the default.
-    If ((!$Config) -and ($Webservice -eq $null)) {$Config = Join-Path ($global:ScriptPath) "Config.xml"}
+    If ((!$PSBoundParameters.ContainsKey('Config')) -and (!$PSBoundParameters.ContainsKey('Webservice'))) {
+        $Config = Join-Path ($global:ScriptPath) "Config.xml"
+        Write-Verbose "No config provided, defaulting to $Config"
+    }
 
     Write-Verbose "Script version: $Version"
     Write-Verbose "PowerShell version: $PowerShellVersion"
