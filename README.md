@@ -4,6 +4,8 @@ Version: 0.8.2
 
 This is the master branch of ConfigMgr Client Health and is ready for production.
 
+Note: Script version 0.8.2 requires database version 0.7.5.
+
 
 ## Changes since stable release
 
