@@ -718,17 +718,32 @@ Begin {
 	Function Test-ClientSettingsConfiguration {
 		Param([Parameter(Mandatory=$true)]$Log)
 
-		$ClientSettingsConfig = @(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where-Object {$_.PolicySource -eq "CcmTaskSequence"})
+        if ($PowerShellVersion -ge 6) {
+            $ClientSettingsConfig = @(Get-CimInstance -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -ClassName CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where-Object {$_.PolicySource -eq "CcmTaskSequence"})
+        }
+        else {
+            $ClientSettingsConfig = @(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where-Object {$_.PolicySource -eq "CcmTaskSequence"})
+        }
 
 		if ($ClientSettingsConfig.Count -gt 0) {
 
 			$fix = (Get-XMLConfigClientSettingsCheckFix).ToLower()
 
 			if ($fix -eq "true") {
-				$text = "ClientSettings: Error. Remediating"
-				DO {
-					Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1000 | ForEach-Object {Remove-WmiObject -InputObject $_}
-				} Until (!(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1))
+                $text = "ClientSettings: Error. Remediating"
+                if ($PowerShellVersion -ge 6) {
+                    write-host "ps6" -ForegroundColor Green
+                    DO {
+                        Get-CimInstance -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -ClassName CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1000 | ForEach-Object {Remove-WmiObject -InputObject $_}
+                    } Until (!(Get-CimInstance -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -ClassName CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1))
+                }
+                else {
+                    write-host "ps5" -ForegroundColor Green
+                    DO {
+                        Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1000 | ForEach-Object {Remove-WmiObject -InputObject $_}
+                    } Until (!(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1))
+                }
+				
 				$log.ClientSettings = 'Remediated'
 				$obj = $true
 			}
