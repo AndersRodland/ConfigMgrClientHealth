@@ -46,7 +46,8 @@ param(
     [ValidatePattern('.xml$')]
     [string]$Config,
     [Parameter(HelpMessage='URI to ConfigMgr Client Health Webservice')]
-    [string]$Webservice
+    [string]$Webservice,
+    [ValidateNotNullOrEmpty()][ValidatePattern('.xml$')]$UpdateConfigStaticXMLURL
 )
 
 Begin {
@@ -422,6 +423,9 @@ Begin {
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
                 17763 {$OSName = $OSName + " 1809"}
+		18362 {$OSName = $OSName + " 1903"}
+		18363 {$OSName = $OSName + " 1909"}
+		19041 {$OSName = $OSName + " 2004"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -509,13 +513,11 @@ Begin {
         finally { Write-Output $obj }
     }
 
-
     Function Get-ClientMaxLogHistory {
         try { $obj = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').LogMaxHistory }
         catch { $obj = 0 }
         finally { Write-Output $obj }
     }
-
 
     Function Get-Domain {
         try {
@@ -673,7 +675,6 @@ Begin {
         }
     }
 
-
     Function Test-BITS {
         Param([Parameter(Mandatory=$true)]$Log)
 
@@ -757,7 +758,6 @@ Begin {
         if ($null -eq $log.ClientInstalledReason) { $log.ClientInstalledReason = $Message }
         else { $log.ClientInstalledReason += " $Message" }
     }
-
 
     function Get-PendingReboot {
         $result = @{
@@ -1040,6 +1040,9 @@ Begin {
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
                 17763 {$OSName = $OSName + " 1809"}
+		18362 {$OSName = $OSName + " 1903"}
+		18363 {$OSName = $OSName + " 1909"}
+		19041 {$OSName = $OSName + " 2004"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -1788,7 +1791,6 @@ Begin {
         else { Write-Host "SMSTSMgr: OK"}
     }
 
-
     # Windows Service Functions
     Function Test-Services {
         Param([Parameter(Mandatory=$false)]$Xml, $log, $Webservice, $ProfileID)
@@ -2047,7 +2049,6 @@ Begin {
         }
     }
 
-
     Function Test-CCMSoftwareDistribution {
         # TODO Implement this function
         Get-WmiObject -Class CCM_SoftwareDistributionClientConfig
@@ -2244,7 +2245,6 @@ Begin {
         }
         catch { Write-Warning "PolicyPlatform: RecompilePolicyPlatform failed!" }
     }
-
 
     # Get the clients SiteName in Active Directory
     Function Get-ClientSiteName {
@@ -2478,7 +2478,6 @@ Begin {
             'DataRow'   { Write-Output ($ds.Tables[0]) }
         }
     }
-
 
     # Gather info about the computer
     Function Get-Info {
@@ -3059,6 +3058,7 @@ Begin {
             PatchLevel = $UBR
             ClientInstalledReason = $null
             RebootApp = $RebootApp
+	    UpdateConfigStaticXMLURL = $null
         }
         Write-Output $obj
        # Write-Verbose "End New-LogObject"
@@ -3169,7 +3169,7 @@ Begin {
         $logfile = $logfile = Get-LogFileName
         Test-LogFileHistory -Logfile $logfile
         $text = "<--- ConfigMgr Client Health Check starting --->"
-        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
+        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason, UpdateConfigStaticXMLURL | Out-String
         $text = $text.replace("`t","")
         $text = $text.replace("  ","")
         $text = $text.replace(" :",":")
@@ -3215,10 +3215,56 @@ Begin {
     $SCCMLogJobs = New-Object System.Data.DataTable
     [Void]$SCCMLogJobs.Columns.Add("File")
     [Void]$SCCMLogJobs.Columns.Add("Text")
-
+	
+    # Update local config.xml from URL
+    FUNCTION Update-ConfigStaticXML {
+	<#
+	.SYNOPSIS
+		Updates or creates local config.xml file using URL source to overwrite
+	
+	.DESCRIPTION
+		Updates or creates local config.xml file using URL source to overwrite
+	
+	.PARAMETER ConfigStaticXMLURL
+		URL for staticaly hosted XML file
+	
+	.PARAMETER Destination
+		Destination file
+	
+	.EXAMPLE
+		Update-ConfigStaticXML -ConfigStaticXMLURL 'https://server.local/bin/config.xml' -Destination "$(Join-Path ($global:ScriptPath) "Config.xml")"
+	
+	.NOTES
+		Additional information about the function.
+	#>
+		
+	[CmdletBinding()]
+	    PARAM
+	    (
+		[Parameter(Mandatory = $true)][ValidatePattern('.xml$')][ValidateNotNullOrEmpty()]$ConfigStaticXMLURL,
+		[Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][system.io.fileinfo]$Destination
+	    )
+		
+	    TRY {
+		$request = Invoke-WebRequest -Uri $ConfigStaticXMLURL -ErrorAction SilentlyContinue
+		$URIvalid = $true
+	    }
+	    CATCH {
+		$URIvalid = $false
+	    }
+		
+	    IF ($URIvalid) {
+		Start-BitsTransfer -Source $ConfigStaticXMLURL -Destination $destination.FullName
+		$Log.UpdateConfigStaticXMLURL = $ConfigStaticXMLURL
+	    }
+	    ELSE {
+		$Log.UpdateConfigStaticXMLURL = '[URI invalid or unreachable]' + $ConfigStaticXMLURL
+	    }
+    }
+	
 }
 
-Process {
+PROCESS {
     Write-Verbose "Starting precheck. Determing if script will run or not."
     # Veriy script is running with administrative priveleges.
     If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
@@ -3486,7 +3532,13 @@ End {
     $Date = Get-Date
     Set-RegistryValue -Path $RegistryKey -Name $LastRunRegistryValueName -Value $Date
     Write-Output "Setting last ran to $($Date)"
-
+	
+    # Update Config.xml from HTTP/S source
+    IF ($PSBoundParameters.ContainsKey('UpdateConfigStaticXMLURL')) {
+	Write-Output 'Updating local config.xml from supplied URL'
+	Update-ConfigStaticXML -ConfigStaticXMLURL $UpdateConfigStaticXMLURL -Destination "$(Join-Path ($global:ScriptPath) "Config.xml")"
+    }
+	
     if ($LocalLogging -like 'true') {
         Write-Output 'Updating local logfile with results'
         Update-LogFile -Log $log -Mode 'Local'
@@ -3505,6 +3557,7 @@ End {
     if ($PSBoundParameters.ContainsKey('Webservice')) {
         Write-Output 'Updating SQL database with results using webservice'
         Update-Webservice -URI $Webservice -Log $Log
-    }
-    Write-Verbose "Client Health script finished"
+	}
+	
+	Write-Verbose "Client Health script finished"
 }
