@@ -1,62 +1,52 @@
 <#
-	.SYNOPSIS
-		ConfigMgr Client Health is a tool that validates and automatically fixes errors on Windows computers managed by Microsoft Configuration Manager.
-	
-	.DESCRIPTION
-		ConfigMgr Client Health detects and fixes following errors:
-		* ConfigMgr client is not installed.
-		* ConfigMgr client is assigned the correct site code.
-		* ConfigMgr client is upgraded to current version if not at specified minimum version.
-		* ConfigMgr client not able to forward state messages to management point.
-		* ConfigMgr client stuck in provisioning mode.
-		* ConfigMgr client maximum log file size.
-		* ConfigMgr client cache size.
-		* Corrupt WMI.
-		* Services for ConfigMgr client is not running or disabled.
-		* Other services can be specified to start and run and specific state.
-		* Hardware inventory is running at correct schedule
-		* Group Policy failes to update registry.pol
-		* Pending reboot blocking updates from installing
-		* ConfigMgr Client Update Handler is working correctly with registry.pol
-		* Windows Update Agent not working correctly, causing client not to receive patches.
-		* Windows Update Agent missing patches that fixes known bugs.
-	
-	.PARAMETER Config
-		A single parameter specifying the path to the configuration XML file.
-	
-	.PARAMETER Webservice
-		A single parameter specifying the URI to the ConfigMgr Client Health Webservice.
-	
-	.PARAMETER UpdateConfigStaticXMLURL
-		URL for hosted static Config.xml for updates. When used, once script is finished, will attempt to download this file and replace or create a local copy for use on the next run.
-	
-	.EXAMPLE
-		.\ConfigMgrClientHealth.ps1 -Config .\Config.Xml
-	
-	.EXAMPLE
-		\\cm01.rodland.lab\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\cm01.rodland.lab\ClientHealth$\Config.Xml -Webservice https://cm01.rodland.lab/ConfigMgrClientHealth
-	
-	.NOTES
-		You should run this with at least local administrator rights. It is recommended to run this script under the SYSTEM context.
-		
-		DO NOT GIVE USERS WRITE ACCESS TO THIS FILE. LOCK IT DOWN !
-		
-		Author: Anders Rødland
-		Blog: https://www.andersrodland.com
-		Twitter: @AndersRodland
-	
-	.LINK
-		Full documentation: https://www.andersrodland.com/configmgr-client-health/
+.SYNOPSIS
+    ConfigMgr Client Health is a tool that validates and automatically fixes errors on Windows computers managed by Microsoft Configuration Manager.
+.EXAMPLE
+   .\ConfigMgrClientHealth.ps1 -Config .\Config.Xml
+.EXAMPLE
+    \\cm01.rodland.lab\ClientHealth$\ConfigMgrClientHealth.ps1 -Config \\cm01.rodland.lab\ClientHealth$\Config.Xml -Webservice https://cm01.rodland.lab/ConfigMgrClientHealth
+.PARAMETER Config
+    A single parameter specifying the path to the configuration XML file.
+.PARAMETER Webservice
+    A single parameter specifying the URI to the ConfigMgr Client Health Webservice.
+.DESCRIPTION
+    ConfigMgr Client Health detects and fixes following errors:
+        * ConfigMgr client is not installed.
+        * ConfigMgr client is assigned the correct site code.
+        * ConfigMgr client is upgraded to current version if not at specified minimum version.
+        * ConfigMgr client not able to forward state messages to management point.
+        * ConfigMgr client stuck in provisioning mode.
+        * ConfigMgr client maximum log file size.
+        * ConfigMgr client cache size.
+        * Corrupt WMI.
+        * Services for ConfigMgr client is not running or disabled.
+        * Other services can be specified to start and run and specific state.
+        * Hardware inventory is running at correct schedule
+        * Group Policy failes to update registry.pol
+        * Pending reboot blocking updates from installing
+        * ConfigMgr Client Update Handler is working correctly with registry.pol
+        * Windows Update Agent not working correctly, causing client not to receive patches.
+        * Windows Update Agent missing patches that fixes known bugs.
+.NOTES
+    You should run this with at least local administrator rights. It is recommended to run this script under the SYSTEM context.
+
+    DO NOT GIVE USERS WRITE ACCESS TO THIS FILE. LOCK IT DOWN !
+
+    Author: Anders Rødland
+    Blog: https://www.andersrodland.com
+    Twitter: @AndersRodland
+.LINK
+    Full documentation: https://www.andersrodland.com/configmgr-client-health/
 #>
-[CmdletBinding(ConfirmImpact = 'Medium',
-			   SupportsShouldProcess = $true)]
-PARAM
-(
-	[Parameter(HelpMessage = 'Path to XML Configuration File')][ValidatePattern('.xml$')][ValidateScript({
-			Test-Path -Path $_ -PathType Leaf
-		})][string]$Config,
-	[Parameter(HelpMessage = 'URI to ConfigMgr Client Health Webservice')][string]$Webservice,
-	[ValidateNotNullOrEmpty()][ValidatePattern('.xml$')]$UpdateConfigStaticXMLURL
+
+[CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
+param(
+    [Parameter(HelpMessage='Path to XML Configuration File')]
+    [ValidateScript({Test-Path -Path $_ -PathType Leaf})]
+    [ValidatePattern('.xml$')]
+    [string]$Config,
+    [Parameter(HelpMessage='URI to ConfigMgr Client Health Webservice')]
+    [string]$Webservice
 )
 
 Begin {
@@ -432,9 +422,6 @@ Begin {
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
                 17763 {$OSName = $OSName + " 1809"}
-				18362 {$OSName = $OSName + " 1903"}
-				18363 {$OSName = $OSName + " 1909"}
-				19041 {$OSName = $OSName + " 2004"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -522,11 +509,13 @@ Begin {
         finally { Write-Output $obj }
     }
 
+
     Function Get-ClientMaxLogHistory {
         try { $obj = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global').LogMaxHistory }
         catch { $obj = 0 }
         finally { Write-Output $obj }
     }
+
 
     Function Get-Domain {
         try {
@@ -684,6 +673,7 @@ Begin {
         }
     }
 
+
     Function Test-BITS {
         Param([Parameter(Mandatory=$true)]$Log)
 
@@ -767,6 +757,7 @@ Begin {
         if ($null -eq $log.ClientInstalledReason) { $log.ClientInstalledReason = $Message }
         else { $log.ClientInstalledReason += " $Message" }
     }
+
 
     function Get-PendingReboot {
         $result = @{
@@ -1049,9 +1040,6 @@ Begin {
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
                 17763 {$OSName = $OSName + " 1809"}
-				18362 {$OSName = $OSName + " 1903"}
-				18363 {$OSName = $OSName + " 1909"}
-				19041 {$OSName = $OSName + " 2004"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -1800,6 +1788,7 @@ Begin {
         else { Write-Host "SMSTSMgr: OK"}
     }
 
+
     # Windows Service Functions
     Function Test-Services {
         Param([Parameter(Mandatory=$false)]$Xml, $log, $Webservice, $ProfileID)
@@ -2058,6 +2047,7 @@ Begin {
         }
     }
 
+
     Function Test-CCMSoftwareDistribution {
         # TODO Implement this function
         Get-WmiObject -Class CCM_SoftwareDistributionClientConfig
@@ -2254,6 +2244,7 @@ Begin {
         }
         catch { Write-Warning "PolicyPlatform: RecompilePolicyPlatform failed!" }
     }
+
 
     # Get the clients SiteName in Active Directory
     Function Get-ClientSiteName {
@@ -2487,6 +2478,7 @@ Begin {
             'DataRow'   { Write-Output ($ds.Tables[0]) }
         }
     }
+
 
     # Gather info about the computer
     Function Get-Info {
@@ -3067,7 +3059,6 @@ Begin {
             PatchLevel = $UBR
             ClientInstalledReason = $null
             RebootApp = $RebootApp
-			UpdateConfigStaticXMLURL = $null
         }
         Write-Output $obj
        # Write-Verbose "End New-LogObject"
@@ -3178,7 +3169,7 @@ Begin {
         $logfile = $logfile = Get-LogFileName
         Test-LogFileHistory -Logfile $logfile
         $text = "<--- ConfigMgr Client Health Check starting --->"
-        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason, UpdateConfigStaticXMLURL | Out-String
+        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
         $text = $text.replace("`t","")
         $text = $text.replace("  ","")
         $text = $text.replace(" :",":")
@@ -3224,52 +3215,10 @@ Begin {
     $SCCMLogJobs = New-Object System.Data.DataTable
     [Void]$SCCMLogJobs.Columns.Add("File")
     [Void]$SCCMLogJobs.Columns.Add("Text")
-	
-	# Update local config.xml from URL
-	FUNCTION Update-ConfigStaticXML {
-    <#
-        .SYNOPSIS
-        Updates or creates local config.xml file using URL source to overwrite
-	
-        .DESCRIPTION
-        Updates or creates local config.xml file using URL source to overwrite
-	
-        .PARAMETER ConfigStaticXMLURL
-        A description of the XMLURL parameter.
-	
-        .EXAMPLE
-        PS C:\> Update-ConfigStaticXML -ConfigStaticXMLURL $value1
-	
-        .NOTES
-        Additional information about the function.
-    #>
-		
-		[CmdletBinding()]
-		PARAM
-		(
-			[Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][ValidatePattern('.xml$')]$ConfigStaticXMLURL,
-			[Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][system.io.fileinfo]$Destination
-		)
-		TRY {
-			$request = Invoke-WebRequest -Uri $ConfigStaticXMLURL -ErrorAction SilentlyContinue
-			$URIvalid = $true
-		}
-		CATCH {
-			$URIvalid = $false
-		}
-		
-		IF ($URIvalid) {
-			Start-BitsTransfer -Source $ConfigStaticXMLURL -Destination $destination.FullName
-			$Log.UpdateConfigStaticXMLURL = $ConfigStaticXMLURL
-		}
-		ELSE {
-			$Log.UpdateConfigStaticXMLURL = '[URI invalid or unreachable]' + $ConfigStaticXMLURL
-		}
-	}
-	
+
 }
 
-PROCESS {
+Process {
     Write-Verbose "Starting precheck. Determing if script will run or not."
     # Veriy script is running with administrative priveleges.
     If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
@@ -3537,14 +3486,8 @@ End {
     $Date = Get-Date
     Set-RegistryValue -Path $RegistryKey -Name $LastRunRegistryValueName -Value $Date
     Write-Output "Setting last ran to $($Date)"
-	
-	# Update Config.xml from HTTP/S source
-	IF ($PSBoundParameters.ContainsKey('UpdateConfigStaticXMLURL')) {
-		Write-Output 'Updating local config.xml from supplied URL'
-		Update-ConfigStaticXML -ConfigStaticXMLURL $UpdateConfigStaticXMLURL -Destination "$(Join-Path ($global:ScriptPath) "Config.xml")"
-	}
-	
-	IF ($LocalLogging -like 'true') {
+
+    if ($LocalLogging -like 'true') {
         Write-Output 'Updating local logfile with results'
         Update-LogFile -Log $log -Mode 'Local'
     }
@@ -3562,7 +3505,6 @@ End {
     if ($PSBoundParameters.ContainsKey('Webservice')) {
         Write-Output 'Updating SQL database with results using webservice'
         Update-Webservice -URI $Webservice -Log $Log
-	}
-	
-	Write-Verbose "Client Health script finished"
+    }
+    Write-Verbose "Client Health script finished"
 }
