@@ -844,32 +844,32 @@ Begin {
         Switch -Wildcard ($OS) {
             "*Windows 7*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Windows 8*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Windows 10*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
+                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Server 2008*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Server 2012*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Server 2016*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
+                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
 		}
