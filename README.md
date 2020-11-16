@@ -1,4 +1,4 @@
-# ConfigMgr Client Health Development Code
+# ConfigMgr Client Health
 
 Version: 0.8.2
 
