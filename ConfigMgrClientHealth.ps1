@@ -51,7 +51,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.8.2'
+    $Version = '0.8.3'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
@@ -1517,12 +1517,18 @@ Begin {
             $newLogSize = [int]$clientLogSize
             $newLogSize = $newLogSize * 1000
 
+            <#
             if ($PowerShellVersion -ge 6) {Invoke-CimMethod -Namespace "root/ccm" -ClassName "sms_client" -MethodName SetGlobalLoggingConfiguration -Arguments @{LogLevel=$loglevel; LogMaxHistory=$clientLogMaxHistory; LogMaxSize=$newLogSize} }
             else {
                 $smsClient = [wmiclass]"root/ccm:sms_client"
                 $smsClient.SetGlobalLoggingConfiguration($logLevel, $newLogSize, $clientLogMaxHistory)
             }
             #Write-Verbose 'Returning true to trigger restart of ccmexec service'
+            #>
+            
+            # Rewrote after the WMI Method stopped working in previous CM client version
+            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\CCM\Logging\@GLOBAL" -Name LogMaxHistory -PropertyType DWORD -Value $clientLogMaxHistory -Force | Out-Null
+            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\CCM\Logging\@GLOBAL" -Name LogMaxSize -PropertyType DWORD -Value $newLogSize -Force | Out-Null
 
             #Write-Verbose 'Sleeping for 5 seconds to allow WMI method complete before we collect new results...'
             #Start-Sleep -Seconds 5
@@ -3202,7 +3208,8 @@ Begin {
             $propertyString = $propertyString + ' '
         }
         $clientCacheSize = Get-XMLConfigClientCache
-        $clientInstallProperties = $propertyString
+        #replace to account for multiple skipreqs and escapee the character
+        $clientInstallProperties = $propertyString.Replace(';', '`;')
         $clientAutoUpgrade = (Get-XMLConfigClientAutoUpgrade).ToLower()
         $AdminShare = Get-XMLConfigRemediationAdminShare
         $ClientProvisioningMode = Get-XMLConfigRemediationClientProvisioningMode

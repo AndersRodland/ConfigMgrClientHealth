@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
 	<LocalFiles>C:\ClientHealth</LocalFiles> <!-- Path locally on computer for temporary files and local clienthealth.log if LocalLogFile="True" -->
-	<Client Name="Version">5.00.8853.1006</Client>
-	<Client Name="SiteCode">PS1</Client>
-	<Client Name="Domain">rodland.lab</Client>
+	<Client Name="Version">5.00.9012.1010</Client>
+	<Client Name="SiteCode">AR1</Client>
+	<Client Name="Domain">andersrodland.com</Client>
 	<Client Name="AutoUpgrade">True</Client>
-	<Client Name="Share">\\CM01.rodland.lab\Clienthealth$\Client</Client>
-	<Client Name="CacheSize" Value="10240" DeleteOrphanedData="True" Enable="True" />
-	<Client Name="Log" MaxLogSize="4096" MaxLogHistory="1" Enable="True" />
-	<ClientInstallProperty>SMSSITECODE=PS1</ClientInstallProperty>
-	<ClientInstallProperty>MP=CM01.rodland.lab</ClientInstallProperty>
-	<ClientInstallProperty>FSP=CM01.rodland.lab</ClientInstallProperty>
-	<ClientInstallProperty>DNSSUFFIX=rodland.lab</ClientInstallProperty>
-	<ClientInstallProperty>/Source:\\CM01.rodland.lab\Clienthealth$\client</ClientInstallProperty>
-	<ClientInstallProperty>/MP:CM01.rodland.lab</ClientInstallProperty>
+	<Client Name="Share">\\MEMCM01.andersrodland.com\Clienthealth$\Client</Client>
+	<Client Name="CacheSize" Value="16384" DeleteOrphanedData="True" Enable="True" />
+	<Client Name="Log" MaxLogSize="4096" MaxLogHistory="2" Enable="True" />
+	<ClientInstallProperty>SMSSITECODE=AR1</ClientInstallProperty>
+	<ClientInstallProperty>MP=MEMCM01.andersrodland.com</ClientInstallProperty>
+	<ClientInstallProperty>FSP=MEMCM01.andersrodland.com</ClientInstallProperty>
+	<ClientInstallProperty>DNSSUFFIX=andersrodland.com</ClientInstallProperty>
+	<ClientInstallProperty>/Source:\\MEMCM01.andersrodland.com\Clienthealth$\client</ClientInstallProperty>
+	<ClientInstallProperty>/MP:MEMCM01.andersrodland.com</ClientInstallProperty>
 	<ClientInstallProperty>/skipprereq:silverlight.exe</ClientInstallProperty>
-	<Log Name="File" Share="\\CM01.rodland.lab\ClientHealthLogs$" Level="Full" MaxLogHistory="8" LocalLogFile="True" Enable="True" /> <!-- Level: Full = everything. ClientInstall = only if installation of sccm agent fails.  -->
-	<Log Name="SQL" Server="CM01.rodland.lab" Enable="True" />
+	<Log Name="File" Share="\\MEMCM01.andersrodland.com\ClientHealthLogs$" Level="Full" MaxLogHistory="8" LocalLogFile="True" Enable="True" /> <!-- Level: Full = everything. ClientInstall = only if installation of sccm agent fails.  -->
+	<Log Name="SQL" Server="MEMCM01.andersrodland.com" Enable="True" />
 	<Log Name="Time" Format="ClientLocal" /> <!-- Valid formats: ClientLocal / UTC  -->
 	<Option Name="CcmSQLCELog" Enable="False" /> <!-- Optional check on the ConfigMgr agent if local database is corrupt -->
 	<Option Name="BITSCheck" Fix="True" Enable="True" />
 	<Option Name="ClientSettingsCheck" Fix="True" Enable="True" />
 	<Option Name="DNSCheck" Fix="True" Enable="True" />
 	<Option Name="Drivers" Enable="True" />
-	<Option Name="Updates" Share="\\CM01.rodland.lab\ClientHealth$\Updates" Fix="True" Enable="False" />
+	<Option Name="Updates" Share="\\MEMCM01.andersrodland.com\ClientHealth$\Updates" Fix="True" Enable="False" />
 	<Option Name="PendingReboot" StartRebootApplication="False" Enable="True" />
-	<Option Name="RebootApplication" Application="\\CM01.rodland.lab\ClientHealth$\RebootApp\shutdowntool.exe /t:7200 /m:1440" Enable="False" />
+	<Option Name="RebootApplication" Application="\\MEMCM01.andersrodland.com\ClientHealth$\RebootApp\shutdowntool.exe /t:7200 /m:1440" Enable="False" />
 	<Option Name="MaxRebootDays" Days="7" Enable="True" />
 	<Option Name="OSDiskFreeSpace">10</Option>
 	<Option Name="HardwareInventory" Days="10" Fix="True" Enable="True" />
