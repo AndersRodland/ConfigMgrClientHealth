@@ -4,7 +4,7 @@ Version: 0.8.3
 
 This is the master branch of ConfigMgr Client Health and is ready for production.
 
-Download the stable version including the webservice: [Technet Galleries](https://gallery.technet.microsoft.com/ConfigMgr-Client-Health-ccd00bd7)
+Download the stable version including the webservice: [ConfigMgr Client Health 0.8.3](https://github.com/AndersRodland/ConfigMgrClientHealth/raw/master/Download/ConfigMgrClientHealth-0.8.3.zip)
 
 [ConfigMgr Client Health Full documentation](https://www.andersrodland.com/configmgr-client-health/)
 
