@@ -928,7 +928,7 @@ Begin {
             try {
                 $ActiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
                 $dnsServers = Get-DnsClientServerAddress | Where-Object {$ActiveAdapters -contains $_.InterfaceAlias} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
-                $dnsAddressList = Resolve-DnsName -Name $fqdn -Server ($dnsServers | Select-Object -First 1) -Type A -DnsOnly | Select-Object -ExpandProperty IPAddress
+                $dnsAddressList = Resolve-DnsName -Name $fqdn -Server ($dnsServers | Select-Object -First 1) -Type A -DnsOnly | Where-Object -FilterScript {$_.IPAddress} | Select-Object -ExpandProperty IPAddress
             }
             catch {
                 # Fallback to depreciated method
