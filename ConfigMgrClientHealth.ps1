@@ -1462,6 +1462,9 @@ Begin {
             Get-SCCMPolicyScanUpdateSource
             Get-SCCMPolicySourceUpdateMessage
 
+            Write-Verbose 'Refreshing Endpoint AntiMalware policy' 
+            Get-SCCMPolicyEndpointAM
+
             $log.WUAHandler = "Repaired ($RepairReason)"
             Write-Output "GPO Cache: $($log.WUAHandler)"
         }
@@ -2346,6 +2349,12 @@ Begin {
 
     Function Get-SCCMPolicyMachineEvaluation {
         $trigger = "{00000000-0000-0000-0000-000000000022}"
+        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
+        else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
+    }
+
+    Function Get-SCCMPolicyEndpointAM {
+        $trigger = "{00000000-0000-0000-0000-000000000222}"
         if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
         else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
