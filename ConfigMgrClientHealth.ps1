@@ -1380,6 +1380,99 @@ Begin {
         }
     }
 
+    ## Function provided by @CodyMathis123 ##
+    Function Get-CHini {
+        <#
+        .SYNOPSIS
+        Reads an ini file and returns back the value of the provided key
+        .DESCRIPTION
+        Parses through a provided ini file and finds the value of a key under a particular section of the file
+        .EXAMPLE
+        Get-CHINI -parameter "value"
+        .EXAMPLE
+        Get-CHINI -File "c:\Windows\smscfg.ini" -Section "Configuration - Client Properties" -Key "SID"
+        .PARAMETER File
+        Full path to desired ini file
+        .PARAMETER Section
+        Section name from the ini file where the requested key is located
+        .PARAMETER Key
+        Key name of requested value
+            #>
+        param
+        (
+            [Parameter(Mandatory = $True)]
+            [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
+            [ValidatePattern('.ini$')]
+            [string]$File,
+    
+            [Parameter(Mandatory = $True,
+                ValueFromPipelineByPropertyName = $True)]
+            [string]$Section,
+    
+            [Parameter(Mandatory = $True,
+                ValueFromPipelineByPropertyName = $True)]
+            [string]$Key
+    
+        )        
+        $InitialMessage = [string]::Format("Parsing [File = '{0}'] for [Key = '{1}'] under [Section = '{2}']", $File, $Key, $Section)
+        Write-Verbose $InitialMessage
+        [object]$INI = New-Object -TypeName psobject
+    
+        switch -regex -file $File {
+            '^\[(.+)\]' {
+                #Section
+                $INISection = $matches[1]
+            }
+            '(.+?)\s*=(.*)' {
+                #Key
+                $name, $value = $matches[1..2]
+                $INI | Add-Member -MemberType NoteProperty -Name ('{0}.{1}' -f $INISection, $name) -Value $value
+            }
+        }
+    
+        #$Value = $INI[$Section][$Key]
+        $Value = $INI.(('{0}.{1}' -f $Section, $key))
+        If ($null -eq $Value) {
+            Write-Warning "$Key value is blank"
+        }
+        Else {
+            Write-Verbose "$Key value found"
+            Write-Verbose "$Key = $Value"
+            return $Value
+        }
+    }
+
+    ## Function provided by @CodyMathis123 ##
+    Function Get-CMClientGUID {
+        Param([Parameter(Mandatory=$true)]$Log)
+        <#
+            Code from Cody Mathis
+            Checks WMI first, then parses SMSCFG.INI as a fallback to determine the current GUID associated with the machine.
+        #>
+        Try {
+            $return = $null
+            $GUID = Get-WmiObject -Namespace root\ccm -Query "Select ClientID from CCM_Client" | Select-Object -ExpandProperty ClientID
+            if ([string]::IsNullOrWhiteSpace($GUID)) {
+                Write-Warning 'Failed to get CM Client GUID from WMI - falling back to parsing smscfg.ini'
+                throw 'Failed to get CM Client GUID from WMI - falling back to parsing smscfg.ini'
+            }
+            else {
+                Write-Output "Client GUID: $GUID"
+                $log.CMClientGUID = $GUID
+            }
+        }
+        catch {
+            $GUID = Get-CHini -File "$env:windir\smscfg.ini" -Section 'Configuration - Client Properties' -Key 'SMS Unique Identifier'
+            if ([string]::IsNullOrWhiteSpace($GUID)) {
+                Write-Warning 'Failed to get CM Client GUID from smscfg.ini'
+            }
+            else {
+                Write-Output "Client GUID: $GUID"
+                $log.CMClientGUID = $GUID
+            }
+        }
+    }
+
     Function Update-State {
         Write-Verbose "Start Update-State"
         $SCCMUpdatesStore = New-Object -ComObject Microsoft.CCM.UpdatesStore
@@ -2894,6 +2987,12 @@ Begin {
         Write-Output $obj
     }
 
+    Function Get-XMLConfigGUIDCheck {        
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientGUIDCheck'} | Select-Object -ExpandProperty 'Enable'
+        }
+        Write-Output $obj
+    }
 
 
     # End Getters - XML config file
@@ -3002,6 +3101,7 @@ Begin {
         $DNS = 'Unknown'
         $Drivers = 'Unknown'
         $ClientCertificate = 'Unknown'
+        $CMClientGUID = 'Unknown'
         $PendingReboot = 'Unknown'
         $RebootApp = 'Unknown'
         if ($PowerShellVersion -ge 6) { $LastBootTime = Get-SmallDateTime -Date ($OS.LastBootUpTime) }
@@ -3044,6 +3144,7 @@ Begin {
             ClientCertificate = $ClientCertificate
             ProvisioningMode = $ProvisioningMode
             DNS = $DNS
+            CMClientGUID = $CMClientGUID
             Drivers = $Drivers
             Updates = $Updates
             PendingReboot = $PendingReboot
@@ -3175,7 +3276,7 @@ Begin {
         $logfile = $logfile = Get-LogFileName
         Test-LogFileHistory -Logfile $logfile
         $text = "<--- ConfigMgr Client Health Check starting --->"
-        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
+        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, CMClientGUID, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
         $text = $text.replace("`t","")
         $text = $text.replace("  ","")
         $text = $text.replace(" :",":")
@@ -3360,6 +3461,8 @@ Process {
     if ((Get-XMLConfigRemediationClientCertificate -like 'True') -eq $true) { Test-CCMCertificateError -Log $Log }
     if (Get-XMLConfigHardwareInventoryEnable -like 'True') { Test-SCCMHardwareInventoryScan -Log $log }
 
+    Write-Verbose 'Gathering Client GUID...'
+    if ((Get-XMLConfigGUIDCheck -like 'True' ) -eq $true) { Get-CMClientGUID -Log $log }
 
     if (Get-XMLConfigSoftwareMeteringEnable -like 'True') {
         Write-Verbose "Testing software metering prep driver check"

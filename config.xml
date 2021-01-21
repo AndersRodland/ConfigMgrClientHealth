@@ -32,6 +32,7 @@
 	<Option Name="SoftwareMetering" Fix="True" Enable="True" />
 	<Option Name="WMI" Fix="True" Enable="True"/>
 	<Option Name="RefreshComplianceState" Days="30" Enable="True"/>
+	<Option Name="ClientGUIDCheck" Enable="True" />
 	<Service Name="BITS" StartupType="Automatic (Delayed Start)" State="Running" Uptime=""/>
 	<Service Name="winmgmt" StartupType="Automatic" State="Running" Uptime=""/>
 	<Service Name="wuauserv" StartupType="Automatic (Delayed Start)" State="Running" Uptime=""/>
