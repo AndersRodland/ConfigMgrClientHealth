@@ -1255,11 +1255,11 @@ Begin {
 
     Function Test-ClientVersion {
         Param([Parameter(Mandatory=$true)]$Log)
-        $ClientVersion = Get-XMLConfigClientVersion
+        [Version]$ClientVersion = Get-XMLConfigClientVersion
         [String]$ClientAutoUpgrade = Get-XMLConfigClientAutoUpgrade
         $ClientAutoUpgrade = $ClientAutoUpgrade.ToLower()
-        $installedVersion = Get-ClientVersion
-        $log.ClientVersion = $installedVersion
+        [Version]$installedVersion = Get-ClientVersion
+        $log.ClientVersion = $installedVersion.ToString()
 
         if ($installedVersion -ge $ClientVersion) {
             $text = 'ConfigMgr Client version is: ' +$installedVersion + ': OK'
@@ -3467,10 +3467,10 @@ Process {
         $log.CacheSize = Get-ClientCache
 
         # Verify that installed client version is now equal or better that minimum required client version
-        $NewClientVersion = Get-ClientVersion
-        $MinimumClientVersion = Get-XMLConfigClientVersion
+        [Version]$NewClientVersion = Get-ClientVersion
+        [Version]$MinimumClientVersion = Get-XMLConfigClientVersion
 
-        if ( $NewClientVersion -lt $MinimumClientVersion) {
+        if ($NewClientVersion -lt $MinimumClientVersion) {
             # ConfigMgr client version is still not at expected level.
             # Log for now, remediation is comming
             $Log.ClientInstalledReason += " Upgrade failed."
