@@ -3330,7 +3330,7 @@ Process {
     <#
     Write-Verbose 'Validate that ConfigMgr client does not have CcmSQLCE.log and is not in debug mode.'
     if (Test-CcmSQLCELog -eq $true) {
-        # This is a very bad situation. ConfigMgr agent is fubar. Local SDF files are deleted by the test itself, now reinstalling client immediatly. Waiting 10 minutes before continuing with health check.
+        # This is a very bad situation. ConfigMgr agent is fubar. Local SDF files are deleted by the test itself, now reinstalling client immediatley. Waiting 10 minutes before continuing with health check.
         Resolve-Client -Xml $xml -ClientInstallProperties $ClientInstallProperties
         Start-Sleep -Seconds 600
     }
