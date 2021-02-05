@@ -22,7 +22,7 @@
         * Services for ConfigMgr client is not running or disabled.
         * Other services can be specified to start and run and specific state.
         * Hardware inventory is running at correct schedule
-        * Group Policy failes to update registry.pol
+        * Group Policy fails to update registry.pol
         * Pending reboot blocking updates from installing
         * ConfigMgr Client Update Handler is working correctly with registry.pol
         * Windows Update Agent not working correctly, causing client not to receive patches.
@@ -111,7 +111,7 @@ Begin {
 
 
     # Import Modules
-    # Import BitsTransfer Module (Does not work on PowerShell Core (6), disable check if module failes to import.)
+    # Import BitsTransfer Module (Does not work on PowerShell Core (6), disable check if module fails to import.)
     $BitsCheckEnabled = $false
     if (Get-Module -ListAvailable -Name BitsTransfer) {
 		try {
@@ -174,7 +174,7 @@ Begin {
         }
     }
 
-    # Retrieve configuration from SQL using webserivce
+    # Retrieve configuration from SQL using webservice
     Function Get-ConfigFromWebservice {
         Param(
             [Parameter(Mandatory=$true)][String]$URI,
@@ -422,6 +422,10 @@ Begin {
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
                 17763 {$OSName = $OSName + " 1809"}
+                18362 {$OSName = $OSName + " 1903"}
+                18363 {$OSName = $OSName + " 1909"}
+                19041 {$OSName = $OSName + " 2004"}
+                19042 {$OSName = $OSName + " 20H2"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -457,7 +461,7 @@ Begin {
             [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Path,
             [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Name,
             [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Value,
-            [ValidateSet("String","ExpandString","Binary","DWord","MultiString","Qword")]$ProperyType="String"
+            [ValidateSet("String","ExpandString","Binary","DWord","MultiString","Qword")]$PropertyType="String"
         )
 
         #Make sure the key exists
@@ -465,14 +469,14 @@ Begin {
             New-Item $Path -Force | Out-Null
         }
 
-        New-ItemProperty -Force -Path $Path -Name $Name -Value $Value -PropertyType $ProperyType | Out-Null
+        New-ItemProperty -Force -Path $Path -Name $Name -Value $Value -PropertyType $PropertyType | Out-Null
     }
 
     Function Get-Sitecode {
         try {
             <#
             if ($PowerShellVersion -ge 6) { $obj = (Invoke-CimMethod -Namespace "ROOT\ccm" -ClassName SMS_Client -MethodName GetAssignedSite).sSiteCode }
-            else { $obj = $([WmiClass]"ROOT\ccm:SMS_Client").getassignedsite() | Select-Object -Expandproperty sSiteCode }
+            else { $obj = $([WmiClass]"ROOT\ccm:SMS_Client").getassignedsite() | Select-Object -ExpandProperty sSiteCode }
             #>
             $sms = new-object -comobject 'Microsoft.SMS.Client'
             $obj = $sms.GetAssignedSite()
@@ -635,7 +639,7 @@ Begin {
             $text = 'ConfigMgr Client Certificate: Error failed to find the certificate in store. Attempting fix.'
             Write-Warning $text
             Stop-Service -Name ccmexec -Force
-            # Name is persistant across systems.
+            # Name is persistent across systems.
             $cert = "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys\19c5cf9c7b5dc9de3e548adb70398402_50e417e0-e461-474b-96e2-077b80325612"
             # CCM creates new certificate when missing.
             Remove-Item -Path $cert -Force -ErrorAction SilentlyContinue | Out-Null
@@ -924,7 +928,7 @@ Begin {
 
         $OSName = Get-OperatingSystem
         if (($OSName -notlike "*Windows 7*") -and ($OSName -notlike "*Server 2008*")) {
-            # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
+            # This method is supported on Windows 8 / Server 2012 and higher. More accurate than using .NET object method
             try {
                 $ActiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
                 $dnsServers = Get-DnsClientServerAddress | Where-Object {$ActiveAdapters -contains $_.InterfaceAlias} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
@@ -954,10 +958,10 @@ Begin {
             Write-Verbose 'Checking if one local IP matches on IP from DNS'
             Write-Verbose 'Loop through each IP address published in DNS'
             foreach ($dnsIP in $dnsAddressList) {
-                #Write-Host "Testing if IP address: $dnsIP published in DNS exist in local IP configuration."
+                #Write-Host "Testing if IP address: $dnsIP published in DNS exists in local IP configuration."
                 ##if ($dnsIP -notin $localIPs) { ## Requires PowerShell 3. Works fine :(
                 if ($localIPs -notcontains $dnsIP) {
-                   $dnsFail += "IP '$dnsIP' in DNS record do not exist locally`n"
+                   $dnsFail += "IP '$dnsIP' in DNS record does not exist locally`n"
                    $logFail += "$dnsIP "
                    $obj = $false
                 }
@@ -976,7 +980,7 @@ Begin {
             $false {
                 $fix = (Get-XMLConfigDNSFix).ToLower()
                 if ($fix -eq "true") {
-                    $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Trying to resolve by registerting with DNS server'
+                    $text = 'DNS Check: FAILED. IP address published in DNS does not match IP address on local machine. Trying to resolve by registering with DNS server.'
                     if ($PowerShellVersion -ge 4) { Register-DnsClient | out-null  }
                     else { ipconfig /registerdns | out-null }
                     Write-Host $text
@@ -988,7 +992,7 @@ Begin {
 
                 }
                 else {
-                    $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Monitor mode only, no remediation'
+                    $text = 'DNS Check: FAILED. IP address published in DNS does not match IP address on local machine. Monitor mode only, no remediation.'
                     $log.DNS = $logFail
                     if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text  -Severity 2}
                     Write-Host $text
@@ -1040,6 +1044,10 @@ Begin {
                 16299 {$OSName = $OSName + " 1709"}
                 17134 {$OSName = $OSName + " 1803"}
                 17763 {$OSName = $OSName + " 1809"}
+                18362 {$OSName = $OSName + " 1903"}
+                18363 {$OSName = $OSName + " 1909"}
+                19041 {$OSName = $OSName + " 2004"}
+                19042 {$OSName = $OSName + " 20H2"}
                 default {$OSName = $OSName + " Insider Preview"}
             }
         }
@@ -2226,7 +2234,7 @@ Begin {
         Write-Verbose "End Test-SCCMHardwareInventoryScan"
     }
 
-    # TODO: Implement so result of this remediation is stored in WMI log object, next to result of previous WMI check. This do not require db or webservice update
+    # TODO: Implement so result of this remediation is stored in WMI log object, next to result of previous WMI check. This does not require db or webservice update
     # ref: https://social.technet.microsoft.com/Forums/de-DE/1f48e8d8-4e13-47b5-ae1b-dcb831c0a93b/setup-was-unable-to-compile-the-file-discoverystatusmof-the-error-code-is-8004100e?forum=configmanagerdeployment
     Function Test-PolicyPlatform {
         Param([Parameter(Mandatory=$true)]$Log)
@@ -2901,10 +2909,10 @@ Begin {
     Function GetComputerInfo {
         $info = Get-Info | Select-Object HostName, OperatingSystem, Architecture, Build, InstallDate, Manufacturer, Model, LastLoggedOnUser
         #$text = 'Computer info'+ "`n"
-        $text = 'Hostname: ' +$info.HostName
+        $text = 'Hostname: ' + $info.HostName
         Write-Output $text
         #Out-LogFile -Xml $xml $text
-        $text = 'Operatingsystem: ' +$info.OperatingSystem
+        $text = 'Operatingsystem: ' + $info.OperatingSystem
         Write-Output $text
         #Out-LogFile -Xml $xml $text
         $text = 'Architecture: ' + $info.Architecture
@@ -3320,9 +3328,9 @@ Process {
     }
 
     <#
-    Write-Verbose 'Validate that ConfigMgr client do not have CcmSQLCE.log and are not in debug mode'
+    Write-Verbose 'Validate that ConfigMgr client does not have CcmSQLCE.log and is not in debug mode.'
     if (Test-CcmSQLCELog -eq $true) {
-        # This is a very bad situation. ConfigMgr agent is fubar. Local SDF files are deleted by the test itself, now reinstalling client immediatly. Waiting 10 minutes before continuing with health check.
+        # This is a very bad situation. ConfigMgr agent is fubar. Local SDF files are deleted by the test itself, now reinstalling client immediately. Waiting 10 minutes before continuing with health check.
         Resolve-Client -Xml $xml -ClientInstallProperties $ClientInstallProperties
         Start-Sleep -Seconds 600
     }
