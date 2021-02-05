@@ -1621,7 +1621,7 @@ Begin {
                 Start-Sleep -Seconds 360
             }
 
-            
+
 
         }
         else {
@@ -2529,6 +2529,10 @@ Begin {
     Function Get-XMLConfigClientVersion {
         if ($config) {
             $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Version'} | Select-Object -ExpandProperty '#text'
+            if ($obj.ToLower() -eq 'auto') {
+                $ClientShare = Get-XMLConfigClientShare
+                $obj = (Get-Item (Join-Path $ClientShare 'ccmsetup.exe')).VersionInfo.ProductVersion
+            }
         }
 
         Write-Output $obj
