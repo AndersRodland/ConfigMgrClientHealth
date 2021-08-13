@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+	<LocalFiles>$($env:ProgramData)\ConfigMgrClientHealth</LocalFiles> <!-- Path locally on computer for temporary files and local clienthealth.log if LocalLogFile="True" -->
+	<Client Name="Version">5.00.9049.1035</Client>
+	<Client Name="SiteCode">000</Client>
+	<Client Name="Domain">Contoso.com</Client>
+	<Client Name="AutoUpgrade">True</Client>
+	<Client Name="Share">\\INSERTSHARENAME\MEM_ClientHealth\Client</Client>
+	<Client Name="CacheSize" Value="20480" DeleteOrphanedData="True" Enable="True" />
+	<Client Name="Log" MaxLogSize="4096" MaxLogHistory="2" Enable="True" />
+	<ClientInstallProperty>SMSSITECODE=000</ClientInstallProperty>
+	<ClientInstallProperty>MP=CONFIGMGR.Contoso.com</ClientInstallProperty>
+	<ClientInstallProperty>DNSSUFFIX=Contoso.com</ClientInstallProperty>
+	<ClientInstallProperty>/MP:CONFIGMGR.Contoso.com</ClientInstallProperty>
+	<ClientInstallProperty>/skipprereq:silverlight.exe</ClientInstallProperty>
+	<Log Name="File" Share="\\INSERTSHARENAME\MEM_ClientHealthLogs" Level="Full" MaxLogHistory="8" LocalLogFile="True" Enable="True" /> <!-- Level: Full = everything. ClientInstall = only if installation of sccm agent fails.  -->
+	<Log Name="SQL" Server="" Enable="False" />
+	<Log Name="Time" Format="ClientLocal" /> <!-- Valid formats: ClientLocal / UTC  -->
+	<Option Name="CcmSQLCELog" Enable="True" /> <!-- Optional check on the ConfigMgr agent if local database is corrupt -->
+	<Option Name="BITSCheck" Fix="True" Enable="True" />
+	<Option Name="ClientSettingsCheck" Fix="True" Enable="True" />
+	<Option Name="DNSCheck" Fix="True" Enable="True" />
+	<Option Name="Drivers" Enable="True" />
+	<Option Name="Updates" Share="\\INSERTSHARENAME\MEM_ClientHealth\Updates" Fix="True" Enable="True" />
+	<Option Name="PendingReboot" StartRebootApplication="False" Enable="True" />
+	<Option Name="RebootApplication" Application="" Enable="False" />
+	<Option Name="MaxRebootDays" Days="7" Enable="True" />
+	<Option Name="OSDiskFreeSpace">30</Option>
+	<Option Name="HardwareInventory" Days="7" Fix="True" Enable="True" />
+	<Option Name="SoftwareMetering" Fix="True" Enable="True" />
+	<Option Name="WMI" Fix="True" Enable="True"/>
+	<Option Name="RefreshComplianceState" Days="30" Enable="True"/>
+	<Service Name="BITS" StartupType="Automatic (Delayed Start)" State="Running" Uptime=""/>
+	<Service Name="winmgmt" StartupType="Automatic" State="Running" Uptime=""/>
+	<Service Name="wuauserv" StartupType="Automatic (Delayed Start)" State="Running" Uptime=""/>
+	<Service Name="lanmanserver" StartupType="Automatic" State="Running" Uptime=""/>
+	<Service Name="RpcSs" StartupType="Automatic" State="Running" Uptime=""/>
+	<Service Name="W32Time" StartupType="Automatic" State="Running" Uptime=""/>
+	<Service Name="ccmexec" StartupType="Automatic (Delayed Start)" State="Running" Uptime="7" />
+	<Remediation Name="AdminShare" Fix="True" />
+	<Remediation Name="ClientProvisioningMode" Fix="True" />
+	<Remediation Name="ClientStateMessages" Fix="True" />
+	<Remediation Name="ClientWUAHandler" Fix="True"  Days=""/>
+	<Remediation Name="ClientCertificate" Fix="True" />
+</Configuration>
