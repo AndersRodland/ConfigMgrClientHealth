@@ -27,10 +27,11 @@
         * ConfigMgr Client Update Handler is working correctly with registry.pol
         * Windows Update Agent not working correctly, causing client not to receive patches.
         * Windows Update Agent missing patches that fixes known bugs.
-        **Fixed Regex for Windows update Scan
-        **Fixed Versions of Windows 10 + added Windows 11
+        **Changed Regex for Windows update Scan - to search for MSU files and install them
+        **Added Versions of Windows 10 + added Windows 11
         **Added Free Space Function
         **Changed Logging to be viewed better in CMTRACE
+        **Added PoorNetwork option to switch between searching event log and check Registry.Pol for corruption
 .NOTES
     You should run this with at least local administrator rights. It is recommended to run this script under the SYSTEM context.
 
@@ -55,7 +56,7 @@ param(
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '1.0.0 (Customized)'
+    $Version = '1.0.1 (Customized)'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
@@ -1481,23 +1482,63 @@ Begin {
             catch { Write-Warning "GPO Cache: Failed to check machine policy age." }
         }
 
-        # Check 3 - Look back through the last 7 days for group policy processing errors.
-        #Event IDs documented here: https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-vista/cc749336(v=ws.10)#troubleshooting-group-policy-using-event-logs-1
-        try {
-            Write-Verbose "Checking the Group Policy event log for errors since $($StartTime)."
-            $numberOfGPOErrors = (Get-WinEvent -Verbose:$false -FilterHashTable @{LogName = 'Microsoft-Windows-GroupPolicy/Operational'; Level = 2; StartTime = $StartTime } -ErrorAction SilentlyContinue | Where-Object { ($_.ID -ge 7000 -and $_.ID -le 7007) -or ($_.ID -ge 7017 -and $_.ID -le 7299) -or ($_.ID -eq 1096) }).Count
-            if ($numberOfGPOErrors -gt 0) { $RepairReason = "Event Log" }
-
+        If ((Get-XMLConfigPoorNetwork -like 'True') -eq $true) {
+            # Check 4 - Check for corruption of Registry.pol
+            ## Modified implementation of https://2pintsoftware.com/download/configmgr-ci-local-policy-corruption/
+            ## and https://itinlegal.wordpress.com/2017/09/09/psa-locating-badcorrupt-registry-pol-files/
+            try {
+                Write-Verbose "Checking the Registry.pol for corruption."
+                $PathToMachineRegistryPOLFile = "$ENV:Windir\System32\GroupPolicy\Machine\Registry.pol"
+                $PathToUserRegistryPOLFile = "$ENV:Windir\System32\GroupPolicy\User\Registry.pol"
+                # Test for a Machine policy file - if there isn't one - all good
+                if (!(Test-Path -Path $PathToMachineRegistryPOLFile -PathType Leaf)) {}
+                #If there is a .pol file - test it
+                else {
+                    If (((Get-Content -Encoding Byte -Path $PathToMachineRegistryPOLFile -TotalCount 4) -join '') -ne '8082101103') {
+                        $RepairReason = "Machine Registry.pol Corrupt"
+                    }
+                }
+                # Test for a User policy file - if there isn't one - as you were
+                if (!(Test-Path -Path $PathToUserRegistryPOLFile -PathType Leaf)) {}
+                #If there is a .pol file - test it
+                else {
+                    If (((Get-Content -Encoding Byte -Path $PathToUserRegistryPOLFile -TotalCount 4) -join '') -ne '8082101103') {
+                        if ($RepairReason.Length -ge 1) {
+                            $RepairReason += ", User Registry.pol Corrupt"
+                        }
+                        else { $RepairReason = "User Registry.pol Corrupt" }
+                    }
+                }
+            }
+            catch {
+                Write-Warning "GPO Cache: Failed to check Registry.pol for corruption" 
+            }    
         }
-        catch { Write-Warning "GPO Cache: Failed to check the event log for policy errors." }
+        else {
+            # Check 3 - Look back through the last 7 days for group policy processing errors.
+            #Event IDs documented here: https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-vista/cc749336(v=ws.10)#troubleshooting-group-policy-using-event-logs-1
+            try {
+                Write-Verbose "Checking the Group Policy event log for errors since $($StartTime)."
+                $numberOfGPOErrors = (Get-WinEvent -Verbose:$false -FilterHashTable @{LogName = 'Microsoft-Windows-GroupPolicy/Operational'; Level = 2; StartTime = $StartTime } -ErrorAction SilentlyContinue | Where-Object { ($_.ID -ge 7000 -and $_.ID -le 7007) -or ($_.ID -ge 7017 -and $_.ID -le 7299) -or ($_.ID -eq 1096) }).Count
+                if ($numberOfGPOErrors -gt 0) { $RepairReason = "Event Log" }
 
+            }
+            catch { Write-Warning "GPO Cache: Failed to check the event log for policy errors." }
+        }
+        
+        
         #If we need to repart the policy files then do so.
         if ($RepairReason -ne "") {
             $log.WUAHandler = "Broken ($RepairReason)"
             Write-Output "GPO Cache: Broken ($RepairReason)"
             Write-Verbose 'Deleting registry.pol and running gpupdate...'
 
-            try { if (Test-Path -Path $MachineRegistryFile) { Remove-Item $MachineRegistryFile -Force } }
+            try { 
+
+                if ($repairReason -like "*User Registry.pol Corrupt") {
+                   Remove-Item $PathToUserRegistryPOLFile -Force
+                }
+                if (Test-Path -Path $MachineRegistryFile) { Remove-Item $MachineRegistryFile -Force } }
             catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
             finally { & Write-Output n | gpupdate.exe /force /target:computer | Out-Null }
 
@@ -2101,68 +2142,11 @@ Begin {
             $text = "Local disk $env:SystemDrive Less than $XMLDiskSpace GB free space"
 
             Write-Error $text
-            netsh branchcache flush
-            #SetDiskCleanup
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Active Setup Temp Folders" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\BranchCache" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Downloaded Program Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\GameNewsFiles" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\GameStatisticsFiles" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\GameUpdateFiles" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Internet Cache Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Memory Dump Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Offline Pages Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Old ChkDsk Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Previous Installations" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Recycle Bin" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Service Pack Cleanup" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Setup Log Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\System error memory dump files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\System error minidump files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Setup Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Sync Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Update Cleanup" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Upgrade Discarded Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\User file versions" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Defender" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting Archive Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting Queue Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting System Archive Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting System Queue Files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows ESD installation files" -Force
-            New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Upgrade Log Files" -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Active Setup Temp Folders" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\BranchCache" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Downloaded Program Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\GameNewsFiles" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\GameStatisticsFiles" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\GameUpdateFiles" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Internet Cache Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Memory Dump Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Offline Pages Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Old ChkDsk Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Previous Installations" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Recycle Bin" -Name stateflags0001 -Value 0 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Service Pack Cleanup" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Setup Log Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\System error memory dump files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\System error minidump files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Setup Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Sync Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Update Cleanup" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Upgrade Discarded Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\User file versions" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Defender" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting Archive Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting Queue Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting System Archive Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting System Queue Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows ESD installation files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
-            New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Upgrade Log Files" -Name stateflags0001 -Value 2 -PropertyType DWord -Force
+            $DCREGARRAY = "Active Setup Temp Folders","BranchCache","Downloaded Program Files","GameNewsFiles","GameStatisticsFiles","GameUpdateFiles","Internet Cache Files","Memory Dump Files","Offline Pages Files","Old ChkDsk Files","Previous Installations","Recycle Bin","Service Pack Cleanup","Setup Log Files","System error memory dump files","System error minidump files","Temporary Files","Temporary Setup Files","Temporary Sync Files","Thumbnail Cache","Update Cleanup","Upgrade Discarded Files","User file versions","Windows Defender","Windows Error Reporting Archive Files","Windows Error Reporting Queue Files","Windows Error Reporting System Archive Files","Windows Error Reporting System Queue Files","Windows ESD installation files","Windows Upgrade Log Files"
+            foreach ($DCReg in $DCREGARRAY){
+                New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$DCReg" -Force
+                New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$DCreg" -Name "stateflags0001" -Value "2" -PropertyType "DWord" -Force
+            }
             "%SystemRoot%\SYSTEM32\cleanmgr.exe /sagerun:1"
         }
         else {
@@ -2898,6 +2882,13 @@ Begin {
         # TODO implement this check in console extension and webservice
         if ($config) {
             $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'HardwareInventory' } | Select-Object -ExpandProperty 'Days'
+        }
+        Write-Output $obj
+    }
+
+    Function Get-XMLConfigPoorNetwork {
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'PoorNetwork' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
