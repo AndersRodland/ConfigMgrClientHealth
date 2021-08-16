@@ -1,7 +1,6 @@
 # ConfigMgr Client Health
 
-Version: 0.8.3
-
+Version: 1.0.0
 This is the master branch of ConfigMgr Client Health and is ready for production.
 
 Download the stable version including the webservice: [ConfigMgr Client Health 0.8.3](https://github.com/AndersRodland/ConfigMgrClientHealth/raw/master/Download/ConfigMgrClientHealth-0.8.3.zip)
@@ -18,6 +17,11 @@ Note: Script version 0.8.3 requires database version 0.7.5.
 * Fixed an issue where ClientInstallProperty using /skipprereq and specifying multiple components while separating with ";" would break the script.
 * Updated criteria for excluding Defender signature updates in the Get-LastInstalledPatches function. Thanks to Scott Ladewig.
 * Enabled debug logging in the webservice by default to make troubleshooting easier. Debug logs are stored in the "logs" folder.
+**Fixed Regex for Windows update Scan
+**Fixed Versions of Windows 10 + added Windows 11
+**Added Free Space Function
+**Changed Logging to be viewed better in CMTRACE
+**Incremented version to be 1.0.0 for personal use
 
 
 This software is provided "AS IS" with no warranties. Use at your own risk.

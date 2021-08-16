@@ -27,6 +27,11 @@
         * ConfigMgr Client Update Handler is working correctly with registry.pol
         * Windows Update Agent not working correctly, causing client not to receive patches.
         * Windows Update Agent missing patches that fixes known bugs.
+        **Changed Regex for Windows update Scan - to search for MSU files and install them
+        **Added Versions of Windows 10 + added Windows 11
+        **Added Free Space Function
+        **Changed Logging to be viewed better in CMTRACE
+        **Added PoorNetwork option to switch between searching event log and check Registry.Pol for corruption
 .NOTES
     You should run this with at least local administrator rights. It is recommended to run this script under the SYSTEM context.
 
@@ -39,19 +44,19 @@
     Full documentation: https://www.andersrodland.com/configmgr-client-health/
 #>
 
-[CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Medium")]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Medium")]
 param(
-    [Parameter(HelpMessage='Path to XML Configuration File')]
-    [ValidateScript({Test-Path -Path $_ -PathType Leaf})]
+    [Parameter(HelpMessage = 'Path to XML Configuration File')]
+    [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
     [ValidatePattern('.xml$')]
     [string]$Config,
-    [Parameter(HelpMessage='URI to ConfigMgr Client Health Webservice')]
+    [Parameter(HelpMessage = 'URI to ConfigMgr Client Health Webservice')]
     [string]$Webservice
 )
 
 Begin {
     # ConfigMgr Client Health Version
-    $Version = '0.8.3'
+    $Version = '1.0.1 (Customized)'
     $PowerShellVersion = [int]$PSVersionTable.PSVersion.Major
     $global:ScriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
@@ -70,7 +75,7 @@ Begin {
         Test the validity of an XML file
         #>
         [CmdletBinding()]
-        param ([parameter(mandatory=$true)][ValidateNotNullorEmpty()][string]$xmlFilePath)
+        param ([parameter(mandatory = $true)][ValidateNotNullorEmpty()][string]$xmlFilePath)
         # Check the file exists
         if (!(Test-Path -Path $xmlFilePath)) { throw "$xmlFilePath is not valid. Please provide a valid path to the .xml config file" }
         # Check for Load or Parse errors when loading the XML file
@@ -114,12 +119,12 @@ Begin {
     # Import BitsTransfer Module (Does not work on PowerShell Core (6), disable check if module failes to import.)
     $BitsCheckEnabled = $false
     if (Get-Module -ListAvailable -Name BitsTransfer) {
-		try {
-			Import-Module BitsTransfer -ErrorAction stop
-			$BitsCheckEnabled = $true
-		}
-		catch { $BitsCheckEnabled = $false }
-	}
+        try {
+            Import-Module BitsTransfer -ErrorAction stop
+            $BitsCheckEnabled = $true
+        }
+        catch { $BitsCheckEnabled = $false }
+    }
 
     #region functions
     Function Get-DateTime {
@@ -135,7 +140,7 @@ Begin {
 
     # Converts a DateTime object to UTC time.
     Function Get-UTCTime {
-        param([Parameter(Mandatory=$true)][DateTime]$DateTime)
+        param([Parameter(Mandatory = $true)][DateTime]$DateTime)
         $obj = $DateTime.ToUniversalTime()
         Write-Output $obj
     }
@@ -151,7 +156,7 @@ Begin {
 
     # Update-WebService use ClientHealth Webservice to update database. RESTful API.
     Function Update-Webservice {
-        Param([Parameter(Mandatory=$true)][String]$URI, $Log)
+        Param([Parameter(Mandatory = $true)][String]$URI, $Log)
 
         $Hostname = Get-Hostname
         $Obj = $Log | ConvertTo-Json
@@ -177,13 +182,13 @@ Begin {
     # Retrieve configuration from SQL using webserivce
     Function Get-ConfigFromWebservice {
         Param(
-            [Parameter(Mandatory=$true)][String]$URI,
-            [Parameter(Mandatory=$false)][String]$ProfileID
-            )
+            [Parameter(Mandatory = $true)][String]$URI,
+            [Parameter(Mandatory = $false)][String]$ProfileID
+        )
 
         $URI = $URI + "/ConfigurationProfile"
         #Write-Host "ProfileID = $ProfileID"
-        if ($ProfileID -ge 0) { $URI = $URI + "/$ProfileID"}
+        if ($ProfileID -ge 0) { $URI = $URI + "/$ProfileID" }
 
         Write-Verbose "Retrieving configuration from webservice. URI: $URI"
         try {
@@ -199,13 +204,13 @@ Begin {
 
     Function Get-ConfigClientInstallPropertiesFromWebService {
         Param(
-            [Parameter(Mandatory=$true)][String]$URI,
-            [Parameter(Mandatory=$true)][String]$ProfileID
-            )
+            [Parameter(Mandatory = $true)][String]$URI,
+            [Parameter(Mandatory = $true)][String]$ProfileID
+        )
 
-            $URI = $URI + "/ClientInstallProperties"
+        $URI = $URI + "/ClientInstallProperties"
 
-            Write-Verbose "Retrieving client install properties from webservice"
+        Write-Verbose "Retrieving client install properties from webservice"
         try {
             $CIP = Invoke-RestMethod -Uri $URI
         }
@@ -214,7 +219,7 @@ Begin {
             Exit 1
         }
 
-        $string = $CIP | Where-Object {$_.profileId -eq $ProfileID} | Select-Object -ExpandProperty cmd
+        $string = $CIP | Where-Object { $_.profileId -eq $ProfileID } | Select-Object -ExpandProperty cmd
         $obj = ""
 
         foreach ($i in $string) {
@@ -222,19 +227,19 @@ Begin {
         }
 
         # Remove the trailing space from the last parameter caused by the foreach loop
-        $obj = $obj.Substring(0,$obj.Length-1)
+        $obj = $obj.Substring(0, $obj.Length - 1)
         Write-Output $Obj
     }
 
     Function Get-ConfigServicesFromWebservice {
         Param(
-            [Parameter(Mandatory=$true)][String]$URI,
-            [Parameter(Mandatory=$true)][String]$ProfileID
-            )
+            [Parameter(Mandatory = $true)][String]$URI,
+            [Parameter(Mandatory = $true)][String]$ProfileID
+        )
 
-            $URI = $URI + "/ConfigurationProfileServices"
+        $URI = $URI + "/ConfigurationProfileServices"
 
-            Write-Verbose "Retrieving client install properties from webservice"
+        Write-Verbose "Retrieving client install properties from webservice"
         try {
             $CS = Invoke-RestMethod -Uri $URI
         }
@@ -243,7 +248,7 @@ Begin {
             Exit 1
         }
 
-        $obj = $CS | Where-Object {$_.profileId -eq $ProfileID} | Select-Object Name, StartupType, State, Uptime
+        $obj = $CS | Where-Object { $_.profileId -eq $ProfileID } | Select-Object Name, StartupType, State, Uptime
 
 
 
@@ -260,16 +265,16 @@ Begin {
     }
 
     Function Get-ServiceUpTime {
-        param([Parameter(Mandatory=$true)]$Name)
+        param([Parameter(Mandatory = $true)]$Name)
 
-        Try{$ServiceDisplayName = (Get-Service $Name).DisplayName}
-        Catch{
+        Try { $ServiceDisplayName = (Get-Service $Name).DisplayName }
+        Catch {
             Write-Warning "The '$($Name)' service could not be found."
             Return
         }
 
         #First try and get the service start time based on the last start event message in the system log.
-        Try{
+        Try {
             [datetime]$ServiceStartTime = (Get-EventLog -LogName System -Source "Service Control Manager" -EntryType Information -Message "*$($ServiceDisplayName)*running*" -Newest 1).TimeGenerated
             Return (New-TimeSpan -Start $ServiceStartTime -End (Get-Date)).Days
         }
@@ -278,7 +283,7 @@ Begin {
         }
 
         #If the event log doesn't contain a start event then use the start time of the service's process.  Since processes can be shared this is less reliable.
-        Try{
+        Try {
             if ($PowerShellVersion -ge 6) { $ServiceProcessID = (Get-CimInstance Win32_Service -Filter "Name='$($Name)'").ProcessID }
             else { $ServiceProcessID = (Get-WMIObject -Class Win32_Service -Filter "Name='$($Name)'").ProcessID }
 
@@ -286,7 +291,7 @@ Begin {
             Return (New-TimeSpan -Start $ServiceStartTime -End (Get-Date)).Days
 
         }
-        Catch{
+        Catch {
             Write-Warning "Could not get the uptime time for the '$($Name)' service.  Returning max value."
             Return [int]::MaxValue
         }
@@ -295,8 +300,8 @@ Begin {
     #Loop backwards through a Configuration Manager log file looking for the latest matching message after the start time.
     Function Search-CMLogFile {
         Param(
-            [Parameter(Mandatory=$true)]$LogFile,
-            [Parameter(Mandatory=$true)][String[]]$SearchStrings,
+            [Parameter(Mandatory = $true)]$LogFile,
+            [Parameter(Mandatory = $true)][String[]]$SearchStrings,
             [datetime]$StartTime = [datetime]::MinValue
         )
 
@@ -304,17 +309,17 @@ Begin {
         $LogData = Get-Content $LogFile
 
         #Loop backwards through the log file.
-        :loop for ($i=($LogData.Count - 1);$i -ge 0; $i--) {
+        :loop for ($i = ($LogData.Count - 1); $i -ge 0; $i--) {
 
             #Parse the log line into its parts.
-            try{
+            try {
                 $LogData[$i] -match '\<\!\[LOG\[(?<Message>.*)?\]LOG\]\!\>\<time=\"(?<Time>.+)(?<TZAdjust>[+|-])(?<TZOffset>\d{2,3})\"\s+date=\"(?<Date>.+)?\"\s+component=\"(?<Component>.+)?\"\s+context="(?<Context>.*)?\"\s+type=\"(?<Type>\d)?\"\s+thread=\"(?<TID>\d+)?\"\s+file=\"(?<Reference>.+)?\"\>' | Out-Null
-                $LogTime = [datetime]::ParseExact($("$($matches.date) $($matches.time)"),"MM-dd-yyyy HH:mm:ss.fff", $null)
+                $LogTime = [datetime]::ParseExact($("$($matches.date) $($matches.time)"), "MM-dd-yyyy HH:mm:ss.fff", $null)
                 $LogMessage = $matches.message
             }
-            catch{
+            catch {
                 Write-Warning "Could not parse the line $($i) in '$($LogFile)': $($LogData[$i])"
-				continue
+                continue
             }
 
             #If we have gone beyond the start time then stop searching.
@@ -324,11 +329,11 @@ Begin {
             }
 
             #Loop through each search string looking for a match.
-            ForEach($String in $SearchStrings){
+            ForEach ($String in $SearchStrings) {
                 If ($LogMessage -match $String) {
-					Write-Output $LogData[$i]
-					break loop
-				}
+                    Write-Output $LogData[$i]
+                    break loop
+                }
             }
         }
 
@@ -346,9 +351,9 @@ Begin {
             [Parameter(Mandatory = $false)][ValidateSet(1, 2, 3, 'Information', 'Warning', 'Error')]$Severity = 1)
 
         switch ($Severity) {
-            'Information' {$Severity = 1}
-            'Warning' {$Severity = 2}
-            'Error' {$Severity = 3}
+            'Information' { $Severity = 1 }
+            'Warning' { $Severity = 2 }
+            'Error' { $Severity = 3 }
         }
 
         if ($Mode -like "Local") {
@@ -362,6 +367,19 @@ Begin {
             $text = "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation." 
             $Severity = 3
         }
+        
+        function ToArray {
+            begin {
+                $output = @();
+            }
+            process {
+                $output += $_.Split("`r");
+            }
+            end {
+                return , $output;
+            }
+        }
+        $text = $text | ToArray
 
         foreach ($item in $text) {
             $item = '<![LOG[' + $item + ']LOG]!>'
@@ -389,10 +407,10 @@ Begin {
         # Handles different OS languages
         $OSArchitecture = ($OS.OSArchitecture -replace ('([^0-9])(\.*)', '')) + '-Bit'
         switch -Wildcard ($OS.Caption) {
-            "*Embedded*" {$OSName = "Windows 7 " + $OSArchitecture}
-            "*Windows 7*" {$OSName = "Windows 7 " + $OSArchitecture}
-            "*Windows 8.1*" {$OSName = "Windows 8.1 " + $OSArchitecture}
-            "*Windows 10*" {$OSName = "Windows 10 " + $OSArchitecture}
+            "*Embedded*" { $OSName = "Windows 7 " + $OSArchitecture }
+            "*Windows 7*" { $OSName = "Windows 7 " + $OSArchitecture }
+            "*Windows 8.1*" { $OSName = "Windows 8.1 " + $OSArchitecture }
+            "*Windows 10*" { $OSName = "Windows 10 " + $OSArchitecture }
             "*Server 2008*" {
                 if ($OS.Caption -like "*R2*") { $OSName = "Windows Server 2008 R2 " + $OSArchitecture }
                 else { $OSName = "Windows Server 2008 " + $OSArchitecture }
@@ -415,14 +433,26 @@ Begin {
         if ($OSName -like "*Windows 10*") {
             $build = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber
             switch ($build) {
-                10240 {$OSName = $OSName + " 1507"}
-                10586 {$OSName = $OSName + " 1511"}
-                14393 {$OSName = $OSName + " 1607"}
-                15063 {$OSName = $OSName + " 1703"}
-                16299 {$OSName = $OSName + " 1709"}
-                17134 {$OSName = $OSName + " 1803"}
-                17763 {$OSName = $OSName + " 1809"}
-                default {$OSName = $OSName + " Insider Preview"}
+                10240 { $OSName = $OSName + " 1507" }
+                10586 { $OSName = $OSName + " 1511" }
+                14393 { $OSName = $OSName + " 1607" }
+                15063 { $OSName = $OSName + " 1703" }
+                16299 { $OSName = $OSName + " 1709" }
+                17134 { $OSName = $OSName + " 1803" }
+                17763 { $OSName = $OSName + " 1809" }
+                18362 { $OSName = $OSName + " 1903" }
+                18363 { $OSName = $OSName + " 1909" }
+                19041 { $OSName = $OSName + " 2004" }
+                19042 { $OSName = $OSName + " 20H2" }
+                19043 { $OSName = $OSName + " 21H1" }
+                19044 { $OSName = $OSName + " 21H2" }
+                default { $OSName = $OSName + " Insider Preview" }
+            }
+        }
+        elseif ($OSName -like "*Windows 11*") {
+            $build = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber
+            switch ($build) {
+                default { $OSName = $OSName + " Insider Preview" }
             }
         }
 
@@ -445,8 +475,8 @@ Begin {
 
     Function Get-RegistryValue {
         param (
-            [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Path,
-            [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Name
+            [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]$Path,
+            [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]$Name
         )
 
         Return (Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue).$Name
@@ -454,14 +484,14 @@ Begin {
 
     Function Set-RegistryValue {
         param (
-            [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Path,
-            [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Name,
-            [parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Value,
-            [ValidateSet("String","ExpandString","Binary","DWord","MultiString","Qword")]$ProperyType="String"
+            [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]$Path,
+            [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]$Name,
+            [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]$Value,
+            [ValidateSet("String", "ExpandString", "Binary", "DWord", "MultiString", "Qword")]$ProperyType = "String"
         )
 
         #Make sure the key exists
-        If (!(Test-Path $Path)){
+        If (!(Test-Path $Path)) {
             New-Item $Path -Force | Out-Null
         }
 
@@ -496,7 +526,7 @@ Begin {
             #if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
             #else { $obj = (Get-WmiObject -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig -ErrorAction SilentlyContinue).Size }
         }
-        catch { $obj = 0}
+        catch { $obj = 0 }
         finally {
             if ($null -eq $obj) { $obj = 0 }
             Write-Output $obj
@@ -620,7 +650,7 @@ Begin {
     }
 
     function Test-CCMCertificateError {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         # More checks to come
         $logdir = Get-CCMLogDirectory
         $logFile1 = "$logdir\ClientIDManagerStartup.log"
@@ -675,7 +705,7 @@ Begin {
 
 
     Function Test-BITS {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
 
         if ($BitsCheckEnabled -eq $true) {
             $Errors = Get-BitsTransfer -AllUsers | Where-Object { ($_.JobState -like "TransientError") -or ($_.JobState -like "Transient_Error") -or ($_.JobState -like "Error") }
@@ -715,44 +745,44 @@ Begin {
 
     }
 
-	Function Test-ClientSettingsConfiguration {
-		Param([Parameter(Mandatory=$true)]$Log)
+    Function Test-ClientSettingsConfiguration {
+        Param([Parameter(Mandatory = $true)]$Log)
 
-		$ClientSettingsConfig = @(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where-Object {$_.PolicySource -eq "CcmTaskSequence"})
+        $ClientSettingsConfig = @(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig -ErrorAction SilentlyContinue | Where-Object { $_.PolicySource -eq "CcmTaskSequence" })
 
-		if ($ClientSettingsConfig.Count -gt 0) {
+        if ($ClientSettingsConfig.Count -gt 0) {
 
-			$fix = (Get-XMLConfigClientSettingsCheckFix).ToLower()
+            $fix = (Get-XMLConfigClientSettingsCheckFix).ToLower()
 
-			if ($fix -eq "true") {
-				$text = "ClientSettings: Error. Remediating"
-				DO {
-					Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1000 | ForEach-Object {Remove-WmiObject -InputObject $_}
-				} Until (!(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object {$_.PolicySource -eq "CcmTaskSequence"} | Select-Object -first 1))
-				$log.ClientSettings = 'Remediated'
-				$obj = $true
-			}
-			else {
-				$text = "ClientSettings: Error. Monitor only"
-				$log.ClientSettings = 'Error'
-				$obj = $false
-			}
-		}
+            if ($fix -eq "true") {
+                $text = "ClientSettings: Error. Remediating"
+                DO {
+                    Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object { $_.PolicySource -eq "CcmTaskSequence" } | Select-Object -first 1000 | ForEach-Object { Remove-WmiObject -InputObject $_ }
+                } Until (!(Get-WmiObject -Namespace "root\ccm\Policy\DefaultMachine\RequestedConfig" -Class CCM_ClientAgentConfig | Where-Object { $_.PolicySource -eq "CcmTaskSequence" } | Select-Object -first 1))
+                $log.ClientSettings = 'Remediated'
+                $obj = $true
+            }
+            else {
+                $text = "ClientSettings: Error. Monitor only"
+                $log.ClientSettings = 'Error'
+                $obj = $false
+            }
+        }
 
-		else {
-			$text = "ClientSettings: OK"
-			$log.ClientSettings = 'OK'
-			$Obj = $false
-		}
-		Write-Host $text
-		#Write-Output $Obj
+        else {
+            $text = "ClientSettings: OK"
+            $log.ClientSettings = 'OK'
+            $Obj = $false
+        }
+        Write-Host $text
+        #Write-Output $Obj
     }
 
     Function New-ClientInstalledReason {
         Param(
-            [Parameter(Mandatory=$true)]$Message,
-            [Parameter(Mandatory=$true)]$Log
-            )
+            [Parameter(Mandatory = $true)]$Message,
+            [Parameter(Mandatory = $true)]$Log
+        )
 
         if ($null -eq $log.ClientInstalledReason) { $log.ClientInstalledReason = $Message }
         else { $log.ClientInstalledReason += " $Message" }
@@ -761,10 +791,10 @@ Begin {
 
     function Get-PendingReboot {
         $result = @{
-            CBSRebootPending =$false
+            CBSRebootPending            = $false
             WindowsUpdateRebootRequired = $false
-            FileRenamePending = $false
-            SCCMRebootPending = $false
+            FileRenamePending           = $false
+            SCCMRebootPending           = $false
         }
 
         #Check CBS Registry
@@ -777,19 +807,17 @@ Begin {
 
         #Check PendingFileRenameOperations
         $prop = Get-ItemProperty 'HKLM:SYSTEM\CurrentControlSet\Control\Session Manager' -Name PendingFileRenameOperations -ErrorAction SilentlyContinue
-        if ($null -ne $prop)
-        {
+        if ($null -ne $prop) {
             #PendingFileRenameOperations is not *must* to reboot?
             #$result.FileRenamePending = $true
         }
 
-        try
-        {
+        try {
             $util = [wmiclass]'\\.\root\ccm\clientsdk:CCM_ClientUtilities'
             $status = $util.DetermineIfRebootPending()
-            if(($null -ne $status) -and $status.RebootPending){ $result.SCCMRebootPending = $true }
+            if (($null -ne $status) -and $status.RebootPending) { $result.SCCMRebootPending = $true }
         }
-        catch{}
+        catch {}
 
         #Return Reboot required
         if ($result.ContainsValue($true)) {
@@ -814,10 +842,14 @@ Begin {
 
     Function Get-OSDiskFreeSpace {
 
-        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
-        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
-        $freeSpace = (($driveC.FreeSpace / $driveC.Size) * 100)
-        Write-Output ([math]::Round($freeSpace,2))
+        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "$env:SystemDrive" } | Select-Object FreeSpace, Size }
+        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "$env:SystemDrive" } | Select-Object FreeSpace, Size }
+        #$freeSpace = (($driveC.FreeSpace / $driveC.Size) * 100)
+        $freeSpace = ((($driveC.FreeSpace)/1000)/1000)/1000
+        $freeSpace1 = ([math]::Round($freeSpace, 2))
+        $freeSpace = $freeSpace1.tostring() + " GB"
+        #Write-Output ([math]::Round($freeSpace, 2))
+        Write-Output $freeSpace
     }
 
     Function Get-Computername {
@@ -834,7 +866,7 @@ Begin {
     }
 
     Function Get-LastInstalledPatches {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         # Reading date from Windows Update COM object.
         $Session = New-Object -ComObject Microsoft.Update.Session
         $Searcher = $Session.CreateUpdateSearcher()
@@ -844,35 +876,35 @@ Begin {
         Switch -Wildcard ($OS) {
             "*Windows 7*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Windows 8*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Windows 10*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
+                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Server 2008*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdates' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Server 2012*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
+                    ($_.ClientApplicationID -eq 'AutomaticUpdatesWuApp' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
             "*Server 2016*" {
                 $Date = $Searcher.QueryHistory(0, $HistoryCount) | Where-Object {
-                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Security Intelligence Update|Definition Update")
+                    ($_.ClientApplicationID -eq 'UpdateOrchestrator' -or $_.ClientApplicationID -eq 'ccmexec') -and ($_.Title -notmatch "Definition Update")
                 } | Select-Object -ExpandProperty Date | Measure-Latest
             }
-		}
+        }
 
         # Reading date from PowerShell Get-Hotfix
         #$now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
@@ -880,8 +912,8 @@ Begin {
 
         #$Hotfix = Get-Hotfix | Select-Object -ExpandProperty InstalledOn -ErrorAction SilentlyContinue
 
-        if ($PowerShellVersion -ge 6) { $Hotfix = Get-CimInstance -ClassName Win32_QuickFixEngineering | Select-Object @{Name="InstalledOn";Expression={[DateTime]::Parse($_.InstalledOn,$([System.Globalization.CultureInfo]::GetCultureInfo("en-US")))}} }
-        else { $Hotfix = Get-Hotfix | Select-Object @{l="InstalledOn";e={[DateTime]::Parse($_.psbase.properties["installedon"].value,$([System.Globalization.CultureInfo]::GetCultureInfo("en-US")))}} }
+        if ($PowerShellVersion -ge 6) { $Hotfix = Get-CimInstance -ClassName Win32_QuickFixEngineering | Select-Object @{Name = "InstalledOn"; Expression = { [DateTime]::Parse($_.InstalledOn, $([System.Globalization.CultureInfo]::GetCultureInfo("en-US"))) } } }
+        else { $Hotfix = Get-Hotfix | Select-Object @{l = "InstalledOn"; e = { [DateTime]::Parse($_.psbase.properties["installedon"].value, $([System.Globalization.CultureInfo]::GetCultureInfo("en-US"))) } } }
 
         $Hotfix = $Hotfix | Select-Object -ExpandProperty InstalledOn
 
@@ -900,40 +932,40 @@ Begin {
     }
 
     Function Test-LogFileHistory {
-        Param([Parameter(Mandatory=$true)]$Logfile)
+        Param([Parameter(Mandatory = $true)]$Logfile)
         $startString = '<--- ConfigMgr Client Health Check starting --->'
         $content = ''
 
         # Handle the network share log file
-        if (Test-Path $logfile -ErrorAction SilentlyContinue)  { $content = Get-Content $logfile -ErrorAction SilentlyContinue }
-		else { return }
+        if (Test-Path $logfile -ErrorAction SilentlyContinue) { $content = Get-Content $logfile -ErrorAction SilentlyContinue }
+        else { return }
         $maxHistory = Get-XMLConfigLoggingMaxHistory
-        $startCount = [regex]::matches($content,$startString).count
+        $startCount = [regex]::matches($content, $startString).count
 
         # Delete logfile if more start and stop entries than max history
         if ($startCount -ge $maxHistory) { Remove-Item $logfile -Force }
     }
 
     Function Test-DNSConfiguration {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         #$dnsdomain = (Get-WmiObject Win32_NetworkAdapterConfiguration -filter "ipenabled = 'true'").DNSDomain
         $fqdn = [System.Net.Dns]::GetHostEntry([string]"localhost").HostName
-        if ($PowerShellVersion -ge 6) { $localIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object {$_.IPEnabled -Match "True"} |  Select-Object -ExpandProperty IPAddress }
-        else { $localIPs = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object {$_.IPEnabled -Match "True"} |  Select-Object -ExpandProperty IPAddress }
+        if ($PowerShellVersion -ge 6) { $localIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -Match "True" } |  Select-Object -ExpandProperty IPAddress }
+        else { $localIPs = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -Match "True" } |  Select-Object -ExpandProperty IPAddress }
         $dnscheck = [System.Net.DNS]::GetHostByName($fqdn)
 
         $OSName = Get-OperatingSystem
         if (($OSName -notlike "*Windows 7*") -and ($OSName -notlike "*Server 2008*")) {
             # This method is supported on Windows 8 / Server 2012 and higher. More acurate than using .NET object method
             try {
-                $ActiveAdapters = (get-netadapter | Where-Object {$_.Status -like "Up"}).Name
-                $dnsServers = Get-DnsClientServerAddress | Where-Object {$ActiveAdapters -contains $_.InterfaceAlias} | Where-Object {$_.AddressFamily -eq 2} | Select-Object -ExpandProperty ServerAddresses
+                $ActiveAdapters = (get-netadapter | Where-Object { $_.Status -like "Up" }).Name
+                $dnsServers = Get-DnsClientServerAddress | Where-Object { $ActiveAdapters -contains $_.InterfaceAlias } | Where-Object { $_.AddressFamily -eq 2 } | Select-Object -ExpandProperty ServerAddresses
                 $dnsAddressList = Resolve-DnsName -Name $fqdn -Server ($dnsServers | Select-Object -First 1) -Type A -DnsOnly | Select-Object -ExpandProperty IPAddress
             }
             catch {
                 # Fallback to depreciated method
                 $dnsAddressList = $dnscheck.AddressList | Select-Object -ExpandProperty IPAddressToString
-                $dnsAddressList = $dnsAddressList -replace("%(.*)", "")
+                $dnsAddressList = $dnsAddressList -replace ("%(.*)", "")
             }
         }
 
@@ -942,7 +974,7 @@ Begin {
             # For Windows 7 only
 
             $dnsAddressList = $dnscheck.AddressList | Select-Object -ExpandProperty IPAddressToString
-            $dnsAddressList = $dnsAddressList -replace("%(.*)", "")
+            $dnsAddressList = $dnsAddressList -replace ("%(.*)", "")
         }
 
         $dnsFail = ''
@@ -957,15 +989,15 @@ Begin {
                 #Write-Host "Testing if IP address: $dnsIP published in DNS exist in local IP configuration."
                 ##if ($dnsIP -notin $localIPs) { ## Requires PowerShell 3. Works fine :(
                 if ($localIPs -notcontains $dnsIP) {
-                   $dnsFail += "IP '$dnsIP' in DNS record do not exist locally`n"
-                   $logFail += "$dnsIP "
-                   $obj = $false
+                    $dnsFail += "IP '$dnsIP' in DNS record do not exist locally`n"
+                    $logFail += "$dnsIP "
+                    $obj = $false
                 }
             }
         }
         else {
             $hn = $dnscheck.HostName
-            $dnsFail = 'DNS name: ' +$hn + ' local fqdn: ' +$fqdn + ' DNS IPs: ' +$dnsAddressList + ' Local IPs: ' + $localIPs
+            $dnsFail = 'DNS name: ' + $hn + ' local fqdn: ' + $fqdn + ' DNS IPs: ' + $dnsAddressList + ' Local IPs: ' + $localIPs
             $obj = $false
             Write-Host $dnsFail
         }
@@ -977,7 +1009,7 @@ Begin {
                 $fix = (Get-XMLConfigDNSFix).ToLower()
                 if ($fix -eq "true") {
                     $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Trying to resolve by registerting with DNS server'
-                    if ($PowerShellVersion -ge 4) { Register-DnsClient | out-null  }
+                    if ($PowerShellVersion -ge 4) { Register-DnsClient | out-null }
                     else { ipconfig /registerdns | out-null }
                     Write-Host $text
                     $log.DNS = $logFail
@@ -990,7 +1022,7 @@ Begin {
                 else {
                     $text = 'DNS Check: FAILED. IP address published in DNS do not match IP address on local machine. Monitor mode only, no remediation'
                     $log.DNS = $logFail
-                    if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text  -Severity 2}
+                    if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text  -Severity 2 }
                     Write-Host $text
                 }
 
@@ -1011,12 +1043,12 @@ Begin {
         $correctValue = '%USERPROFILE%\AppData\Roaming'
         $currentValue = (Get-Item 'HKU:\S-1-5-18\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\').GetValue('AppData', $null, 'DoNotExpandEnvironmentNames')
 
-       # Only fix if the value is wrong
-       if ($currentValue -ne $correctValue) { Set-ItemProperty -Path  'HKU:\S-1-5-18\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\' -Name 'AppData' -Value $correctValue }
+        # Only fix if the value is wrong
+        if ($currentValue -ne $correctValue) { Set-ItemProperty -Path  'HKU:\S-1-5-18\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\' -Name 'AppData' -Value $correctValue }
     }
 
     Function Test-Update {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
 
         #if (($Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Enable') -like 'True') {
 
@@ -1033,20 +1065,33 @@ Begin {
         if ($OSName -like "*Windows 10*") {
             $build = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber
             switch ($build) {
-                10240 {$OSName = $OSName + " 1507"}
-                10586 {$OSName = $OSName + " 1511"}
-                14393 {$OSName = $OSName + " 1607"}
-                15063 {$OSName = $OSName + " 1703"}
-                16299 {$OSName = $OSName + " 1709"}
-                17134 {$OSName = $OSName + " 1803"}
-                17763 {$OSName = $OSName + " 1809"}
-                default {$OSName = $OSName + " Insider Preview"}
+                10240 { $OSName = $OSName + " 1507" }
+                10586 { $OSName = $OSName + " 1511" }
+                14393 { $OSName = $OSName + " 1607" }
+                15063 { $OSName = $OSName + " 1703" }
+                16299 { $OSName = $OSName + " 1709" }
+                17134 { $OSName = $OSName + " 1803" }
+                17763 { $OSName = $OSName + " 1809" }
+                18362 { $OSName = $OSName + " 1903" }
+                18363 { $OSName = $OSName + " 1909" }
+                19041 { $OSName = $OSName + " 2004" }
+                19042 { $OSName = $OSName + " 20H2" }
+                19043 { $OSName = $OSName + " 21H1" }
+                19044 { $OSName = $OSName + " 21H2" }
+                default { $OSName = $OSName + " Insider Preview" }
+            }
+        }
+        elseif ($OSName -like "*Windows 11*") {
+            $build = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber
+            switch ($build) {
+                default { $OSName = $OSName + " Insider Preview" }
             }
         }
 
         $Updates = (Join-Path $UpdateShare $OSName)
         If ((Test-Path $Updates) -eq $true) {
-            $regex = '(?i)^.+-kb[0-9]{6,}-(?:v[0-9]+-)?x[0-9]+\.msu$'
+            #$regex = '(?i)^.+-kb[0-9]{6,}-(?:v[0-9]+-)?x[0-9]+\.msu$'
+            $regex = '([a-z]{0,7}[0-9]{0,2}\.[0-9]{0,2}-)?(kb[0-9]{6,10})(-x[0-9]{2}_[0-z]{0,100})?(\.msu)'
             $hotfixes = @(Get-ChildItem $Updates | Where-Object { $_.Name -match $regex } | Select-Object -ExpandProperty Name)
 
             if ($PowerShellVersion -ge 6) { $installedUpdates = @((Get-CimInstance Win32_QuickFixEngineering).HotFixID) }
@@ -1057,26 +1102,28 @@ Begin {
             if (($count -eq 0) -or ($count -eq $null)) {
                 $text = 'Updates: No mandatory updates to install.'
                 Write-Output $text
-                $log.Updates = 'OK'
+                $log.Updates = 'No mandatory updates to install - OK'
             }
             else {
                 $logEntry = $null
 
-				$regex = '\b(?!(KB)+(\d+)\b)\w+'
+                $regex = '\b(?!(KB)+(\d+)\b)\w+'
                 foreach ($hotfix in $hotfixes) {
                     $kb = $hotfix -replace $regex -replace "\." -replace "-"
                     if ($installedUpdates -contains $kb) {
                         $text = "Update $hotfix" + ": OK"
+                        $logEntry += "`nUpdate $kb" + ": OK"
                         Write-Output $text
                     }
                     else {
                         if ($null -eq $logEntry) { $logEntry = $kb }
-                        else { $logEntry += ", $kb" }
+                        else { $logEntry += "`nTesting Update: $kb" }
 
                         $fix = (Get-XMLConfigUpdatesFix).ToLower()
                         if ($fix -eq "true") {
                             $kbfullpath = Join-Path $updates $hotfix
                             $text = "Update $hotfix" + ": Missing. Installing now..."
+                            $logEntry += "`nUpdate $kb" + ": Missing. Installing now..."
                             Write-Warning $text
 
                             $temppath = Join-Path (Get-LocalFilesPath) "Temp"
@@ -1093,6 +1140,7 @@ Begin {
                         }
                         else {
                             $text = "Update $hotfix" + ": Missing. Monitor mode only, no remediation."
+                            $logEntry += "`nUpdate $kb" + ": Missing. Monitor mode only, no remediation."
                             Write-Warning $text
                         }
                     }
@@ -1109,7 +1157,7 @@ Begin {
     }
 
     Function Test-ConfigMgrClient {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
 
         # Check if the SCCM Agent is installed or not.
         # If installed, perform tests to decide if reinstall is needed or not.
@@ -1123,12 +1171,12 @@ Begin {
             # We test that the local database files exists. Less than 7 means the client is horrible broken and requires reinstall.
             $LocalDBFilesPresent = Test-CcmSDF
             if ($LocalDBFilesPresent -eq $False) {
-                    New-ClientInstalledReason -Log $Log -Message "ConfigMgr Client database files missing."
-                    Write-Host "ConfigMgr Client database files missing. Reinstalling..."
-                    # Add /ForceInstall to Client Install Properties to ensure the client is uninstalled before we install client again.
-                    #if (-NOT ($clientInstallProperties -like "*/forceinstall*")) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
-                    $Reinstall = $true
-                    $Uninstall = $true
+                New-ClientInstalledReason -Log $Log -Message "ConfigMgr Client database files missing."
+                Write-Host "ConfigMgr Client database files missing. Reinstalling..."
+                # Add /ForceInstall to Client Install Properties to ensure the client is uninstalled before we install client again.
+                #if (-NOT ($clientInstallProperties -like "*/forceinstall*")) { $clientInstallProperties = $clientInstallProperties + " /forceinstall" }
+                $Reinstall = $true
+                $Uninstall = $true
             }
 
             # Only test CM client local DB if this check is enabled
@@ -1168,7 +1216,8 @@ Begin {
             Try {
                 if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
                 else { $WMI = Get-WmiObject -Namespace root/ccm -Class SMS_Client -ErrorAction Stop }
-            } Catch {
+            }
+            Catch {
                 Write-Verbose 'Failed to connect to WMI namespace "root/ccm" class "SMS_Client". Clearing WMI and tagging client for reinstall to fix.'
 
                 # Clear the WMI namespace to avoid having to uninstall first
@@ -1202,12 +1251,12 @@ Begin {
 
             # Test again if agent is installed
             if (Get-Service -Name ccmexec -ErrorAction SilentlyContinue) {}
-            else { Out-LogFile "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation."  -Mode "ClientInstall" -Severity 3}
+            else { Out-LogFile "ConfigMgr Client installation failed. Agent not detected 10 minutes after triggering installation."  -Mode "ClientInstall" -Severity 3 }
         }
     }
 
     Function Test-ClientCacheSize {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         $ClientCacheSize = Get-XMLConfigClientCache
         #if ($PowerShellVersion -ge 6) { $Cache = Get-CimInstance -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig }
         #else { $Cache = Get-WmiObject -Namespace "ROOT\CCM\SoftMgmtAgent" -Class CacheConfig }
@@ -1220,8 +1269,8 @@ Begin {
             $num = $ClientCacheSize -replace '%'
             $num = ($num / 100)
             # TotalDiskSpace in Byte
-            if ($PowerShellVersion -ge 6) { $TotalDiskSpace = (Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object -ExpandProperty Size) }
-            else { $TotalDiskSpace = (Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object -ExpandProperty Size) }
+            if ($PowerShellVersion -ge 6) { $TotalDiskSpace = (Get-CimInstance -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "$env:SystemDrive" } | Select-Object -ExpandProperty Size) }
+            else { $TotalDiskSpace = (Get-WmiObject -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "$env:SystemDrive" } | Select-Object -ExpandProperty Size) }
             $ClientCacheSize = ([math]::Round(($TotalDiskSpace * $num) / 1048576))
         }
         else { $type = 'fixed' }
@@ -1235,7 +1284,7 @@ Begin {
 
         else {
             switch ($type) {
-                'fixed' {$text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating."}
+                'fixed' { $text = "ConfigMgr Client Cache Size: $CurrentCache. Expected: $ClientCacheSize. Redmediating." }
                 'percentage' {
                     $percent = Get-XMLConfigClientCache
                     if ($ClientCacheSize -gt "99999") { $ClientCacheSize = "99999" }
@@ -1254,7 +1303,7 @@ Begin {
     }
 
     Function Test-ClientVersion {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         $ClientVersion = Get-XMLConfigClientVersion
         [String]$ClientAutoUpgrade = Get-XMLConfigClientAutoUpgrade
         $ClientAutoUpgrade = $ClientAutoUpgrade.ToLower()
@@ -1262,17 +1311,17 @@ Begin {
         $log.ClientVersion = $installedVersion
 
         if ($installedVersion -ge $ClientVersion) {
-            $text = 'ConfigMgr Client version is: ' +$installedVersion + ': OK'
+            $text = 'ConfigMgr Client version is: ' + $installedVersion + ': OK'
             Write-Output $text
             $obj = $false
         }
         elseif ($ClientAutoUpgrade -like 'true') {
-            $text = 'ConfigMgr Client version is: ' +$installedVersion +': Tagging client for upgrade to version: '+$ClientVersion
+            $text = 'ConfigMgr Client version is: ' + $installedVersion + ': Tagging client for upgrade to version: ' + $ClientVersion
             Write-Warning $text
             $obj = $true
         }
         else {
-            $text = 'ConfigMgr Client version is: ' +$installedVersion +': Required version: '+$ClientVersion +' AutoUpgrade: false. Skipping upgrade'
+            $text = 'ConfigMgr Client version is: ' + $installedVersion + ': Required version: ' + $ClientVersion + ' AutoUpgrade: false. Skipping upgrade'
             Write-Output $text
             $obj = $false
         }
@@ -1280,7 +1329,7 @@ Begin {
     }
 
     Function Test-ClientSiteCode {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         $sms = new-object -comobject "Microsoft.SMS.Client"
         $ClientSiteCode = Get-XMLConfigClientSitecode
         #[String]$currentSiteCode = Get-Sitecode
@@ -1295,7 +1344,7 @@ Begin {
             #$obj = $false
         }
         else {
-            $text = 'ConfigMgr Client Site Code is "' +$currentSiteCode + '". Expected: "' +$ClientSiteCode +'". Changing sitecode.'
+            $text = 'ConfigMgr Client Site Code is "' + $currentSiteCode + '". Expected: "' + $ClientSiteCode + '". Changing sitecode.'
             Write-Warning $text
             $sms.SetAssignedSite($ClientSiteCode)
             #$obj = $true
@@ -1304,14 +1353,14 @@ Begin {
     }
 
     function Test-PendingReboot {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         # Only run pending reboot check if enabled in config
-        if (($Xml.Configuration.Option | Where-Object {$_.Name -like 'PendingReboot'} | Select-Object -ExpandProperty 'Enable') -like 'True') {
+        if (($Xml.Configuration.Option | Where-Object { $_.Name -like 'PendingReboot' } | Select-Object -ExpandProperty 'Enable') -like 'True') {
             $result = @{
-                CBSRebootPending =$false
+                CBSRebootPending            = $false
                 WindowsUpdateRebootRequired = $false
-                FileRenamePending = $false
-                SCCMRebootPending = $false
+                FileRenamePending           = $false
+                SCCMRebootPending           = $false
             }
 
             #Check CBS Registry
@@ -1324,19 +1373,17 @@ Begin {
 
             #Check PendingFileRenameOperations
             $prop = Get-ItemProperty 'HKLM:SYSTEM\CurrentControlSet\Control\Session Manager' -Name PendingFileRenameOperations -ErrorAction SilentlyContinue
-            if ($null -ne $prop)
-            {
+            if ($null -ne $prop) {
                 #PendingFileRenameOperations is not *must* to reboot?
                 #$result.FileRenamePending = $true
             }
 
-            try
-            {
+            try {
                 $util = [wmiclass]'\\.\root\ccm\clientsdk:CCM_ClientUtilities'
                 $status = $util.DetermineIfRebootPending()
-                if(($null -ne $status) -and $status.RebootPending){ $result.SCCMRebootPending = $true}
+                if (($null -ne $status) -and $status.RebootPending) { $result.SCCMRebootPending = $true }
             }
-            catch{}
+            catch {}
 
             #Return Reboot required
             if ($result.ContainsValue($true)) {
@@ -1360,7 +1407,7 @@ Begin {
 
     # Functions to detect and fix errors
     Function Test-ProvisioningMode {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         $registryPath = 'HKLM:\SOFTWARE\Microsoft\CCM\CcmExec'
         $provisioningMode = (Get-ItemProperty -Path $registryPath).ProvisioningMode
 
@@ -1369,8 +1416,8 @@ Begin {
             Write-Warning $text
             Set-ItemProperty -Path $registryPath -Name ProvisioningMode -Value "false"
             $ArgumentList = @($false)
-            if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -Class 'SMS_Client' -MethodName 'SetClientProvisioningMode' -Arguments @{bEnable=$false} | Out-Null }
-            else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'SMS_Client' -Name 'SetClientProvisioningMode' -ArgumentList $ArgumentList | Out-Null  }
+            if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -Class 'SMS_Client' -MethodName 'SetClientProvisioningMode' -Arguments @{bEnable = $false } | Out-Null }
+            else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'SMS_Client' -Name 'SetClientProvisioningMode' -ArgumentList $ArgumentList | Out-Null }
             $log.ProvisioningMode = 'Repaired'
         }
         else {
@@ -1389,7 +1436,7 @@ Begin {
     }
 
     Function Test-UpdateStore {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         Write-Verbose "Check StateMessage.log if State Messages are successfully forwarded to Management Point"
         $logdir = Get-CCMLogDirectory
         $logfile = "$logdir\StateMessage.log"
@@ -1409,9 +1456,9 @@ Begin {
 
     Function Test-RegistryPol {
         Param(
-            [datetime]$StartTime=[datetime]::MinValue,
+            [datetime]$StartTime = [datetime]::MinValue,
             $Days,
-            [Parameter(Mandatory=$true)]$Log)
+            [Parameter(Mandatory = $true)]$Log)
         $log.WUAHandler = "Checking"
         $RepairReason = ""
         $MachineRegistryFile = "$($env:WinDir)\System32\GroupPolicy\Machine\registry.pol"
@@ -1420,8 +1467,8 @@ Begin {
         Write-Verbose "Check WUAHandler.log for errors since $($StartTime)."
         $logdir = Get-CCMLogDirectory
         $logfile = "$logdir\WUAHandler.log"
-        $logLine = Search-CMLogFile -LogFile $logfile -StartTime $StartTime -SearchStrings @('0x80004005','0x87d00692')
-        if ($logLine) {$RepairReason = "WUAHandler Log"}
+        $logLine = Search-CMLogFile -LogFile $logfile -StartTime $StartTime -SearchStrings @('0x80004005', '0x87d00692')
+        if ($logLine) { $RepairReason = "WUAHandler Log" }
 
         # Check 2 - Registry.pol is too old.
         if ($Days) {
@@ -1430,30 +1477,70 @@ Begin {
                 $file = Get-ChildItem -Path $MachineRegistryFile -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty LastWriteTime
                 $regPolDate = Get-Date($file)
                 $now = Get-Date
-                if (($now - $regPolDate).Days -ge $Days) {$RepairReason = "File Age"}
+                if (($now - $regPolDate).Days -ge $Days) { $RepairReason = "File Age" }
             }
             catch { Write-Warning "GPO Cache: Failed to check machine policy age." }
         }
 
-        # Check 3 - Look back through the last 7 days for group policy processing errors.
-        #Event IDs documented here: https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-vista/cc749336(v=ws.10)#troubleshooting-group-policy-using-event-logs-1
-        try {
-            Write-Verbose "Checking the Group Policy event log for errors since $($StartTime)."
-            $numberOfGPOErrors = (Get-WinEvent -Verbose:$false -FilterHashTable @{LogName='Microsoft-Windows-GroupPolicy/Operational';Level=2;StartTime=$StartTime} -ErrorAction SilentlyContinue | Where-Object {($_.ID -ge 7000 -and $_.ID -le 7007) -or ($_.ID -ge 7017 -and $_.ID -le 7299) -or ($_.ID -eq 1096)}).Count
-            if ($numberOfGPOErrors -gt 0) {$RepairReason = "Event Log"}
-
+        If ((Get-XMLConfigPoorNetwork -like 'True') -eq $true) {
+            # Check 4 - Check for corruption of Registry.pol
+            ## Modified implementation of https://2pintsoftware.com/download/configmgr-ci-local-policy-corruption/
+            ## and https://itinlegal.wordpress.com/2017/09/09/psa-locating-badcorrupt-registry-pol-files/
+            try {
+                Write-Verbose "Checking the Registry.pol for corruption."
+                $PathToMachineRegistryPOLFile = "$ENV:Windir\System32\GroupPolicy\Machine\Registry.pol"
+                $PathToUserRegistryPOLFile = "$ENV:Windir\System32\GroupPolicy\User\Registry.pol"
+                # Test for a Machine policy file - if there isn't one - all good
+                if (!(Test-Path -Path $PathToMachineRegistryPOLFile -PathType Leaf)) {}
+                #If there is a .pol file - test it
+                else {
+                    If (((Get-Content -Encoding Byte -Path $PathToMachineRegistryPOLFile -TotalCount 4) -join '') -ne '8082101103') {
+                        $RepairReason = "Machine Registry.pol Corrupt"
+                    }
+                }
+                # Test for a User policy file - if there isn't one - as you were
+                if (!(Test-Path -Path $PathToUserRegistryPOLFile -PathType Leaf)) {}
+                #If there is a .pol file - test it
+                else {
+                    If (((Get-Content -Encoding Byte -Path $PathToUserRegistryPOLFile -TotalCount 4) -join '') -ne '8082101103') {
+                        if ($RepairReason.Length -ge 1) {
+                            $RepairReason += ", User Registry.pol Corrupt"
+                        }
+                        else { $RepairReason = "User Registry.pol Corrupt" }
+                    }
+                }
+            }
+            catch {
+                Write-Warning "GPO Cache: Failed to check Registry.pol for corruption" 
+            }    
         }
-        catch { Write-Warning "GPO Cache: Failed to check the event log for policy errors." }
+        else {
+            # Check 3 - Look back through the last 7 days for group policy processing errors.
+            #Event IDs documented here: https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-vista/cc749336(v=ws.10)#troubleshooting-group-policy-using-event-logs-1
+            try {
+                Write-Verbose "Checking the Group Policy event log for errors since $($StartTime)."
+                $numberOfGPOErrors = (Get-WinEvent -Verbose:$false -FilterHashTable @{LogName = 'Microsoft-Windows-GroupPolicy/Operational'; Level = 2; StartTime = $StartTime } -ErrorAction SilentlyContinue | Where-Object { ($_.ID -ge 7000 -and $_.ID -le 7007) -or ($_.ID -ge 7017 -and $_.ID -le 7299) -or ($_.ID -eq 1096) }).Count
+                if ($numberOfGPOErrors -gt 0) { $RepairReason = "Event Log" }
 
+            }
+            catch { Write-Warning "GPO Cache: Failed to check the event log for policy errors." }
+        }
+        
+        
         #If we need to repart the policy files then do so.
-        if ($RepairReason -ne ""){
+        if ($RepairReason -ne "") {
             $log.WUAHandler = "Broken ($RepairReason)"
             Write-Output "GPO Cache: Broken ($RepairReason)"
             Write-Verbose 'Deleting registry.pol and running gpupdate...'
 
-            try { if (Test-Path -Path $MachineRegistryFile) {Remove-Item $MachineRegistryFile -Force } }
+            try { 
+
+                if ($repairReason -like "*User Registry.pol Corrupt") {
+                   Remove-Item $PathToUserRegistryPOLFile -Force
+                }
+                if (Test-Path -Path $MachineRegistryFile) { Remove-Item $MachineRegistryFile -Force } }
             catch { Write-Warning "GPO Cache: Failed to remove the registry file ($($MachineRegistryFile))." }
-            finally { & Write-Output n | gpupdate.exe /force /target:computer | Out-Null  }
+            finally { & Write-Output n | gpupdate.exe /force /target:computer | Out-Null }
 
             #Write-Verbose 'Sleeping for 1 minute to allow for group policy to refresh'
             #Start-Sleep -Seconds 60
@@ -1472,7 +1559,7 @@ Begin {
     }
 
     Function Test-ClientLogSize {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         try { [int]$currentLogSize = Get-ClientMaxLogSize }
         catch { [int]$currentLogSize = 0 }
         try { [int]$currentMaxHistory = Get-ClientMaxLogHistory }
@@ -1496,7 +1583,7 @@ Begin {
         }
         else {
             if ($currentLogSize -ne $clientLogSize) {
-                $text = 'ConfigMgr Client Max Log Size: Configuring to '+ $clientLogSize +' KB'
+                $text = 'ConfigMgr Client Max Log Size: Configuring to ' + $clientLogSize + ' KB'
                 $Log.MaxLogSize = $clientLogSize
                 Write-Warning $text
             }
@@ -1505,7 +1592,7 @@ Begin {
                 Write-Host $text
             }
             if ($currentMaxHistory -ne $clientLogMaxHistory) {
-                $text = 'ConfigMgr Client Max Log History: Configuring to ' +$clientLogMaxHistory
+                $text = 'ConfigMgr Client Max Log History: Configuring to ' + $clientLogMaxHistory
                 $Log.MaxLogHistory = $clientLogMaxHistory
                 Write-Warning $text
             }
@@ -1548,7 +1635,7 @@ Begin {
             $CCMCache = "$env:SystemDrive\Windows\ccmcache"
             $CCMCache = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().Location
             if ($null -eq $CCMCache) { $CCMCache = "$env:SystemDrive\Windows\ccmcache" }
-            $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object {$_.Location}
+            $ValidCachedFolders = (New-Object -ComObject "UIResource.UIResourceMgr").GetCacheInfo().GetCacheElements() | ForEach-Object { $_.Location }
             $AllCachedFolders = (Get-ChildItem -Path $CCMCache) | Select-Object Fullname -ExpandProperty Fullname
 
             ForEach ($CachedFolder in $AllCachedFolders) {
@@ -1562,14 +1649,14 @@ Begin {
             }
         }
         catch { Write-Host "Failed Clearing ConfigMgr orphaned Cache items." }
-        }
+    }
 
     Function Resolve-Client {
         Param(
-            [Parameter(Mandatory=$false)]$Xml,
-            [Parameter(Mandatory=$true)]$ClientInstallProperties,
-            [Parameter(Mandatory=$false)]$FirstInstall=$false
-            )
+            [Parameter(Mandatory = $false)]$Xml,
+            [Parameter(Mandatory = $true)]$ClientInstallProperties,
+            [Parameter(Mandatory = $false)]$FirstInstall = $false
+        )
 
         $ClientShare = Get-XMLConfigClientShare
         if ((Test-Path $ClientShare -ErrorAction SilentlyContinue) -eq $true) {
@@ -1583,22 +1670,22 @@ Begin {
             Write-Verbose "Enforce registration of common DLL files to make sure CCM Agent works."
             $DllFiles = 'actxprxy.dll', 'atl.dll', 'Bitsprx2.dll', 'Bitsprx3.dll', 'browseui.dll', 'cryptdlg.dll', 'dssenh.dll', 'gpkcsp.dll', 'initpki.dll', 'jscript.dll', 'mshtml.dll', 'msi.dll', 'mssip32.dll', 'msxml.dll', 'msxml3.dll', 'msxml3a.dll', 'msxml3r.dll', 'msxml4.dll', 'msxml4a.dll', 'msxml4r.dll', 'msxml6.dll', 'msxml6r.dll', 'muweb.dll', 'ole32.dll', 'oleaut32.dll', 'Qmgr.dll', 'Qmgrprxy.dll', 'rsaenh.dll', 'sccbase.dll', 'scrrun.dll', 'shdocvw.dll', 'shell32.dll', 'slbcsp.dll', 'softpub.dll', 'rlmon.dll', 'userenv.dll', 'vbscript.dll', 'Winhttp.dll', 'wintrust.dll', 'wuapi.dll', 'wuaueng.dll', 'wuaueng1.dll', 'wucltui.dll', 'wucltux.dll', 'wups.dll', 'wups2.dll', 'wuweb.dll', 'wuwebv.dll', 'Xpob2res.dll', 'WBEM\wmisvc.dll'
             foreach ($Dll in $DllFiles) {
-                $file =  $env:windir +"\System32\$Dll"
+                $file = $env:windir + "\System32\$Dll"
                 Register-DLLFile -FilePath $File
             }
 
             if ($Uninstall -eq $true) {
-				Write-Verbose "Trigger ConfigMgr Client uninstallation using Invoke-Expression."
-				Invoke-Expression "&'$ClientShare\ccmsetup.exe' /uninstall"
+                Write-Verbose "Trigger ConfigMgr Client uninstallation using Invoke-Expression."
+                Invoke-Expression "&'$ClientShare\ccmsetup.exe' /uninstall"
 
-				$launched = $true
-				do {
-					Start-Sleep -seconds 5
-					if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
-						Write-Verbose "ConfigMgr Client Uninstallation still running"
-						$launched = $true
-					}
-					else { $launched = $false }
+                $launched = $true
+                do {
+                    Start-Sleep -seconds 5
+                    if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
+                        Write-Verbose "ConfigMgr Client Uninstallation still running"
+                        $launched = $true
+                    }
+                    else { $launched = $false }
                 } while ($launched -eq $true)
             }
 
@@ -1606,14 +1693,14 @@ Begin {
             Write-Verbose "Client install string: $ClientShare\ccmsetup.exe $ClientInstallProperties"
             Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
 
-			$launched = $true
-			do {
-				Start-Sleep -seconds 5
-				if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
-					Write-Verbose "ConfigMgr Client installation still running"
-					$launched = $true
-				}
-				else { $launched = $false }
+            $launched = $true
+            do {
+                Start-Sleep -seconds 5
+                if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
+                    Write-Verbose "ConfigMgr Client installation still running"
+                    $launched = $true
+                }
+                else { $launched = $false }
             } while ($launched -eq $true)
 
             if ($FirstInstall -eq $true) {
@@ -1625,7 +1712,7 @@ Begin {
 
         }
         else {
-            $text = 'ERROR: Client tagged for reinstall, but failed to access fileshare: ' +$ClientShare
+            $text = 'ERROR: Client tagged for reinstall, but failed to access fileshare: ' + $ClientShare
             Write-Error $text
             Exit 1
         }
@@ -1640,7 +1727,7 @@ Begin {
     }
 
     Function Test-WMI {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         $vote = 0
         $obj = $false
 
@@ -1648,7 +1735,7 @@ Begin {
         switch -wildcard ($result) {
             # Always fix if this returns inconsistent
             "*inconsistent*" { $vote = 100 } # English
-            "*not consistent*"  { $vote = 100 } # English
+            "*not consistent*" { $vote = 100 } # English
             "*inkonsekvent*" { $vote = 100 } # Swedish
             "*epäyhtenäinen*" { $vote = 100 } # Finnish
             "*inkonsistent*" { $vote = 100 } # German
@@ -1658,10 +1745,12 @@ Begin {
         Try {
             if ($PowerShellVersion -ge 6) { $WMI = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop }
             else { $WMI = Get-WmiObject Win32_ComputerSystem -ErrorAction Stop }
-        } Catch {
+        }
+        Catch {
             Write-Verbose 'Failed to connect to WMI class "Win32_ComputerSystem". Voting for WMI fix...'
             $vote++
-        } Finally {
+        }
+        Finally {
             if ($vote -eq 0) {
                 $text = 'WMI Check: OK'
                 $log.WMI = 'OK'
@@ -1689,11 +1778,11 @@ Begin {
     }
 
     Function Repair-WMI {
-        $text ='Repairing WMI'
+        $text = 'Repairing WMI'
         Write-Output $text
 
         # Check PATH
-        if((! (@(($ENV:PATH).Split(";")) -contains "$env:SystemDrive\WINDOWS\System32\Wbem")) -and (! (@(($ENV:PATH).Split(";")) -contains "%systemroot%\System32\Wbem"))){
+        if ((! (@(($ENV:PATH).Split(";")) -contains "$env:SystemDrive\WINDOWS\System32\Wbem")) -and (! (@(($ENV:PATH).Split(";")) -contains "%systemroot%\System32\Wbem"))) {
             $text = "WMI Folder not in search path!."
             Write-Warning $text
         }
@@ -1702,18 +1791,18 @@ Begin {
         Stop-Service -Force winmgmt
 
         # WMI Binaries
-        [String[]]$aWMIBinaries=@("unsecapp.exe","wmiadap.exe","wmiapsrv.exe","wmiprvse.exe","scrcons.exe")
-        foreach ($sWMIPath in @(($ENV:SystemRoot+"\System32\wbem"),($ENV:SystemRoot+"\SysWOW64\wbem"))) {
-            if(Test-Path -Path $sWMIPath){
+        [String[]]$aWMIBinaries = @("unsecapp.exe", "wmiadap.exe", "wmiapsrv.exe", "wmiprvse.exe", "scrcons.exe")
+        foreach ($sWMIPath in @(($ENV:SystemRoot + "\System32\wbem"), ($ENV:SystemRoot + "\SysWOW64\wbem"))) {
+            if (Test-Path -Path $sWMIPath) {
                 push-Location $sWMIPath
-                foreach($sBin in $aWMIBinaries){
-                    if(Test-Path -Path $sBin){
-                        $oCurrentBin=Get-Item -Path  $sBin
+                foreach ($sBin in $aWMIBinaries) {
+                    if (Test-Path -Path $sBin) {
+                        $oCurrentBin = Get-Item -Path  $sBin
                         & $oCurrentBin.FullName /RegServer
                     }
-                    else{
+                    else {
                         # Warning only for System32
-                        if($sWMIPath -eq $ENV:SystemRoot+"\System32\wbem"){
+                        if ($sWMIPath -eq $ENV:SystemRoot + "\System32\wbem") {
                             Write-Warning "File $sBin not found!"
                         }
                     }
@@ -1724,8 +1813,8 @@ Begin {
 
         # Reregister Managed Objects
         Write-Verbose "Reseting Repository..."
-        & ($ENV:SystemRoot+"\system32\wbem\winmgmt.exe") /resetrepository
-        & ($ENV:SystemRoot+"\system32\wbem\winmgmt.exe") /salvagerepository
+        & ($ENV:SystemRoot + "\system32\wbem\winmgmt.exe") /resetrepository
+        & ($ENV:SystemRoot + "\system32\wbem\winmgmt.exe") /salvagerepository
         Start-Service winmgmt
         $text = 'Tagging ConfigMgr client for reinstall'
         Write-Warning $text
@@ -1734,11 +1823,11 @@ Begin {
     # Test if the compliance state messages should be resent.
     Function Test-RefreshComplianceState {
         Param(
-            $Days=0,
-            [Parameter(Mandatory=$true)]$RegistryKey,
-            [Parameter(Mandatory=$true)]$Log
+            $Days = 0,
+            [Parameter(Mandatory = $true)]$RegistryKey,
+            [Parameter(Mandatory = $true)]$Log
         )
-        $RegValueName="RefreshServerComplianceState"
+        $RegValueName = "RefreshServerComplianceState"
 
         #Get the last time this script was ran.  If the registry isn't found just use the current date.
         Try { [datetime]$LastSent = Get-RegistryValue -Path $RegistryKey -Name $RegValueName }
@@ -1749,19 +1838,19 @@ Begin {
         $NumberOfDays = (New-Timespan -Start (Get-Date) -End ($LastSent.AddDays($Days))).Days
 
         #Resend complianc states if the next interval has already arrived or randomly based on the number of days left until the next interval.
-        If (($NumberOfDays -le 0) -or ((Get-Random -Maximum $NumberOfDays) -eq 0 )){
-            Try{
+        If (($NumberOfDays -le 0) -or ((Get-Random -Maximum $NumberOfDays) -eq 0 )) {
+            Try {
                 Write-Verbose "Resending compliance states."
                 (New-Object -ComObject Microsoft.CCM.UpdatesStore).RefreshServerComplianceState()
-                $LastSent=Get-Date
+                $LastSent = Get-Date
                 Write-Output "Compliance States: Refreshed."
             }
-            Catch{
+            Catch {
                 Write-Error "Failed to resend the compliance states."
-                $LastSent=[datetime]::MinValue
+                $LastSent = [datetime]::MinValue
             }
         }
-        Else{
+        Else {
             Write-Output "Compliance States: OK."
         }
 
@@ -1774,7 +1863,7 @@ Begin {
     # Start ConfigMgr Agent if not already running
     Function Test-SCCMService {
         if ($service.Status -ne 'Running') {
-            try {Start-Service -Name CcmExec | Out-Null}
+            try { Start-Service -Name CcmExec | Out-Null }
             catch {}
         }
     }
@@ -1791,20 +1880,19 @@ Begin {
             write-host "SMSTSMgr: Adding dependency on Windows Management Instrumentaion service."
             start-process sc.exe -ArgumentList "config smstsmgr depend= winmgmt" -wait
         }
-        else { Write-Host "SMSTSMgr: OK"}
+        else { Write-Host "SMSTSMgr: OK" }
     }
 
 
     # Windows Service Functions
     Function Test-Services {
-        Param([Parameter(Mandatory=$false)]$Xml, $log, $Webservice, $ProfileID)
+        Param([Parameter(Mandatory = $false)]$Xml, $log, $Webservice, $ProfileID)
 
         $log.Services = 'OK'
 
         # Test services defined by config.xml
         Write-Verbose 'Test services from XML configuration file'
-        foreach ($service in $Xml.Configuration.Service)
-        {
+        foreach ($service in $Xml.Configuration.Service) {
             $startuptype = ($service.StartupType).ToLower()
 
             if ($startuptype -like "automatic (delayed start)") { $service.StartupType = "automaticd" }
@@ -1821,19 +1909,19 @@ Begin {
 
     Function Test-Service {
         param(
-        [Parameter(Mandatory=$True,
-                    HelpMessage='Name')]
-                    [string]$Name,
-        [Parameter(Mandatory=$True,
-                    HelpMessage='StartupType: Automatic, Automatic (Delayed Start), Manual, Disabled')]
-                    [string]$StartupType,
-        [Parameter(Mandatory=$True,
-                    HelpMessage='State: Running, Stopped')]
-                    [string]$State,
-        [Parameter(Mandatory=$False,
-                    HelpMessage='Updatime in days')]
-                    [int]$Uptime,
-        [Parameter(Mandatory=$True)]$log
+            [Parameter(Mandatory = $True,
+                HelpMessage = 'Name')]
+            [string]$Name,
+            [Parameter(Mandatory = $True,
+                HelpMessage = 'StartupType: Automatic, Automatic (Delayed Start), Manual, Disabled')]
+            [string]$StartupType,
+            [Parameter(Mandatory = $True,
+                HelpMessage = 'State: Running, Stopped')]
+            [string]$State,
+            [Parameter(Mandatory = $False,
+                HelpMessage = 'Updatime in days')]
+            [int]$Uptime,
+            [Parameter(Mandatory = $True)]$log
         )
 
         $OSName = Get-OperatingSystem
@@ -1841,10 +1929,10 @@ Begin {
         # Handle all sorts of casing and mispelling of delayed and triggerd start in config.xml services
         $val = $StartupType.ToLower()
         switch -Wildcard ($val) {
-            "automaticd*" {$StartupType = "Automatic (Delayed Start)"}
-            "automatic(d*" {$StartupType = "Automatic (Delayed Start)"}
-            "automatic(t*" {$StartupType = "Automatic (Trigger Start)"}
-            "automatict*" {$StartupType = "Automatic (Trigger Start)"}
+            "automaticd*" { $StartupType = "Automatic (Delayed Start)" }
+            "automatic(d*" { $StartupType = "Automatic (Delayed Start)" }
+            "automatic(t*" { $StartupType = "Automatic (Trigger Start)" }
+            "automatict*" { $StartupType = "Automatic (Trigger Start)" }
         }
 
         $path = "HKLM:\SYSTEM\CurrentControlSet\Services\$name"
@@ -1871,13 +1959,12 @@ Begin {
             "automatic (t*" {$serviceStartType = "Automatic (Trigger Start)"}
             "automatic t*" {$serviceStartType = "Automatic (Trigger Start)"}
             #>
-            "manual" {$serviceStartType = "Manual"}
-            "disabled" {$serviceStartType = "Disabled"}
+            "manual" { $serviceStartType = "Manual" }
+            "disabled" { $serviceStartType = "Disabled" }
         }
 
         Write-Verbose "Verify startup type"
-        if ($serviceStartType -eq $StartupType)
-        {
+        if ($serviceStartType -eq $StartupType) {
             $text = "Service $Name startup: OK"
             Write-Output $text
         }
@@ -1915,26 +2002,26 @@ Begin {
 
         Write-Verbose 'Verify service is running'
         if ($service.Status -eq "Running") {
-            $text = 'Service ' +$Name+' running: OK'
+            $text = 'Service ' + $Name + ' running: OK'
             Write-Output $text
 
             #If we are checking uptime.
-            If ($Uptime){
+            If ($Uptime) {
                 Write-Verbose "Verify the $($Name) service hasn't exceeded uptime of $($Uptime) days."
-                $ServiceUptime= Get-ServiceUpTime -Name $Name
+                $ServiceUptime = Get-ServiceUpTime -Name $Name
                 if ($ServiceUptime -ge $Uptime) {
                     try {
 
                         #Before restarting the service wait for some known processes to end.  Restarting the service while an app or updates is installing might cause issues.
                         $Timer = [Diagnostics.Stopwatch]::StartNew()
                         $WaitMinutes = 30
-                        $ProcessesStopped=$True
-                        While ((Get-Process -Name WUSA,wuauclt,setup,TrustedInstaller,msiexec,TiWorker,ccmsetup -ErrorAction SilentlyContinue).Count -gt 0){
+                        $ProcessesStopped = $True
+                        While ((Get-Process -Name WUSA, wuauclt, setup, TrustedInstaller, msiexec, TiWorker, ccmsetup -ErrorAction SilentlyContinue).Count -gt 0) {
                             $MinutesLeft = $WaitMinutes - $Timer.Elapsed.Minutes
 
-                            If($MinutesLeft -le 0){
+                            If ($MinutesLeft -le 0) {
                                 Write-Warning "Timed out waiting $($WaitMinutes) minutes for installation processes to complete.  Will not restart the $($Name) service."
-                                $ProcessesStopped=$False
+                                $ProcessesStopped = $False
                                 Break
                             }
                             Write-Warning "Waiting $($MinutesLeft) minutes for installation processes to complete."
@@ -1943,13 +2030,14 @@ Begin {
                         $Timer.Stop()
 
                         #If the processes are not running the restart the service.
-                        If ($ProcessesStopped){
+                        If ($ProcessesStopped) {
                             Write-Output "Restarting service: $($Name)..."
                             Restart-Service  -Name $service.Name -Force
                             Write-Output "Restarted service: $($Name)..."
                             $log.Services = 'Restarted'
                         }
-                    } catch {
+                    }
+                    catch {
                         $text = "Failed to restart service $($Name)"
                         Write-Error $text
                     }
@@ -1967,37 +2055,39 @@ Begin {
                     Stop-Process -ID $ServicePID -Force:$true -Confirm:$false -ErrorAction Stop
                     Write-Verbose "Succesfully stopped the $Name service process which was in a degraded state."
                 }
-                Catch{
+                Catch {
                     Write-Error "Failed to force $Name process to stop."
                 }
             }
             try {
-                $RetryService= $False
+                $RetryService = $False
                 $text = 'Starting service: ' + $Name + '...'
                 Write-Output $text
                 Start-Service -Name $service.Name -ErrorAction Stop
                 $log.Services = 'Started'
-            } catch {
+            }
+            catch {
                 #Error 1290 (-2146233087) indicates that the service is sharing a thread with another service that is protected and cannot share its thread.
                 #This is resolved by configuring the service to run on its own thread.
-                If ($_.Exception.Hresult -eq '-2146233087'){
+                If ($_.Exception.Hresult -eq '-2146233087') {
                     Write-Output "Failed to start service $Name because it's sharing a thread with another process.  Changing to use its own thread."
                     & cmd /c sc config $Name type= own
-                    $RetryService= $True
+                    $RetryService = $True
                 }
-                Else{
-                    $text = 'Failed to start service ' +$Name
+                Else {
+                    $text = 'Failed to start service ' + $Name
                     Write-Error $text
                 }
             }
 
             #If a recoverable error was found, try starting it again.
-            If ($RetryService){
+            If ($RetryService) {
                 try {
                     Start-Service -Name $service.Name -ErrorAction Stop
                     $log.Services = 'Started'
-                } catch {
-                    $text = 'Failed to start service ' +$Name
+                }
+                catch {
+                    $text = 'Failed to start service ' + $Name
                     Write-Error $text
                 }
             }
@@ -2005,10 +2095,10 @@ Begin {
     }
 
     function Test-AdminShare {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         Write-Verbose "Test the ADMIN$ and C$"
-        if ($PowerShellVersion -ge 6) { $share = Get-CimInstance Win32_Share | Where-Object {$_.Name -like 'ADMIN$'} }
-        else { $share = Get-WmiObject Win32_Share | Where-Object {$_.Name -like 'ADMIN$'} }
+        if ($PowerShellVersion -ge 6) { $share = Get-CimInstance Win32_Share | Where-Object { $_.Name -like 'ADMIN$' } }
+        else { $share = Get-WmiObject Win32_Share | Where-Object { $_.Name -like 'ADMIN$' } }
         #$shareClass = [WMICLASS]"WIN32_Share"  # Depreciated
 
         if ($share.Name -contains 'ADMIN$') {
@@ -2017,8 +2107,8 @@ Begin {
         }
         else { $fix = $true }
 
-        if ($PowerShellVersion -ge 6) { $share = Get-CimInstance Win32_Share | Where-Object {$_.Name -like 'C$'} }
-        else { $share = Get-WmiObject Win32_Share | Where-Object {$_.Name -like 'C$'} }
+        if ($PowerShellVersion -ge 6) { $share = Get-CimInstance Win32_Share | Where-Object { $_.Name -like 'C$' } }
+        else { $share = Get-WmiObject Win32_Share | Where-Object { $_.Name -like 'C$' } }
         #$shareClass = [WMICLASS]'WIN32_Share'  # Depreciated
 
         if ($share.Name -contains "C$") {
@@ -2039,16 +2129,29 @@ Begin {
 
     Function Test-DiskSpace {
         $XMLDiskSpace = Get-XMLConfigOSDiskFreeSpace
-        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
-        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq "$env:SystemDrive"} | Select-Object FreeSpace, Size }
-        $freeSpace = (($driveC.FreeSpace / $driveC.Size) * 100)
-
+        if ($PowerShellVersion -ge 6) { $driveC = Get-CimInstance -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "$env:SystemDrive" } | Select-Object FreeSpace, Size }
+        else { $driveC = Get-WmiObject -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "$env:SystemDrive" } | Select-Object FreeSpace, Size }
+        #$freeSpace = (($driveC.FreeSpace / $driveC.Size) * 100)
+        $freeSpace = ((($driveC.FreeSpace)/1000)/1000)/1000
+        $freeSpace1 = ([math]::Round($freeSpace, 2))
+        $freeSpace1 = $freeSpace1.tostring()
         if ($freeSpace -le $XMLDiskSpace) {
-            $text = "Local disk $env:SystemDrive Less than $XMLDiskSpace % free space"
+            
+            $log.OSDiskFreeSpace = "Local disk $env:SystemDrive has $freespace1 GB free less than the required $XMLDiskSpace GB
+            Running flush of brach cache, disk cleanup"
+            $text = "Local disk $env:SystemDrive Less than $XMLDiskSpace GB free space"
+
             Write-Error $text
+            $DCREGARRAY = "Active Setup Temp Folders","BranchCache","Downloaded Program Files","GameNewsFiles","GameStatisticsFiles","GameUpdateFiles","Internet Cache Files","Memory Dump Files","Offline Pages Files","Old ChkDsk Files","Previous Installations","Recycle Bin","Service Pack Cleanup","Setup Log Files","System error memory dump files","System error minidump files","Temporary Files","Temporary Setup Files","Temporary Sync Files","Thumbnail Cache","Update Cleanup","Upgrade Discarded Files","User file versions","Windows Defender","Windows Error Reporting Archive Files","Windows Error Reporting Queue Files","Windows Error Reporting System Archive Files","Windows Error Reporting System Queue Files","Windows ESD installation files","Windows Upgrade Log Files"
+            foreach ($DCReg in $DCREGARRAY){
+                New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$DCReg" -Force
+                New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$DCreg" -Name "stateflags0001" -Value "2" -PropertyType "DWord" -Force
+            }
+            "%SystemRoot%\SYSTEM32\cleanmgr.exe /sagerun:1"
         }
         else {
-            $text ="Free space $env:SystemDrive OK"
+            $text = "Free space $env:SystemDrive OK"
+            $log.OSDiskFreeSpace = "Free space for $env:SystemDrive is $freespace1 GB - OK"
             Write-Output $text
         }
     }
@@ -2065,10 +2168,10 @@ Begin {
     }
 
     Function Get-LastReboot {
-        Param([Parameter(Mandatory=$false)][xml]$Xml)
+        Param([Parameter(Mandatory = $false)][xml]$Xml)
 
         # Only run if option in config is enabled
-        if (($Xml.Configuration.Option | Where-Object {$_.Name -like 'RebootApplication'} | Select-Object -ExpandProperty 'Enable') -like 'True') { $execute = $true }
+        if (($Xml.Configuration.Option | Where-Object { $_.Name -like 'RebootApplication' } | Select-Object -ExpandProperty 'Enable') -like 'True') { $execute = $true }
 
         if ($execute -eq $true) {
 
@@ -2080,16 +2183,16 @@ Begin {
 
             $uptime = (Get-Date) - ($wmi.ConvertToDateTime($wmi.lastbootuptime))
             if ($uptime.TotalDays -lt $maxRebootDays) {
-                $text = 'Last boot time: ' +$lastBootTime + ': OK'
+                $text = 'Last boot time: ' + $lastBootTime + ': OK'
                 Write-Output $text
             }
             elseif (($uptime.TotalDays -ge $maxRebootDays) -and (Get-XMLConfigRebootApplicationEnable -eq $true)) {
-                $text = 'Last boot time: ' +$lastBootTime + ': More than '+$maxRebootDays +' days since last reboot. Starting reboot application.'
+                $text = 'Last boot time: ' + $lastBootTime + ': More than ' + $maxRebootDays + ' days since last reboot. Starting reboot application.'
                 Write-Warning $text
                 Start-RebootApplication
             }
             else {
-                $text = 'Last boot time: ' +$lastBootTime + ': More than '+$maxRebootDays +' days since last reboot. Reboot application disabled.'
+                $text = 'Last boot time: ' + $lastBootTime + ': More than ' + $maxRebootDays + ' days since last reboot. Reboot application disabled.'
                 Write-Warning $text
             }
         }
@@ -2099,33 +2202,33 @@ Begin {
         $taskName = 'ConfigMgr Client Health - Reboot on demand'
         #$OS = Get-OperatingSystem
         #if ($OS -like "*Windows 7*") {
-            $task = schtasks.exe /query | FIND /I "ConfigMgr Client Health - Reboot"
+        $task = schtasks.exe /query | FIND /I "ConfigMgr Client Health - Reboot"
         #}
         #else { $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue }
         if ($task -eq $null) { New-RebootTask -taskName $taskName }
         #if ($OS -notlike "*Windows 7*") {Start-ScheduledTask -TaskName $taskName }
         #else {
-            schtasks.exe /Run /TN $taskName
+        schtasks.exe /Run /TN $taskName
         #}
     }
 
     Function New-RebootTask {
-        Param([Parameter(Mandatory=$true)]$taskName)
+        Param([Parameter(Mandatory = $true)]$taskName)
         $rebootApp = Get-XMLConfigRebootApplication
 
         # $execute is the executable file, $arguement is all the arguments added to it.
-        $execute,$arguments = $rebootApp.Split(' ')
+        $execute, $arguments = $rebootApp.Split(' ')
         $argument = $null
 
         foreach ($i in $arguments) { $argument += $i + " " }
 
         # Trim the " " from argument if present
-        $i = $argument.Length -1
-        if ($argument.Substring($i) -eq ' ') { $argument = $argument.Substring(0, $argument.Length -1) }
+        $i = $argument.Length - 1
+        if ($argument.Substring($i) -eq ' ') { $argument = $argument.Substring(0, $argument.Length - 1) }
 
         #$OS = Get-OperatingSystem
         #if ($OS -like "*Windows 7*") {
-            schtasks.exe /Create /tn $taskName /tr "$execute $argument" /ru "BUILTIN\Users" /sc ONCE /st 00:00 /sd 01/01/1901
+        schtasks.exe /Create /tn $taskName /tr "$execute $argument" /ru "BUILTIN\Users" /sc ONCE /st 00:00 /sd 01/01/1901
         #}
         <#
         else {
@@ -2143,12 +2246,12 @@ Begin {
     }
 
     Function Test-MissingDrivers {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
         $i = 0
-        if ($PowerShellVersion -ge 6) { $devices = Get-CimInstance Win32_PNPEntity | Where-Object{ ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
-        else { $devices = Get-WmiObject Win32_PNPEntity | Where-Object{ ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
-        $devices | ForEach-Object {$i++}
+        if ($PowerShellVersion -ge 6) { $devices = Get-CimInstance Win32_PNPEntity | Where-Object { ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
+        else { $devices = Get-WmiObject Win32_PNPEntity | Where-Object { ($_.ConfigManagerErrorCode -ne 0) -and ($_.ConfigManagerErrorCode -ne 22) -and ($_.Name -notlike "*PS/2*") } | Select-Object Name, DeviceID }
+        $devices | ForEach-Object { $i++ }
 
         if ($devices -ne $null) {
             $text = "Drivers: $i unknown or faulty device(s)"
@@ -2156,9 +2259,9 @@ Begin {
             $log.Drivers = "$i unknown or faulty driver(s)"
 
             foreach ($device in $devices) {
-                $text = 'Missing or faulty driver: ' +$device.Name + '. Device ID: ' + $device.DeviceID
+                $text = 'Missing or faulty driver: ' + $device.Name + '. Device ID: ' + $device.DeviceID
                 Write-Warning $text
-                if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text -Severity 2}
+                if (-NOT($FileLogLevel -like "clientlocal")) { Out-LogFile -Xml $xml -Text $text -Severity 2 }
             }
         }
         else {
@@ -2171,9 +2274,9 @@ Begin {
     # Function to store SCCM log file changes to be processed
     Function New-SCCMLogFileJob {
         Param(
-            [Parameter(Mandatory=$true)]$Logfile,
-            [Parameter(Mandatory=$true)]$Text,
-            [Parameter(Mandatory=$true)]$SCCMLogJobs
+            [Parameter(Mandatory = $true)]$Logfile,
+            [Parameter(Mandatory = $true)]$Text,
+            [Parameter(Mandatory = $true)]$SCCMLogJobs
         )
 
         $path = Get-CCMLogDirectory
@@ -2183,19 +2286,19 @@ Begin {
 
     # Function to remove info in SCCM logfiles after remediation. This to prevent false positives triggering remediation next time script runs
     Function Update-SCCMLogFile {
-        Param([Parameter(Mandatory=$true)]$SCCMLogJobs)
+        Param([Parameter(Mandatory = $true)]$SCCMLogJobs)
         Write-Verbose "Start Update-SCCMLogFile"
-        foreach ($job in $SCCMLogJobs) { get-content -Path $job.File | Where-Object {$_ -notmatch $job.Text} | Out-File $job.File -Force }
+        foreach ($job in $SCCMLogJobs) { get-content -Path $job.File | Where-Object { $_ -notmatch $job.Text } | Out-File $job.File -Force }
         Write-Verbose "End Update-SCCMLogFile"
     }
 
     Function Test-SCCMHardwareInventoryScan {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
 
         Write-Verbose "Start Test-SCCMHardwareInventoryScan"
         $days = Get-XMLConfigHardwareInventoryDays
-        if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object {$_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}'} | Select-Object @{label='HWSCAN';expression={$_.ConvertToDateTime($_.LastCycleStartedDate)}} }
-        else { $wmi = Get-WmiObject -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object {$_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}'} | Select-Object @{label='HWSCAN';expression={$_.ConvertToDateTime($_.LastCycleStartedDate)}} }
+        if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object { $_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}' } | Select-Object @{label = 'HWSCAN'; expression = { $_.ConvertToDateTime($_.LastCycleStartedDate) } } }
+        else { $wmi = Get-WmiObject -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object { $_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}' } | Select-Object @{label = 'HWSCAN'; expression = { $_.ConvertToDateTime($_.LastCycleStartedDate) } } }
         $HWScanDate = $wmi | Select-Object -ExpandProperty HWSCAN
         $HWScanDate = Get-SmallDateTime $HWScanDate
         $minDate = Get-SmallDateTime((Get-Date).AddDays(-$days))
@@ -2207,8 +2310,8 @@ Begin {
                 Get-SCCMPolicyHardwareInventory
 
                 # Get the new date after policy trigger
-                if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object {$_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}'} | Select-Object @{label='HWSCAN';expression={$_.ConvertToDateTime($_.LastCycleStartedDate)}} }
-                else { $wmi = Get-WmiObject -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object {$_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}'} | Select-Object @{label='HWSCAN';expression={$_.ConvertToDateTime($_.LastCycleStartedDate)}} }
+                if ($PowerShellVersion -ge 6) { $wmi = Get-CimInstance -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object { $_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}' } | Select-Object @{label = 'HWSCAN'; expression = { $_.ConvertToDateTime($_.LastCycleStartedDate) } } }
+                else { $wmi = Get-WmiObject -Namespace root\ccm\invagt -Class InventoryActionStatus | Where-Object { $_.InventoryActionID -eq '{00000000-0000-0000-0000-000000000001}' } | Select-Object @{label = 'HWSCAN'; expression = { $_.ConvertToDateTime($_.LastCycleStartedDate) } } }
                 $HWScanDate = $wmi | Select-Object -ExpandProperty HWSCAN
                 $HWScanDate = Get-SmallDateTime -Date $HWScanDate
             }
@@ -2229,7 +2332,7 @@ Begin {
     # TODO: Implement so result of this remediation is stored in WMI log object, next to result of previous WMI check. This do not require db or webservice update
     # ref: https://social.technet.microsoft.com/Forums/de-DE/1f48e8d8-4e13-47b5-ae1b-dcb831c0a93b/setup-was-unable-to-compile-the-file-discoverystatusmof-the-error-code-is-8004100e?forum=configmanagerdeployment
     Function Test-PolicyPlatform {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         try {
             if (Get-WmiObject -Namespace 'root/Microsoft' -Class '__Namespace' -Filter 'Name = "PolicyPlatform"') { Write-Host "PolicyPlatform: OK" }
             else {
@@ -2258,12 +2361,12 @@ Begin {
             if ($PowerShellVersion -ge 6) { $obj = (Get-CimInstance Win32_NTDomain).ClientSiteName }
             else { $obj = (Get-WmiObject Win32_NTDomain).ClientSiteName }
         }
-        catch {$obj = $false}
+        catch { $obj = $false }
         finally { if ($obj -ne $false) { Write-Output ($obj | Select-Object -First 1) } }
     }
 
     Function Test-SoftwareMeteringPrepDriver {
-        Param([Parameter(Mandatory=$true)]$Log)
+        Param([Parameter(Mandatory = $true)]$Log)
         # To execute function: if (Test-SoftwareMeteringPrepDriver -eq $false) {$restartCCMExec = $true}
         # Thanks to Paul Andrews for letting me know about this issue.
         # And Sherry Kissinger for a nice fix: https://mnscug.org/blogs/sherry-kissinger/481-configmgr-ccmrecentlyusedapps-blank-or-mtrmgr-log-with-startprepdriver-openservice-failed-with-error-issue
@@ -2322,36 +2425,36 @@ Begin {
     # SCCM Client evaluation policies
     Function Get-SCCMPolicySourceUpdateMessage {
         $trigger = "{00000000-0000-0000-0000-000000000032}"
-        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
+        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID = $trigger } -ErrorAction SilentlyContinue | Out-Null }
         else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicySendUnsentStateMessages {
         $trigger = "{00000000-0000-0000-0000-000000000111}"
-        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
+        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID = $trigger } -ErrorAction SilentlyContinue | Out-Null }
         else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyScanUpdateSource {
         $trigger = "{00000000-0000-0000-0000-000000000113}"
-        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
+        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID = $trigger } -ErrorAction SilentlyContinue | Out-Null }
         else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyHardwareInventory {
         $trigger = "{00000000-0000-0000-0000-000000000001}"
-        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
+        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID = $trigger } -ErrorAction SilentlyContinue | Out-Null }
         else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-SCCMPolicyMachineEvaluation {
         $trigger = "{00000000-0000-0000-0000-000000000022}"
-        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID=$trigger} -ErrorAction SilentlyContinue | Out-Null }
+        if ($PowerShellVersion -ge 6) { Invoke-CimMethod -Namespace 'root\ccm' -ClassName 'sms_client' -MethodName TriggerSchedule -Arguments @{sScheduleID = $trigger } -ErrorAction SilentlyContinue | Out-Null }
         else { Invoke-WmiMethod -Namespace 'root\ccm' -Class 'sms_client' -Name TriggerSchedule -ArgumentList @($trigger) -ErrorAction SilentlyContinue | Out-Null }
     }
 
     Function Get-Version {
-        $text = 'ConfigMgr Client Health Version ' +$Version
+        $text = 'ConfigMgr Client Health Version ' + $Version
         Write-Output $text
         Out-LogFile -Xml $xml -Text $text -Severity 1
     }
@@ -2413,10 +2516,9 @@ Begin {
         $Database = 'ClientHealth'
         $FileLogLevel = ((Get-XMLConfigLoggingLevel).ToString()).ToLower()
 
-        $ConnectionString = "Server={0};Database={1};Integrated Security=True;" -f $SQLServer,$Database
+        $ConnectionString = "Server={0};Database={1};Integrated Security=True;" -f $SQLServer, $Database
 
-        try
-        {
+        try {
             $sqlConnection = New-Object System.Data.SqlClient.SqlConnection $ConnectionString;
             $sqlConnection.Open();
             $sqlConnection.Close();
@@ -2427,61 +2529,58 @@ Begin {
         catch {
             $text = "Error connecting to SQLDatabase $Database on SQL Server $SQLServer"
             Write-Error -Message $text
-            if (-NOT($FileLogLevel -like "clientinstall")) { Out-LogFile -Xml $xml -Text $text -Severity 3}
+            if (-NOT($FileLogLevel -like "clientinstall")) { Out-LogFile -Xml $xml -Text $text -Severity 3 }
             $obj = $false;
             Write-Verbose "SQL connection test failed"
         }
-        finally {Write-Output $obj }
+        finally { Write-Output $obj }
     }
 
     # Invoke-SqlCmd2 - Created by Chad Miller
     function Invoke-Sqlcmd2 {
         [CmdletBinding()]
         param(
-        [Parameter(Position=0, Mandatory=$true)] [string]$ServerInstance,
-        [Parameter(Position=1, Mandatory=$false)] [string]$Database,
-        [Parameter(Position=2, Mandatory=$false)] [string]$Query,
-        [Parameter(Position=3, Mandatory=$false)] [string]$Username,
-        [Parameter(Position=4, Mandatory=$false)] [string]$Password,
-        [Parameter(Position=5, Mandatory=$false)] [Int32]$QueryTimeout=600,
-        [Parameter(Position=6, Mandatory=$false)] [Int32]$ConnectionTimeout=15,
-        [Parameter(Position=7, Mandatory=$false)] [ValidateScript({test-path $_})] [string]$InputFile,
-        [Parameter(Position=8, Mandatory=$false)] [ValidateSet("DataSet", "DataTable", "DataRow")] [string]$As="DataRow"
+            [Parameter(Position = 0, Mandatory = $true)] [string]$ServerInstance,
+            [Parameter(Position = 1, Mandatory = $false)] [string]$Database,
+            [Parameter(Position = 2, Mandatory = $false)] [string]$Query,
+            [Parameter(Position = 3, Mandatory = $false)] [string]$Username,
+            [Parameter(Position = 4, Mandatory = $false)] [string]$Password,
+            [Parameter(Position = 5, Mandatory = $false)] [Int32]$QueryTimeout = 600,
+            [Parameter(Position = 6, Mandatory = $false)] [Int32]$ConnectionTimeout = 15,
+            [Parameter(Position = 7, Mandatory = $false)] [ValidateScript( { test-path $_ })] [string]$InputFile,
+            [Parameter(Position = 8, Mandatory = $false)] [ValidateSet("DataSet", "DataTable", "DataRow")] [string]$As = "DataRow"
         )
 
-        if ($InputFile)
-        {
+        if ($InputFile) {
             $filePath = $(resolve-path $InputFile).path
-            $Query =  [System.IO.File]::ReadAllText("$filePath")
+            $Query = [System.IO.File]::ReadAllText("$filePath")
         }
 
-        $conn=new-object System.Data.SqlClient.SQLConnection
+        $conn = new-object System.Data.SqlClient.SQLConnection
 
-        if ($Username) { $ConnectionString = "Server={0};Database={1};User ID={2};Password={3};Trusted_Connection=False;Connect Timeout={4}" -f $ServerInstance,$Database,$Username,$Password,$ConnectionTimeout }
-        else { $ConnectionString = "Server={0};Database={1};Integrated Security=True;Connect Timeout={2}" -f $ServerInstance,$Database,$ConnectionTimeout }
+        if ($Username) { $ConnectionString = "Server={0};Database={1};User ID={2};Password={3};Trusted_Connection=False;Connect Timeout={4}" -f $ServerInstance, $Database, $Username, $Password, $ConnectionTimeout }
+        else { $ConnectionString = "Server={0};Database={1};Integrated Security=True;Connect Timeout={2}" -f $ServerInstance, $Database, $ConnectionTimeout }
 
-        $conn.ConnectionString=$ConnectionString
+        $conn.ConnectionString = $ConnectionString
 
         #Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller
-        if ($PSBoundParameters.Verbose)
-        {
-            $conn.FireInfoMessageEventOnUserErrors=$true
-            $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] {Write-Verbose "$($_)"}
+        if ($PSBoundParameters.Verbose) {
+            $conn.FireInfoMessageEventOnUserErrors = $true
+            $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose "$($_)" }
             $conn.add_InfoMessage($handler)
         }
 
         $conn.Open()
-        $cmd=new-object system.Data.SqlClient.SqlCommand($Query,$conn)
-        $cmd.CommandTimeout=$QueryTimeout
-        $ds=New-Object system.Data.DataSet
-        $da=New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
+        $cmd = new-object system.Data.SqlClient.SqlCommand($Query, $conn)
+        $cmd.CommandTimeout = $QueryTimeout
+        $ds = New-Object system.Data.DataSet
+        $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
         [void]$da.fill($ds)
         $conn.Close()
-        switch ($As)
-        {
-            'DataSet'   { Write-Output ($ds) }
+        switch ($As) {
+            'DataSet' { Write-Output ($ds) }
             'DataTable' { Write-Output ($ds.Tables) }
-            'DataRow'   { Write-Output ($ds.Tables[0]) }
+            'DataRow' { Write-Output ($ds.Tables[0]) }
         }
     }
 
@@ -2502,13 +2601,13 @@ Begin {
         }
 
         $obj = New-Object PSObject -Property @{
-            Hostname = $ComputerSystem.Name;
-            Manufacturer = $ComputerSystem.Manufacturer
-            Model = $Model
-            Operatingsystem = $OS.Caption;
-            Architecture = $OS.OSArchitecture;
-            Build = $OS.BuildNumber;
-            InstallDate = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.InstallDate))
+            Hostname         = $ComputerSystem.Name;
+            Manufacturer     = $ComputerSystem.Manufacturer
+            Model            = $Model
+            Operatingsystem  = $OS.Caption;
+            Architecture     = $OS.OSArchitecture;
+            Build            = $OS.BuildNumber;
+            InstallDate      = Get-SmallDateTime -Date ($OS.ConvertToDateTime($OS.InstallDate))
             LastLoggedOnUser = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\').LastLoggedOnUser;
         }
 
@@ -2528,7 +2627,7 @@ Begin {
 
     Function Get-XMLConfigClientVersion {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Version'} | Select-Object -ExpandProperty '#text'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'Version' } | Select-Object -ExpandProperty '#text'
         }
 
         Write-Output $obj
@@ -2536,7 +2635,7 @@ Begin {
 
     Function Get-XMLConfigClientSitecode {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'SiteCode'} | Select-Object -ExpandProperty '#text'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'SiteCode' } | Select-Object -ExpandProperty '#text'
         }
 
         Write-Output $obj
@@ -2544,94 +2643,95 @@ Begin {
 
     Function Get-XMLConfigClientDomain {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Domain'} | Select-Object -ExpandProperty '#text'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'Domain' } | Select-Object -ExpandProperty '#text'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientAutoUpgrade {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'AutoUpgrade'} | Select-Object -ExpandProperty '#text'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'AutoUpgrade' } | Select-Object -ExpandProperty '#text'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientMaxLogSize {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogSize'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'Log' } | Select-Object -ExpandProperty 'MaxLogSize'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientMaxLogHistory {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'MaxLogHistory'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'Log' } | Select-Object -ExpandProperty 'MaxLogHistory'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientMaxLogSizeEnabled {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Log'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'Log' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientCache {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Value'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'CacheSize' } | Select-Object -ExpandProperty 'Value'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientCacheDeleteOrphanedData {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'DeleteOrphanedData'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'CacheSize' } | Select-Object -ExpandProperty 'DeleteOrphanedData'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientCacheEnable {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'CacheSize'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'CacheSize' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigClientShare {
         if ($config) {
-            $obj = $Xml.Configuration.Client | Where-Object {$_.Name -like 'Share'} | Select-Object -ExpandProperty '#text' -ErrorAction SilentlyContinue
+            $obj = $Xml.Configuration.Client | Where-Object { $_.Name -like 'Share' } | Select-Object -ExpandProperty '#text' -ErrorAction SilentlyContinue
         }
 
-        if(!($obj)){$obj=$global:ScriptPath} #If Client share is empty, default to the script folder.
+        if (!($obj)) { $obj = $global:ScriptPath } #If Client share is empty, default to the script folder.
         Write-Output $obj
     }
 
     Function Get-XMLConfigUpdatesShare {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Share'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'Updates' } | Select-Object -ExpandProperty 'Share'
         }
 
-        If (!($obj)){$obj = Join-Path $global:ScriptPath "Updates"}
+        If (!($obj)) { $obj = Join-Path $global:ScriptPath "Updates" }
         Return $obj
     }
 
     Function Get-XMLConfigUpdatesEnable {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'Updates' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigUpdatesFix {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Updates'} | Select-Object -ExpandProperty 'Fix' }
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'Updates' } | Select-Object -ExpandProperty 'Fix' 
+        }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingShare {
         if ($config) {
-            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Share'
+            $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'File' } | Select-Object -ExpandProperty 'Share'
         }
 
         $obj = $ExecutionContext.InvokeCommand.ExpandString($obj)
@@ -2640,14 +2740,14 @@ Begin {
 
     Function Get-XMLConfigLoggingLocalFile {
         if ($config) {
-            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'LocalLogFile'
+            $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'File' } | Select-Object -ExpandProperty 'LocalLogFile'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingEnable {
         if ($config) {
-            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'File' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
@@ -2655,21 +2755,21 @@ Begin {
     Function Get-XMLConfigLoggingMaxHistory {
         # Currently not configurable through console extension and webservice. TODO
         if ($config) {
-            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'MaxLogHistory'
+            $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'File' } | Select-Object -ExpandProperty 'MaxLogHistory'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingLevel {
         if ($config) {
-            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'File'} | Select-Object -ExpandProperty 'Level'
+            $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'File' } | Select-Object -ExpandProperty 'Level'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigLoggingTimeFormat {
         if ($config) {
-            $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'Time'} | Select-Object -ExpandProperty 'Format'
+            $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'Time' } | Select-Object -ExpandProperty 'Format'
         }
         Write-Output $obj
     }
@@ -2677,21 +2777,21 @@ Begin {
     Function Get-XMLConfigPendingRebootApp {
         # TODO verify this function
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PendingReboot'} | Select-Object -ExpandProperty 'StartRebootApplication'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'PendingReboot' } | Select-Object -ExpandProperty 'StartRebootApplication'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigMaxRebootDays {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'MaxRebootDays'} | Select-Object -ExpandProperty 'Days'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'MaxRebootDays' } | Select-Object -ExpandProperty 'Days'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRebootApplication {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RebootApplication'} | Select-Object -ExpandProperty 'Application'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'RebootApplication' } | Select-Object -ExpandProperty 'Application'
         }
         Write-Output $obj
     }
@@ -2699,7 +2799,7 @@ Begin {
     Function Get-XMLConfigRebootApplicationEnable {
         ### TODO implement in webservice
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RebootApplication'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'RebootApplication' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
@@ -2707,7 +2807,7 @@ Begin {
     Function Get-XMLConfigDNSCheck {
         # TODO verify switch, skip test and monitor for console extension
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'DNSCheck' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
@@ -2715,7 +2815,7 @@ Begin {
     Function Get-XMLConfigCcmSQLCELog {
         # TODO implement monitor mode
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'CcmSQLCELog'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'CcmSQLCELog' } | Select-Object -ExpandProperty 'Enable'
         }
 
         Write-Output $obj
@@ -2723,49 +2823,49 @@ Begin {
 
     Function Get-XMLConfigDNSFix {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DNSCheck'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'DNSCheck' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigDrivers {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Drivers'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'Drivers' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigPatchLevel {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'PatchLevel'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'PatchLevel' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigOSDiskFreeSpace {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSDiskFreeSpace'} | Select-Object -ExpandProperty '#text'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'OSDiskFreeSpace' } | Select-Object -ExpandProperty '#text'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigHardwareInventoryEnable {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'HardwareInventory' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigHardwareInventoryFix {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'HardwareInventory' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigSoftwareMeteringEnable {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'SoftwareMetering' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
@@ -2773,7 +2873,7 @@ Begin {
     Function Get-XMLConfigSoftwareMeteringFix {
         # TODO implement this check in console extension and webservice
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SoftwareMetering'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'SoftwareMetering' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
@@ -2781,35 +2881,42 @@ Begin {
     Function Get-XMLConfigHardwareInventoryDays {
         # TODO implement this check in console extension and webservice
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'HardwareInventory'} | Select-Object -ExpandProperty 'Days'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'HardwareInventory' } | Select-Object -ExpandProperty 'Days'
+        }
+        Write-Output $obj
+    }
+
+    Function Get-XMLConfigPoorNetwork {
+        if ($config) {
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'PoorNetwork' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationAdminShare {
         if ($config) {
-            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'AdminShare'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Remediation | Where-Object { $_.Name -like 'AdminShare' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientProvisioningMode {
         if ($config) {
-            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientProvisioningMode'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Remediation | Where-Object { $_.Name -like 'ClientProvisioningMode' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientStateMessages {
         if ($config) {
-            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientStateMessages'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Remediation | Where-Object { $_.Name -like 'ClientStateMessages' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientWUAHandler {
         if ($config) {
-            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Remediation | Where-Object { $_.Name -like 'ClientWUAHandler' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
@@ -2817,47 +2924,47 @@ Begin {
     Function Get-XMLConfigRemediationClientWUAHandlerDays {
         # TODO implement days in console extension and webservice
         if ($config) {
-            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientWUAHandler'} | Select-Object -ExpandProperty 'Days'
+            $obj = $Xml.Configuration.Remediation | Where-Object { $_.Name -like 'ClientWUAHandler' } | Select-Object -ExpandProperty 'Days'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigBITSCheck {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'BITSCheck' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigBITSCheckFix {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'BITSCheck'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'BITSCheck' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
-	Function Get-XMLConfigClientSettingsCheck {
+    Function Get-XMLConfigClientSettingsCheck {
         # TODO implement in console extension and webservice
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientSettingsCheck'} | Select-Object -ExpandProperty 'Enable'
+        $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'ClientSettingsCheck' } | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
-	}
+    }
 
-	Function Get-XMLConfigClientSettingsCheckFix {
+    Function Get-XMLConfigClientSettingsCheckFix {
         # TODO implement in console extension and webservice
-        $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'ClientSettingsCheck'} | Select-Object -ExpandProperty 'Fix'
+        $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'ClientSettingsCheck' } | Select-Object -ExpandProperty 'Fix'
         Write-Output $obj
-	}
+    }
 
     Function Get-XMLConfigWMI {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'WMI' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigWMIRepairEnable {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'WMI'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'WMI' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
@@ -2865,32 +2972,32 @@ Begin {
     Function Get-XMLConfigRefreshComplianceState {
         # Measured in days
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RefreshComplianceState'} | Select-Object -ExpandProperty 'Enable'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'RefreshComplianceState' } | Select-Object -ExpandProperty 'Enable'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRefreshComplianceStateDays {
         if ($config) {
-            $obj = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RefreshComplianceState'} | Select-Object -ExpandProperty 'Days'
+            $obj = $Xml.Configuration.Option | Where-Object { $_.Name -like 'RefreshComplianceState' } | Select-Object -ExpandProperty 'Days'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigRemediationClientCertificate {
         if ($config) {
-            $obj = $Xml.Configuration.Remediation | Where-Object {$_.Name -like 'ClientCertificate'} | Select-Object -ExpandProperty 'Fix'
+            $obj = $Xml.Configuration.Remediation | Where-Object { $_.Name -like 'ClientCertificate' } | Select-Object -ExpandProperty 'Fix'
         }
         Write-Output $obj
     }
 
     Function Get-XMLConfigSQLServer {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'SQL'} | Select-Object -ExpandProperty 'Server'
+        $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'SQL' } | Select-Object -ExpandProperty 'Server'
         Write-Output $obj
     }
 
     Function Get-XMLConfigSQLLoggingEnable {
-        $obj = $Xml.Configuration.Log | Where-Object {$_.Name -like 'SQL'} | Select-Object -ExpandProperty 'Enable'
+        $obj = $Xml.Configuration.Log | Where-Object { $_.Name -like 'SQL' } | Select-Object -ExpandProperty 'Enable'
         Write-Output $obj
     }
 
@@ -2901,10 +3008,10 @@ Begin {
     Function GetComputerInfo {
         $info = Get-Info | Select-Object HostName, OperatingSystem, Architecture, Build, InstallDate, Manufacturer, Model, LastLoggedOnUser
         #$text = 'Computer info'+ "`n"
-        $text = 'Hostname: ' +$info.HostName
+        $text = "Hostname: " + $info.HostName
         Write-Output $text
         #Out-LogFile -Xml $xml $text
-        $text = 'Operatingsystem: ' +$info.OperatingSystem
+        $text = 'Operatingsystem: ' + $info.OperatingSystem
         Write-Output $text
         #Out-LogFile -Xml $xml $text
         $text = 'Architecture: ' + $info.Architecture
@@ -2966,7 +3073,7 @@ Begin {
     }
 
     Function New-LogObject {
-       # Write-Verbose "Start New-LogObject"
+        # Write-Verbose "Start New-LogObject"
 
         if ($PowerShellVersion -ge 6) {
             $OS = Get-CimInstance -class Win32_OperatingSystem
@@ -3021,57 +3128,57 @@ Begin {
         if ($PSBuild -le 0) { $PSBuild = $null }
         $UBR = Get-UBR
         $BITS = $null
-		$ClientSettings = $null
+        $ClientSettings = $null
 
         $obj = New-Object PSObject -Property @{
-            Hostname = $Hostname
-            Operatingsystem = $OperatingSystem
-            Architecture = $Architecture
-            Build = $Build
-            Manufacturer = $Manufacturer
-            Model = $Model
-            InstallDate = $InstallDate
-            OSUpdates = $null
-            LastLoggedOnUser = $LastLoggedOnUser
-            ClientVersion = $ClientVersion
-            PSVersion = $PSVersion
-            PSBuild = $PSBuild
-            Sitecode = $Sitecode
-            Domain = $Domain
-            MaxLogSize = $MaxLogSize
-            MaxLogHistory = $MaxLogHistory
-            CacheSize = $CacheSize
-            ClientCertificate = $ClientCertificate
-            ProvisioningMode = $ProvisioningMode
-            DNS = $DNS
-            Drivers = $Drivers
-            Updates = $Updates
-            PendingReboot = $PendingReboot
-            LastBootTime = $LastBootTime
-            OSDiskFreeSpace = $OSDiskFreeSpace
-            Services = $Services
-            AdminShare = $AdminShare
-            StateMessages = $StateMessages
-            WUAHandler = $WUAHandler
-            WMI = $WMI
+            Hostname               = $Hostname
+            Operatingsystem        = $OperatingSystem
+            Architecture           = $Architecture
+            Build                  = $Build
+            Manufacturer           = $Manufacturer
+            Model                  = $Model
+            InstallDate            = $InstallDate
+            OSUpdates              = $null
+            LastLoggedOnUser       = $LastLoggedOnUser
+            ClientVersion          = $ClientVersion
+            PSVersion              = $PSVersion
+            PSBuild                = $PSBuild
+            Sitecode               = $Sitecode
+            Domain                 = $Domain
+            MaxLogSize             = $MaxLogSize
+            MaxLogHistory          = $MaxLogHistory
+            CacheSize              = $CacheSize
+            ClientCertificate      = $ClientCertificate
+            ProvisioningMode       = $ProvisioningMode
+            DNS                    = $DNS
+            Drivers                = $Drivers
+            Updates                = $Updates
+            PendingReboot          = $PendingReboot
+            LastBootTime           = $LastBootTime
+            OSDiskFreeSpace        = $OSDiskFreeSpace
+            Services               = $Services
+            AdminShare             = $AdminShare
+            StateMessages          = $StateMessages
+            WUAHandler             = $WUAHandler
+            WMI                    = $WMI
             RefreshComplianceState = $RefreshComplianceState
-            ClientInstalled = $null
-            Version = $Version
-            Timestamp = $smallDateTime
-            HWInventory = $null
-            SWMetering = $null
-			ClientSettings = $null
-            BITS = $BITS
-            PatchLevel = $UBR
-            ClientInstalledReason = $null
-            RebootApp = $RebootApp
+            ClientInstalled        = $null
+            Version                = $Version
+            Timestamp              = $smallDateTime
+            HWInventory            = $null
+            SWMetering             = $null
+            ClientSettings         = $null
+            BITS                   = $BITS
+            PatchLevel             = $UBR
+            ClientInstalledReason  = $null
+            RebootApp              = $RebootApp
         }
         Write-Output $obj
-       # Write-Verbose "End New-LogObject"
+        # Write-Verbose "End New-LogObject"
     }
 
     Function Get-SmallDateTime {
-        Param([Parameter(Mandatory=$false)]$Date)
+        Param([Parameter(Mandatory = $false)]$Date)
         #Write-Verbose "Start Get-SmallDateTime"
 
         $UTC = (Get-XMLConfigLoggingTimeFormat).ToLower()
@@ -3098,8 +3205,8 @@ Begin {
 
     Function Update-SQL {
         Param(
-            [Parameter(Mandatory=$true)]$Log,
-            [Parameter(Mandatory=$false)]$Table
+            [Parameter(Mandatory = $true)]$Log,
+            [Parameter(Mandatory = $false)]$Table
         )
 
         Write-Verbose "Start Update-SQL"
@@ -3112,11 +3219,11 @@ Begin {
 
         if ($null -ne $log.OSUpdates) {
             # UPDATE
-            $q1 = "OSUpdates='"+$log.OSUpdates+"', "
+            $q1 = "OSUpdates='" + $log.OSUpdates + "', "
             # INSERT INTO
             $q2 = "OSUpdates, "
             # VALUES
-            $q3 = "'"+$log.OSUpdates+"', "
+            $q3 = "'" + $log.OSUpdates + "', "
         }
         else {
             $q1 = $null
@@ -3126,11 +3233,11 @@ Begin {
 
         if ($null -ne $log.ClientInstalled) {
             # UPDATE
-            $q10 = "ClientInstalled='"+$log.ClientInstalled+"', "
+            $q10 = "ClientInstalled='" + $log.ClientInstalled + "', "
             # INSERT INTO
             $q20 = "ClientInstalled, "
             # VALUES
-            $q30 = "'"+$log.ClientInstalled+"', "
+            $q30 = "'" + $log.ClientInstalled + "', "
         }
         else {
             $q10 = $null
@@ -3138,17 +3245,17 @@ Begin {
             $q30 = $null
         }
 
-		#ADD ClientSettings.log...
-        $query= "begin tran
-        if exists (SELECT * FROM $table WITH (updlock,serializable) WHERE Hostname='"+$log.Hostname+"')
+        #ADD ClientSettings.log...
+        $query = "begin tran
+        if exists (SELECT * FROM $table WITH (updlock,serializable) WHERE Hostname='"+ $log.Hostname + "')
         begin
-            UPDATE $table SET Operatingsystem='"+$log.Operatingsystem+"', Architecture='"+$log.Architecture+"', Build='"+$log.Build+"', Manufacturer='"+$log.Manufacturer+"', Model='"+$log.Model+"', InstallDate='"+$log.InstallDate+"', $q1 LastLoggedOnUser='"+$log.LastLoggedOnUser+"', ClientVersion='"+$log.ClientVersion+"', PSVersion='"+$log.PSVersion+"', PSBuild='"+$log.PSBuild+"', Sitecode='"+$log.Sitecode+"', Domain='"+$log.Domain+"', MaxLogSize='"+$log.MaxLogSize+"', MaxLogHistory='"+$log.MaxLogHistory+"', CacheSize='"+$log.CacheSize+"', ClientCertificate='"+$log.ClientCertificate+"', ProvisioningMode='"+$log.ProvisioningMode+"', DNS='"+$log.DNS+"', Drivers='"+$log.Drivers+"', Updates='"+$log.Updates+"', PendingReboot='"+$log.PendingReboot+"', LastBootTime='"+$log.LastBootTime+"', OSDiskFreeSpace='"+$log.OSDiskFreeSpace+"', Services='"+$log.Services+"', AdminShare='"+$log.AdminShare+"', StateMessages='"+$log.StateMessages+"', WUAHandler='"+$log.WUAHandler+"', WMI='"+$log.WMI+"', RefreshComplianceState='"+$log.RefreshComplianceState+"', HWInventory='"+$log.HWInventory+"', Version='"+$Version+"', $q10 Timestamp='"+$smallDateTime+"', SWMetering='"+$log.SWMetering+"', BITS='"+$log.BITS+"', PatchLevel='"+$Log.PatchLevel+"', ClientInstalledReason='"+$log.ClientInstalledReason+"'
-            WHERE Hostname = '"+$log.Hostname+"'
+            UPDATE $table SET Operatingsystem='"+ $log.Operatingsystem + "', Architecture='" + $log.Architecture + "', Build='" + $log.Build + "', Manufacturer='" + $log.Manufacturer + "', Model='" + $log.Model + "', InstallDate='" + $log.InstallDate + "', $q1 LastLoggedOnUser='" + $log.LastLoggedOnUser + "', ClientVersion='" + $log.ClientVersion + "', PSVersion='" + $log.PSVersion + "', PSBuild='" + $log.PSBuild + "', Sitecode='" + $log.Sitecode + "', Domain='" + $log.Domain + "', MaxLogSize='" + $log.MaxLogSize + "', MaxLogHistory='" + $log.MaxLogHistory + "', CacheSize='" + $log.CacheSize + "', ClientCertificate='" + $log.ClientCertificate + "', ProvisioningMode='" + $log.ProvisioningMode + "', DNS='" + $log.DNS + "', Drivers='" + $log.Drivers + "', Updates='" + $log.Updates + "', PendingReboot='" + $log.PendingReboot + "', LastBootTime='" + $log.LastBootTime + "', OSDiskFreeSpace='" + $log.OSDiskFreeSpace + "', Services='" + $log.Services + "', AdminShare='" + $log.AdminShare + "', StateMessages='" + $log.StateMessages + "', WUAHandler='" + $log.WUAHandler + "', WMI='" + $log.WMI + "', RefreshComplianceState='" + $log.RefreshComplianceState + "', HWInventory='" + $log.HWInventory + "', Version='" + $Version + "', $q10 Timestamp='" + $smallDateTime + "', SWMetering='" + $log.SWMetering + "', BITS='" + $log.BITS + "', PatchLevel='" + $Log.PatchLevel + "', ClientInstalledReason='" + $log.ClientInstalledReason + "'
+            WHERE Hostname = '"+ $log.Hostname + "'
         end
         else
         begin
             INSERT INTO $table (Hostname, Operatingsystem, Architecture, Build, Manufacturer, Model, InstallDate, $q2 LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, Sitecode, Domain, MaxLogSize, MaxLogHistory, CacheSize, ClientCertificate, ProvisioningMode, DNS, Drivers, Updates, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, HWInventory, Version, $q20 Timestamp, SWMetering, BITS, PatchLevel, ClientInstalledReason)
-            VALUES ('"+$log.Hostname+"', '"+$log.Operatingsystem+"', '"+$log.Architecture+"', '"+$log.Build+"', '"+$log.Manufacturer+"', '"+$log.Model+"', '"+$log.InstallDate+"', $q3 '"+$log.LastLoggedOnUser+"', '"+$log.ClientVersion+"', '"+$log.PSVersion+"', '"+$log.PSBuild+"', '"+$log.Sitecode+"', '"+$log.Domain+"', '"+$log.MaxLogSize+"', '"+$log.MaxLogHistory+"', '"+$log.CacheSize+"', '"+$log.ClientCertificate+"', '"+$log.ProvisioningMode+"', '"+$log.DNS+"', '"+$log.Drivers+"', '"+$log.Updates+"', '"+$log.PendingReboot+"', '"+$log.LastBootTime+"', '"+$log.OSDiskFreeSpace+"', '"+$log.Services+"', '"+$log.AdminShare+"', '"+$log.StateMessages+"', '"+$log.WUAHandler+"', '"+$log.WMI+"', '"+$log.RefreshComplianceState+"', '"+$log.HWInventory+"', '"+$log.Version+"', $q30 '"+$smallDateTime+"', '"+$log.SWMetering+"', '"+$log.BITS+"', '"+$Log.PatchLevel+"', '"+$Log.ClientInstalledReason+"')
+            VALUES ('"+ $log.Hostname + "', '" + $log.Operatingsystem + "', '" + $log.Architecture + "', '" + $log.Build + "', '" + $log.Manufacturer + "', '" + $log.Model + "', '" + $log.InstallDate + "', $q3 '" + $log.LastLoggedOnUser + "', '" + $log.ClientVersion + "', '" + $log.PSVersion + "', '" + $log.PSBuild + "', '" + $log.Sitecode + "', '" + $log.Domain + "', '" + $log.MaxLogSize + "', '" + $log.MaxLogHistory + "', '" + $log.CacheSize + "', '" + $log.ClientCertificate + "', '" + $log.ProvisioningMode + "', '" + $log.DNS + "', '" + $log.Drivers + "', '" + $log.Updates + "', '" + $log.PendingReboot + "', '" + $log.LastBootTime + "', '" + $log.OSDiskFreeSpace + "', '" + $log.Services + "', '" + $log.AdminShare + "', '" + $log.StateMessages + "', '" + $log.WUAHandler + "', '" + $log.WMI + "', '" + $log.RefreshComplianceState + "', '" + $log.HWInventory + "', '" + $log.Version + "', $q30 '" + $smallDateTime + "', '" + $log.SWMetering + "', '" + $log.BITS + "', '" + $Log.PatchLevel + "', '" + $Log.ClientInstalledReason + "')
         end
         commit tran"
 
@@ -3164,9 +3271,9 @@ Begin {
 
     Function Update-LogFile {
         Param(
-            [Parameter(Mandatory=$true)]$Log,
-            [Parameter(Mandatory=$false)]$Mode
-            )
+            [Parameter(Mandatory = $true)]$Log,
+            [Parameter(Mandatory = $false)]$Mode
+        )
         # Start the logfile
         Write-Verbose "Start Update-LogFile"
         #$share = Get-XMLConfigLoggingShare
@@ -3175,15 +3282,16 @@ Begin {
         $logfile = $logfile = Get-LogFileName
         Test-LogFileHistory -Logfile $logfile
         $text = "<--- ConfigMgr Client Health Check starting --->"
-        $text += $log | Select-Object Hostname, Operatingsystem, Architecture, Build, Model, InstallDate, OSUpdates, LastLoggedOnUser, ClientVersion, PSVersion, PSBuild, SiteCode, Domain, MaxLogSize, MaxLogHistory, CacheSize, Certificate, ProvisioningMode, DNS, PendingReboot, LastBootTime, OSDiskFreeSpace, Services, AdminShare, StateMessages, WUAHandler, WMI, RefreshComplianceState, ClientInstalled, Version, Timestamp, HWInventory, SWMetering, BITS, ClientSettings, PatchLevel, ClientInstalledReason | Out-String
-        $text = $text.replace("`t","")
-        $text = $text.replace("  ","")
-        $text = $text.replace(" :",":")
-        $text = $text -creplace '(?m)^\s*\r?\n',''
+        $text += $log | Select-Object Version, Timestamp, Hostname, PSVersion, PSBuild, Operatingsystem, Architecture, Build, Manufacturer, Model, InstallDate, OSDiskFreeSpace, LastLoggedOnUser, LastBootTime, PendingReboot, RebootApp, BITS, DNS, Services, AdminShare, Drivers, OSUpdates, Updates, WUAHandler, PatchLevel, WMI, Domain, Sitecode, ProvisioningMode, MaxLogSize, MaxLogHistory, CacheSize, ClientCertificate, RefreshComplianceState, StateMessages, HWInventory, SWMetering, ClientSettings, ClientVersion, ClientInstalled, ClientInstalledReason | Out-String
+        $text += "<--- ConfigMgr Client Health Check finished --->"
+        $text = $text.replace("`t", "")
+        $text = $text.replace("  ", "")
+        $text = $text.replace(" :", ":")
+        $text = $text -creplace '(?m)^\s*\r?\n', ''
 
-        if ($Mode -eq 'Local') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1}
-        elseif ($Mode -eq 'ClientInstalledFailed') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1}
-        else { Out-LogFile -Xml $xml -Text $text -Severity 1}
+        if ($Mode -eq 'Local') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1 }
+        elseif ($Mode -eq 'ClientInstalledFailed') { Out-LogFile -Xml $xml -Text $text -Mode $Mode -Severity 1 }
+        else { Out-LogFile -Xml $xml -Text $text -Severity 1 }
         Write-Verbose "End Update-LogFile"
     }
 
@@ -3228,8 +3336,7 @@ Begin {
 Process {
     Write-Verbose "Starting precheck. Determing if script will run or not."
     # Veriy script is running with administrative priveleges.
-    If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-    {
+    If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
         $text = 'ERROR: Powershell not running as Administrator! Client Health aborting.'
         Out-LogFile -Xml $Xml -Text $text -Severity 3
         Write-Error $text
@@ -3250,11 +3357,11 @@ Process {
             $TSName = $tsenv.Value("_SMSTSAdvertID")
             Write-Host "Task sequence $TSName is active executing on computer. ConfigMgr Client Health will not execute."
             Exit 1
-         }
-         else {
-            $StartupText2 = "ConfigMgr Client Health " +$Version+ " starting."
+        }
+        else {
+            $StartupText2 = "ConfigMgr Client Health " + $Version + " starting."
             Write-Host $StartupText2
-         }
+        }
     }
 
 
@@ -3269,8 +3376,8 @@ Process {
     $LastRunRegistryValueName = "LastRun"
 
     #Get the last run from the registry, defaulting to the minimum date value if the script has never ran.
-    try{[datetime]$LastRun = Get-RegistryValue -Path $RegistryKey -Name $LastRunRegistryValueName}
-    catch{$LastRun=[datetime]::MinValue}
+    try { [datetime]$LastRun = Get-RegistryValue -Path $RegistryKey -Name $LastRunRegistryValueName }
+    catch { $LastRun = [datetime]::MinValue }
     Write-Output "Script last ran: $($LastRun)"
 
     Write-Verbose "Testing if log files are bigger than max history for logfiles."
@@ -3363,7 +3470,7 @@ Process {
 
     if (Get-XMLConfigSoftwareMeteringEnable -like 'True') {
         Write-Verbose "Testing software metering prep driver check"
-        if ((Test-SoftwareMeteringPrepDriver -Log $Log) -eq $false) {$restartCCMExec = $true}
+        if ((Test-SoftwareMeteringPrepDriver -Log $Log) -eq $false) { $restartCCMExec = $true }
     }
 
     Write-Verbose 'Validating DNS...'
@@ -3377,12 +3484,12 @@ Process {
     }
 
     Write-Verbose 'Validating ClientSettings'
-	If (Get-XMLConfigClientSettingsCheck -like 'True') {
+    If (Get-XMLConfigClientSettingsCheck -like 'True') {
         Test-ClientSettingsConfiguration -Log $log
-	}
+    }
 
     if (($ClientWUAHandler -like 'True') -eq $true) {
-		Write-Verbose 'Validating Windows Update Scan not broken by bad group policy...'
+        Write-Verbose 'Validating Windows Update Scan not broken by bad group policy...'
         $days = Get-XMLConfigRemediationClientWUAHandlerDays
         Test-RegistryPol -Days $days -log $log -StartTime $LastRun
 
@@ -3395,16 +3502,16 @@ Process {
     }
 
     Write-Verbose 'Validating Admin$ and C$ are shared...'
-    if (($AdminShare -like 'True') -eq $true) {Test-AdminShare -log $log}
+    if (($AdminShare -like 'True') -eq $true) { Test-AdminShare -log $log }
 
     Write-Verbose 'Testing that all devices have functional drivers.'
-    if ((Get-XMLConfigDrivers -like 'True') -eq $true) {Test-MissingDrivers -Log $log}
+    if ((Get-XMLConfigDrivers -like 'True') -eq $true) { Test-MissingDrivers -Log $log }
 
     $UpdatesEnabled = Get-XMLConfigUpdatesEnable
     if ($UpdatesEnabled -like 'True') {
-		Write-Verbose 'Validating required updates are installed...'
-		Test-Update -Log $log
-	}
+        Write-Verbose 'Validating required updates are installed...'
+        Test-Update -Log $log
+    }
 
     Write-Verbose "Validating $env:SystemDrive free diskspace (Only warning, no remediation)..."
     Test-DiskSpace
@@ -3431,7 +3538,7 @@ Process {
             Update-SCCMLogFile
             Start-Service -Name CcmExec
         }
-        else {Restart-Service -Name CcmExec}
+        else { Restart-Service -Name CcmExec }
 
         $Log.MaxLogSize = Get-ClientMaxLogSize
         $Log.MaxLogHistory = Get-ClientMaxLogHistory
