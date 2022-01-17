@@ -619,18 +619,21 @@ Begin {
 
     }
 
-    function Test-CCMCertificateError {
+      Function Test-CCMCertificateError {
         Param([Parameter(Mandatory=$true)]$Log)
         # More checks to come
         $logdir = Get-CCMLogDirectory
-        $logFile1 = "$logdir\ClientIDManagerStartup.log"
+        $clientIDLog = "$logdir\ClientIDManagerStartup.log"
+        $locationsLog = "$logdir\locationservices.log"
         $error1 = 'Failed to find the certificate in the store'
         $error2 = '[RegTask] - Server rejected registration 3'
-        $content = Get-Content -Path $logFile1
+        $error3 = 'ManagementPointCertificate_CrossVerificationFailure'
+        $clientIDContent = Get-Content -Path $clientIDLog
+        $locationsContent = Get-Content -Path $locationsLog
 
         $ok = $true
 
-        if ($content -match $error1) {
+        if ($clientIDContent -match $error1) {
             $ok = $false
             $text = 'ConfigMgr Client Certificate: Error failed to find the certificate in store. Attempting fix.'
             Write-Warning $text
@@ -640,20 +643,45 @@ Begin {
             # CCM creates new certificate when missing.
             Remove-Item -Path $cert -Force -ErrorAction SilentlyContinue | Out-Null
             # Remove the error from the logfile to avoid double remediations based on false positives
-            $newContent = $content | Select-String -pattern $Error1 -notmatch
-            Out-File -FilePath $logfile -InputObject $newContent -Encoding utf8 -Force
+            $newContent = $clientIDContent | Select-String -pattern $Error1 -notmatch
+            Out-File -FilePath $clientIDLog -InputObject $newContent -Encoding utf8 -Force
             Start-Service -Name ccmexec
-
+            
             # Update log object
             $log.ClientCertificate = $error1
         }
 
-        #$content = Get-Content -Path $logFile2
-        if ($content -match $error2) {
+        if ($clientIDContent -match $error2) {
             $ok = $false
             $text = 'ConfigMgr Client Certificate: Error! Server rejected client registration. Client Certificate not valid. No auto-remediation.'
             Write-Error $text
             $log.ClientCertificate = $error2
+        }
+        if ($locationsContent -match $error3) {
+            $ok = $false
+            $text = 'ConfigMgr Management Point Certificate: Certificate has changed and client could not renew the certificate. Attempting fix.'
+            Write-Warning $text
+            # Repair CCM installation
+            $ClientInstallProperties = $propertyString + "RESETKEYINFORMATION=TRUE"
+            $ClientShare = Get-XMLConfigClientShare
+            Invoke-Expression "&'$ClientShare\ccmsetup.exe' $ClientInstallProperties"
+
+            $launched = $true
+			do {
+				Start-Sleep -seconds 5
+				if (Get-Process "ccmsetup" -ErrorAction SilentlyContinue) {
+					Write-Verbose "ConfigMgr Client installation still running"
+					$launched = $true
+				}
+				else { $launched = $false }
+            } while ($launched -eq $true)
+
+            # Remove the error from the logfile to avoid double remediations based on false positives
+            $newContent = $locationsContent | Select-String -pattern $error3 -notmatch
+            Out-File -FilePath $locationsLog -InputObject $newContent -Encoding utf8 -Force
+            
+            # Update log object
+            $log.ClientCertificate = $error3
         }
 
         if ($ok -eq $true) {
